@@ -67,6 +67,33 @@ export function createApp({
 
   app.disable('x-powered-by');
 
+  // --- how many proxies are in front of us (M7-A) ----------------------------
+  //
+  // This has to be set before anything reads `req.ip`, because everything that
+  // does — the rate limiter, above all — inherits the answer.
+  //
+  // WHY THIS IS A SECURITY SETTING AND NOT A DEPLOYMENT DETAIL
+  //
+  // `X-Forwarded-For` is a header. Anyone can send one. Express only believes
+  // it to the depth configured here, and the two ways to get this wrong fail in
+  // opposite directions:
+  //
+  //   too low  — behind a real proxy, every request appears to come from the
+  //              proxy's address, so `keyFor` puts the entire internet in one
+  //              rate-limit bucket. Because authenticated callers are keyed by
+  //              session, the endpoint that actually suffers is the one with no
+  //              session yet: sign-in. One stranger could exhaust the login
+  //              budget for everybody.
+  //
+  //   too high — the app believes a hop that does not exist, so a client can
+  //              write its own `X-Forwarded-For`, choose its own bucket, and
+  //              rotate it for an unlimited number of login attempts.
+  //
+  // There is no value that is safe in both situations, which is why this is
+  // configuration rather than a constant: 0 everywhere by default, and exactly
+  // the real hop count where a proxy genuinely terminates the connection.
+  app.set('trust proxy', config.trustProxy);
+
   // CORS first, so a preflight is answered before anything reads a body, and so
   // a disallowed cross-origin write is refused before it can reach a route.
   app.use('/api', cors({ allowedOrigins: config.corsAllowedOrigins }));
@@ -134,6 +161,36 @@ export function createApp({
   app.use('/api', (_req: Request, res: Response) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'That endpoint does not exist.' } });
   });
+
+  // --- the front end, on the same origin as the API (M7-A) -------------------
+  //
+  // Mounted last, so it can never shadow a route: every API path is under
+  // `/api`, and the catch-all directly above answers anything there that did
+  // not match. Nothing reaching this line is an API request.
+  //
+  // WHY THE SAME ORIGIN, RATHER THAN A SEPARATE STATIC HOST
+  //
+  // Three parts of this system already assume it. The session and CSRF cookies
+  // are `SameSite=Strict`, which a browser will not send on a request to a
+  // different site at all. The client calls `/api` with no host — "in
+  // development and in production alike", as it says. And the CORS allow-list
+  // is empty, which its own comment describes not as a gap but as "there are no
+  // cross-origin clients". Serving both halves from one origin is what makes
+  // all three true at once, and it is the configuration with no CORS surface to
+  // get wrong rather than the one where CORS is configured correctly.
+  //
+  // NO SPA FALLBACK, AND THAT IS NOT AN OMISSION
+  //
+  // The client is a hash router: every route it has is `/#/inbox`, `/#/deals`
+  // and so on. A fragment is never sent to a server, so the only path the
+  // browser ever requests is `/` plus the hashed asset files beside it. A
+  // history-API fallback would be answering a question this front end does not
+  // ask, and would turn every genuine 404 into a 200 serving the app.
+  //
+  // A missing `dist/` is not an error either: `express.static` calls `next()`
+  // when the directory is not there, which is the normal state in development
+  // and under test, where the front end is served by Vite or not at all.
+  app.use(express.static(config.webDistDir));
 
   // Terminal error handler. Everything reaching here is converted by one
   // function (lib/errors.ts) so a response can never carry an internal message

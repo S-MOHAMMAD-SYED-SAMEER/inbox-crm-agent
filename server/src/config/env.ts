@@ -75,6 +75,25 @@ function readInt(key: string, fallback: number, problems: string[]): number {
   return parsed;
 }
 
+/**
+ * Like `readInt`, but zero is a legitimate value.
+ *
+ * `readInt` rejects anything `<= 0` because every setting it reads — a port, an
+ * SLA, a TTL — is meaningless at zero. `TRUST_PROXY` is the opposite: zero is
+ * its safe default and the value it must hold everywhere except behind a real
+ * proxy.
+ */
+function readNonNegativeInt(key: string, fallback: number, problems: string[]): number {
+  const raw = process.env[key];
+  if (raw === undefined || raw.trim() === '') return fallback;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    problems.push(`${key} must be a non-negative integer; received "${raw}". Using ${fallback}.`);
+    return fallback;
+  }
+  return parsed;
+}
+
 export type AppConfig = {
   port: number;
   databaseUrl: string | null;
@@ -99,6 +118,16 @@ export type AppConfig = {
   sessionTtlHours: number;
   /** Exact origins allowed to make credentialed cross-origin requests. */
   corsAllowedOrigins: string[];
+  /**
+   * How many reverse proxies sit in front of this server (M7-A).
+   *
+   * 0 — the default — means "none": `X-Forwarded-For` is ignored entirely and
+   * `req.ip` is the socket address. 1 means exactly one trusted hop, which is
+   * what a single managed host in front of the app looks like.
+   */
+  trustProxy: number;
+  /** Where the built front end lives, served at the same origin as the API. */
+  webDistDir: string;
   /** Whether session cookies carry `Secure`. Derived, never a bare toggle. */
   cookieSecure: boolean;
   approvalSlaHours: number;
@@ -262,6 +291,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
       autonomyLevel: readEnum('AUTONOMY_LEVEL', AUTONOMY_LEVELS, 'manual', problems),
       demoDataDir: readString('DEMO_DATA_DIR', path.join(SERVER_ROOT, 'data', 'demo')),
       migrationsDir: readString('MIGRATIONS_DIR', path.join(SERVER_ROOT, 'migrations')),
+      // Zero by default, deliberately. See the field's documentation: trusting
+      // a forwarding header nobody is writing hands every client the ability to
+      // choose its own rate-limit bucket.
+      trustProxy: readNonNegativeInt('TRUST_PROXY', 0, problems),
+      webDistDir: readString('WEB_DIST_DIR', path.join(SERVER_ROOT, '..', 'web', 'dist')),
       logLevel: readEnum('LOG_LEVEL', ['debug', 'info', 'warn', 'error'] as const, 'info', problems),
     };
 
