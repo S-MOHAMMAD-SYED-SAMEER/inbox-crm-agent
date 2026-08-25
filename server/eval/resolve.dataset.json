@@ -1,0 +1,141 @@
+{
+  "version": "resolve-1.0.0",
+  "note": [
+    "M2 evaluation cases. Scoped to entity resolution — the full harness (§20) is M6.",
+    "",
+    "Expectations are written from the specification's own account of the demo dataset (§22) and the",
+    "seeded CRM, not from what the resolver happens to produce. Several cases assert the SHAPE of a",
+    "decision rather than a link:",
+    "",
+    "  E-03 — a NEW contact at an EXISTING company. The company must match on domain while the",
+    "         contact must not match at all. A resolver that linked Priya to Anil because they share",
+    "         a domain would fail here.",
+    "  E-04 — the Harborview conflict. Two candidates, equal scores, no link, human review. This is",
+    "         the case that fails if a close call is ever silently promoted to a match.",
+    "  E-09 — spam. Must not acquire a CRM identity just because it was processed.",
+    "",
+    "E-08 and E-10 are absent on purpose: M1 routes them to needs_review, so resolution never runs",
+    "on them. An entry here would be asserting behaviour that cannot occur."
+  ],
+  "cases": [
+    {
+      "id": "E-01",
+      "providerMessageId": "demo-e01",
+      "description": "New lead from an unknown company — nothing in the CRM should match.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 },
+        "company": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 }
+      }
+    },
+    {
+      "id": "E-02",
+      "providerMessageId": "demo-e02",
+      "description": "Unknown studio — no match on either entity.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 },
+        "company": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 }
+      }
+    },
+    {
+      "id": "E-03",
+      "providerMessageId": "demo-e03",
+      "description": "New contact at an existing company: the company matches on domain, the contact does not match a colleague.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create" },
+        "company": {
+          "verdict": "MATCH",
+          "outcome": "auto_linked",
+          "selectedLabel": "Vantage Consulting",
+          "topMethod": "exact_domain",
+          "topScore": 1
+        }
+      }
+    },
+    {
+      "id": "E-04",
+      "providerMessageId": "demo-e04",
+      "description": "The Harborview conflict: two equally plausible companies, so nothing is linked and a person decides.",
+      "expected": {
+        "state": "needs_review",
+        "reviewReason": "match_conflict",
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create" },
+        "company": {
+          "verdict": "MATCH_CONFLICT",
+          "outcome": "conflict",
+          "candidateCount": 2,
+          "candidateLabels": ["Harborview Digital", "Harborview Media Ltd"],
+          "topMethod": "distinctive_token",
+          "topScore": 0.65,
+          "noSelection": true
+        }
+      }
+    },
+    {
+      "id": "E-05",
+      "providerMessageId": "demo-e05",
+      "description": "Existing customer: both the contact and the company match exactly.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": {
+          "verdict": "MATCH",
+          "outcome": "auto_linked",
+          "selectedLabel": "Marcus Bell <marcus@solsticeretail.com>",
+          "topMethod": "exact_email",
+          "topScore": 1
+        },
+        "company": {
+          "verdict": "MATCH",
+          "outcome": "auto_linked",
+          "selectedLabel": "Solstice Retail",
+          "topMethod": "exact_domain",
+          "topScore": 1
+        }
+      }
+    },
+    {
+      "id": "E-06",
+      "providerMessageId": "demo-e06",
+      "description": "In-thread follow-up from a known contact — matches on the address, not on the thread.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": {
+          "verdict": "MATCH",
+          "outcome": "auto_linked",
+          "selectedLabel": "Dana Iqbal <dana@solsticeretail.com>",
+          "topMethod": "exact_email"
+        },
+        "company": { "verdict": "MATCH", "outcome": "auto_linked", "selectedLabel": "Solstice Retail" }
+      }
+    },
+    {
+      "id": "E-07",
+      "providerMessageId": "demo-e07",
+      "description": "Partnership approach from an unknown studio — no CRM identity.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 },
+        "company": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 }
+      }
+    },
+    {
+      "id": "E-09",
+      "providerMessageId": "demo-e09",
+      "description": "Spam must not acquire a CRM identity just because it was processed.",
+      "expected": {
+        "state": "deciding",
+        "reviewReason": null,
+        "contact": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 },
+        "company": { "verdict": "NO_MATCH", "outcome": "propose_create", "candidateCount": 0 }
+      }
+    }
+  ]
+}

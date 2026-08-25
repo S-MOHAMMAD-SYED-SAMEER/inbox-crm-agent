@@ -1,0 +1,40 @@
+{
+  "name": "inbox-crm-agent-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "migrate": "node scripts/migrate.ts",
+    "seed": "node scripts/seed.ts",
+    "reset": "node scripts/reset.ts",
+    "hash-password": "node scripts/hash-password.ts",
+    "verify:postgres": "node scripts/verify-postgres.ts",
+    "demo:walkthrough": "node scripts/demo-walkthrough.ts",
+    "eval:understand": "node scripts/eval-understand.ts",
+    "eval:resolve": "node scripts/eval-resolve.ts",
+    "eval:decide": "node scripts/eval-decide.ts",
+    "eval:execute": "node scripts/eval-execute.ts",
+    "eval:revise": "node scripts/eval-revise.ts",
+    "eval:outbound": "node scripts/eval-outbound.ts"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
+    "express": "^5.2.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.13.3",
+    "@types/pg": "^8.15.6",
+    "oxlint": "^1.75.0",
+    "typescript": "~6.0.2"
+  }
+}

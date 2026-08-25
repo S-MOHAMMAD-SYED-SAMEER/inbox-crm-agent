@@ -1,0 +1,119 @@
+{
+  "version": "decide-1.0.0",
+  "autonomyLevel": "assisted",
+  "note": [
+    "M3 evaluation cases. Scoped to DECIDE — the full harness (§20) is M6.",
+    "",
+    "Expectations come from spec §22's stated outcomes, not from what the rules happen to produce.",
+    "",
+    "AUTONOMY: these cases run at `assisted`, because §22 describes E-05 and E-09 as auto-executing",
+    "at tier 0 — which is what `assisted` means. The shipped default is `manual` (§16: 'the default",
+    "for a new client'), under which every one of these would require approval. Both behaviours are",
+    "correct; this dataset measures the one §22 documents.",
+    "",
+    "E-04, E-08 and E-10 are absent on purpose: M1 and M2 hold them at needs_review, so DECIDE never",
+    "runs on them. An entry here would assert behaviour that cannot occur."
+  ],
+  "cases": [
+    {
+      "id": "E-01",
+      "providerMessageId": "demo-e01",
+      "description": "Strong lead: create the company, contact, deal and task, and draft a discovery reply.",
+      "expected": {
+        "actions": ["create_company", "create_contact", "log_activity", "create_deal", "create_task", "send_email"],
+        "riskTier": 2,
+        "requiresApproval": true,
+        "approvalReasonCodes": ["consequential_action"],
+        "state": "awaiting_approval",
+        "dealStage": "new_lead",
+        "hasDraft": true,
+        "draftClean": true,
+        "rulesFired": ["R-01", "R-02", "R-15"]
+      }
+    },
+    {
+      "id": "E-02",
+      "providerMessageId": "demo-e02",
+      "description": "Service inquiry: a qualifying deal and a scoping reply.",
+      "expected": {
+        "actions": ["create_company", "create_contact", "log_activity", "create_deal", "create_task", "send_email"],
+        "riskTier": 2,
+        "requiresApproval": true,
+        "state": "awaiting_approval",
+        "dealStage": "qualifying",
+        "hasDraft": true,
+        "draftClean": true,
+        "rulesFired": ["R-01", "R-02", "R-16"]
+      }
+    },
+    {
+      "id": "E-03",
+      "providerMessageId": "demo-e03",
+      "description": "Pricing request at an existing company: a qualifying deal, and a reply that quotes no price.",
+      "expected": {
+        "actions": ["create_contact", "log_activity", "create_deal", "create_task", "send_email"],
+        "riskTier": 2,
+        "requiresApproval": true,
+        "state": "awaiting_approval",
+        "dealStage": "qualifying",
+        "hasDraft": true,
+        "draftClean": true,
+        "draftMustNotMatch": "[$£€₹]\\s?\\d",
+        "rulesFired": ["R-02", "R-14"]
+      }
+    },
+    {
+      "id": "E-05",
+      "providerMessageId": "demo-e05",
+      "description": "Support request from a known customer: an activity and a task, no reply, and it runs unattended.",
+      "expected": {
+        "actions": ["log_activity", "create_task"],
+        "riskTier": 0,
+        "requiresApproval": false,
+        "state": "deciding",
+        "hasDraft": false,
+        "rulesFired": ["R-11"]
+      }
+    },
+    {
+      "id": "E-06",
+      "providerMessageId": "demo-e06",
+      "description": "In-thread follow-up: advance the open deal, which is consequential and needs a person.",
+      "expected": {
+        "actions": ["log_activity", "update_deal_stage"],
+        "riskTier": 2,
+        "requiresApproval": true,
+        "approvalReasonCodes": ["consequential_action"],
+        "state": "awaiting_approval",
+        "hasDraft": false,
+        "rulesFired": ["R-12"]
+      }
+    },
+    {
+      "id": "E-07",
+      "providerMessageId": "demo-e07",
+      "description": "Partnership: a contact and a note, no deal and no automatic answer.",
+      "expected": {
+        "actions": ["create_company", "create_contact", "log_activity", "add_note"],
+        "riskTier": 1,
+        "requiresApproval": true,
+        "state": "awaiting_approval",
+        "hasDraft": false,
+        "rulesFired": ["R-01", "R-02", "R-17"]
+      }
+    },
+    {
+      "id": "E-09",
+      "providerMessageId": "demo-e09",
+      "description": "Spam: archived, no CRM record, and it runs unattended.",
+      "expected": {
+        "actions": ["archive_email"],
+        "riskTier": 0,
+        "requiresApproval": false,
+        "state": "deciding",
+        "hasDraft": false,
+        "rulesFired": ["R-10"]
+      }
+    }
+  ]
+}

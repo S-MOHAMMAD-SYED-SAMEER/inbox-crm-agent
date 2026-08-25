@@ -1,0 +1,36 @@
+{
+  // Typecheck only. Nothing here emits JavaScript: the runtime is Node 24's
+  // native type stripping (`node src/index.ts`), so there is no build step,
+  // no bundler, and no ts-node in the dependency tree (D2, NFR-9).
+  //
+  // Two settings do the real work:
+  //   allowImportingTsExtensions  — imports must carry an explicit `.ts`
+  //     extension because that is what Node's ESM resolver requires. TS only
+  //     permits it when it is not emitting.
+  //   erasableSyntaxOnly          — rejects any TypeScript that cannot be
+  //     erased (enums, namespaces, parameter properties). Without it, a
+  //     `const enum` would typecheck cleanly and then crash at runtime. This
+  //     flag turns "must be strippable" from a convention into a compile error.
+  "compilerOptions": {
+    "target": "es2024",
+    "lib": ["es2024"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"]
+}

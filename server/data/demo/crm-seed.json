@@ -1,0 +1,300 @@
+{
+  "_note": [
+    "Seeded CRM for the demo (spec §22). Everything here is fictional: no real people,",
+    "no real companies, no real addresses.",
+    "",
+    "Records reference each other by `key`, not by id. The seed script derives a stable",
+    "UUID from each key (lib/ids.ts deterministicId), so `npm run reset` restores the",
+    "exact same state including ids, while this file stays readable and cannot contain a",
+    "typo'd UUID pointing at nothing.",
+    "",
+    "SPEC RECONCILIATION — spec §22 said the seeded near-duplicate pair was 'Acme Commerce'",
+    "and 'ACME Consulting', but E-01 (the hero lead) requires Acme Commerce to be a NEW",
+    "company with no CRM match. Those two cannot both be true. The near-duplicate pair is",
+    "therefore Harborview Digital / Harborview Media, and Acme Commerce is deliberately",
+    "absent so E-01 stays a genuine new-lead case. E-04's sender address must be chosen in",
+    "M1 to match neither Harborview domain exactly (e.g. @harborview-group.com), so that",
+    "entity resolution produces a real conflict rather than a staged one."
+  ],
+
+  "companies": [
+    {
+      "key": "harborview-digital",
+      "name": "Harborview Digital",
+      "domain": "harborview.io",
+      "website": "https://harborview.io",
+      "industry": "Marketing agency",
+      "sizeBand": "11-25",
+      "country": "United Kingdom"
+    },
+    {
+      "key": "harborview-media",
+      "name": "Harborview Media Ltd",
+      "domain": "harborviewmedia.com",
+      "website": "https://harborviewmedia.com",
+      "industry": "Video production",
+      "sizeBand": "1-10",
+      "country": "United Kingdom"
+    },
+    {
+      "key": "lantern-studio",
+      "name": "Lantern Studio",
+      "domain": "lanternstudio.dev",
+      "website": "https://lanternstudio.dev",
+      "industry": "Web design agency",
+      "sizeBand": "1-10",
+      "country": "Ireland"
+    },
+    {
+      "key": "vantage-consulting",
+      "name": "Vantage Consulting",
+      "domain": "vantageconsulting.com",
+      "website": "https://vantageconsulting.com",
+      "industry": "Management consulting",
+      "sizeBand": "26-50",
+      "country": "Singapore"
+    },
+    {
+      "key": "brightpath-recruitment",
+      "name": "Brightpath Recruitment",
+      "domain": "brightpath.works",
+      "website": "https://brightpath.works",
+      "industry": "Recruitment",
+      "sizeBand": "11-25",
+      "country": "Australia"
+    },
+    {
+      "key": "solstice-retail",
+      "name": "Solstice Retail",
+      "domain": "solsticeretail.com",
+      "website": "https://solsticeretail.com",
+      "industry": "D2C ecommerce",
+      "sizeBand": "11-25",
+      "country": "Canada"
+    }
+  ],
+
+  "contacts": [
+    {
+      "key": "elena-marsh",
+      "companyKey": "harborview-digital",
+      "fullName": "Elena Marsh",
+      "email": "elena@harborview.io",
+      "jobTitle": "Head of Delivery",
+      "phone": "+44 20 7946 0102",
+      "lifecycle": "customer"
+    },
+    {
+      "key": "nadia-farrell",
+      "companyKey": "harborview-digital",
+      "fullName": "Nadia Farrell",
+      "email": "nadia@harborview.io",
+      "jobTitle": "Marketing Lead",
+      "lifecycle": "customer"
+    },
+    {
+      "key": "ravi-menon",
+      "companyKey": "harborview-media",
+      "fullName": "Ravi Menon",
+      "email": "ravi@harborviewmedia.com",
+      "jobTitle": "Executive Producer",
+      "lifecycle": "lead"
+    },
+    {
+      "key": "tom-okafor",
+      "companyKey": "lantern-studio",
+      "fullName": "Tom Okafor",
+      "email": "tom@lanternstudio.dev",
+      "jobTitle": "Founder",
+      "lifecycle": "partner"
+    },
+    {
+      "key": "chris-lund",
+      "companyKey": "lantern-studio",
+      "fullName": "Chris Lund",
+      "email": "chris@lanternstudio.dev",
+      "jobTitle": "Design Lead",
+      "lifecycle": "partner"
+    },
+    {
+      "key": "anil-kapoor",
+      "companyKey": "vantage-consulting",
+      "fullName": "Anil Kapoor",
+      "email": "anil@vantageconsulting.com",
+      "jobTitle": "Managing Partner",
+      "phone": "+65 6011 2244",
+      "lifecycle": "customer"
+    },
+    {
+      "key": "jo-whelan",
+      "companyKey": "brightpath-recruitment",
+      "fullName": "Jo Whelan",
+      "email": "jo@brightpath.works",
+      "jobTitle": "Talent Director",
+      "lifecycle": "lead"
+    },
+    {
+      "key": "marcus-bell",
+      "companyKey": "solstice-retail",
+      "fullName": "Marcus Bell",
+      "email": "marcus@solsticeretail.com",
+      "jobTitle": "Ecommerce Manager",
+      "lifecycle": "customer"
+    },
+    {
+      "key": "dana-iqbal",
+      "companyKey": "solstice-retail",
+      "fullName": "Dana Iqbal",
+      "email": "dana@solsticeretail.com",
+      "jobTitle": "Founder",
+      "lifecycle": "customer"
+    }
+  ],
+
+  "deals": [
+    {
+      "key": "solstice-support-automation",
+      "companyKey": "solstice-retail",
+      "primaryContactKey": "dana-iqbal",
+      "title": "Solstice Retail — support automation",
+      "stage": "qualifying",
+      "serviceLine": "ai_customer_support",
+      "amountMinor": 180000,
+      "currency": "USD",
+      "requirementSummary": "Automate first-line support for order and shipping questions.",
+      "budgetNote": "Indicated 1500-2000 USD",
+      "timelineNote": "Wants it live before the November peak"
+    },
+    {
+      "key": "harborview-workflow",
+      "companyKey": "harborview-digital",
+      "primaryContactKey": "elena-marsh",
+      "title": "Harborview Digital — client reporting automation",
+      "stage": "negotiation",
+      "serviceLine": "workflow_automation",
+      "amountMinor": 250000,
+      "currency": "USD",
+      "requirementSummary": "Replace manual monthly client reporting with an automated pipeline.",
+      "budgetNote": "2500 USD agreed in principle",
+      "timelineNote": "Start after their Q3 campaign"
+    },
+    {
+      "key": "brightpath-screening-pilot",
+      "companyKey": "brightpath-recruitment",
+      "primaryContactKey": "jo-whelan",
+      "title": "Brightpath — CV screening pilot",
+      "stage": "new_lead",
+      "serviceLine": "ai_recruitment",
+      "amountMinor": null,
+      "currency": "USD",
+      "requirementSummary": "Rank inbound applications against a role spec with written reasoning.",
+      "budgetNote": "not_provided",
+      "timelineNote": "not_provided"
+    },
+    {
+      "key": "lantern-website",
+      "companyKey": "lantern-studio",
+      "primaryContactKey": "tom-okafor",
+      "title": "Lantern Studio — site rebuild",
+      "stage": "won",
+      "serviceLine": "website_modernization",
+      "amountMinor": 95000,
+      "currency": "USD",
+      "requirementSummary": "Rebuild the marketing site and improve conversion.",
+      "budgetNote": "950 USD, fixed",
+      "timelineNote": "Delivered"
+    }
+  ],
+
+  "tasks": [
+    {
+      "key": "task-solstice-followup",
+      "title": "Follow up with Dana on the support automation scope",
+      "description": "She asked for a written scope before committing to a number.",
+      "dueAt": "2026-08-26T10:00:00.000Z",
+      "priority": "high",
+      "contactKey": "dana-iqbal",
+      "companyKey": "solstice-retail",
+      "dealKey": "solstice-support-automation"
+    },
+    {
+      "key": "task-harborview-contract",
+      "title": "Chase Harborview contract signature",
+      "dueAt": "2026-08-27T09:00:00.000Z",
+      "priority": "high",
+      "contactKey": "elena-marsh",
+      "companyKey": "harborview-digital",
+      "dealKey": "harborview-workflow"
+    },
+    {
+      "key": "task-brightpath-scope",
+      "title": "Prepare Brightpath pilot scope",
+      "description": "Needs a one-page outline of what the screening pilot covers.",
+      "dueAt": "2026-08-31T09:00:00.000Z",
+      "priority": "medium",
+      "contactKey": "jo-whelan",
+      "companyKey": "brightpath-recruitment",
+      "dealKey": "brightpath-screening-pilot"
+    },
+    {
+      "key": "task-lantern-checkin",
+      "title": "Quarterly check-in with Lantern Studio",
+      "dueAt": "2026-09-15T09:00:00.000Z",
+      "priority": "low",
+      "contactKey": "tom-okafor",
+      "companyKey": "lantern-studio",
+      "dealKey": "lantern-website"
+    },
+    {
+      "key": "task-vantage-renewal",
+      "title": "Review Vantage Consulting renewal conversation",
+      "priority": "medium",
+      "contactKey": "anil-kapoor",
+      "companyKey": "vantage-consulting"
+    }
+  ],
+
+  "activities": [
+    { "key": "act-01", "type": "email_in", "direction": "inbound", "subject": "Support automation — initial enquiry", "body": "Dana asked whether order-status questions could be handled automatically.", "occurredAt": "2026-08-10T09:12:00.000Z", "contactKey": "dana-iqbal", "companyKey": "solstice-retail", "dealKey": "solstice-support-automation" },
+    { "key": "act-02", "type": "email_out", "direction": "outbound", "subject": "Re: Support automation — initial enquiry", "body": "Sent two qualifying questions about volume and current tooling.", "occurredAt": "2026-08-10T11:40:00.000Z", "contactKey": "dana-iqbal", "companyKey": "solstice-retail", "dealKey": "solstice-support-automation" },
+    { "key": "act-03", "type": "email_in", "direction": "inbound", "subject": "Re: Support automation — initial enquiry", "body": "Roughly 400 support emails a month, mostly shipping questions.", "occurredAt": "2026-08-11T08:05:00.000Z", "contactKey": "dana-iqbal", "companyKey": "solstice-retail", "dealKey": "solstice-support-automation" },
+    { "key": "act-04", "type": "stage_change", "subject": "New lead → Qualifying", "body": "Volume and budget indication received.", "occurredAt": "2026-08-11T08:20:00.000Z", "companyKey": "solstice-retail", "dealKey": "solstice-support-automation" },
+    { "key": "act-05", "type": "task_created", "subject": "Follow up with Dana on scope", "occurredAt": "2026-08-11T08:22:00.000Z", "contactKey": "dana-iqbal", "dealKey": "solstice-support-automation" },
+    { "key": "act-06", "type": "email_in", "direction": "inbound", "subject": "Monthly reporting is eating our delivery time", "body": "Elena described four hours per client per month spent assembling reports.", "occurredAt": "2026-07-28T14:02:00.000Z", "contactKey": "elena-marsh", "companyKey": "harborview-digital", "dealKey": "harborview-workflow" },
+    { "key": "act-07", "type": "meeting", "subject": "Discovery call — Harborview reporting", "body": "Walked through their current spreadsheet process.", "occurredAt": "2026-08-01T13:00:00.000Z", "contactKey": "elena-marsh", "companyKey": "harborview-digital", "dealKey": "harborview-workflow" },
+    { "key": "act-08", "type": "stage_change", "subject": "Proposal → Negotiation", "body": "Scope agreed; discussing payment schedule.", "occurredAt": "2026-08-14T10:15:00.000Z", "companyKey": "harborview-digital", "dealKey": "harborview-workflow" },
+    { "key": "act-09", "type": "email_out", "direction": "outbound", "subject": "Reporting automation — proposal", "body": "Sent the written proposal and a two-week delivery outline.", "occurredAt": "2026-08-12T16:45:00.000Z", "contactKey": "elena-marsh", "companyKey": "harborview-digital", "dealKey": "harborview-workflow" },
+    { "key": "act-10", "type": "note", "subject": "Procurement note", "body": "Harborview needs a PO raised before signature; Nadia handles that side.", "occurredAt": "2026-08-15T09:30:00.000Z", "contactKey": "nadia-farrell", "companyKey": "harborview-digital" },
+    { "key": "act-11", "type": "email_in", "direction": "inbound", "subject": "CV screening — is this something you do?", "body": "Jo asked whether applications could be ranked with written reasoning.", "occurredAt": "2026-08-18T07:20:00.000Z", "contactKey": "jo-whelan", "companyKey": "brightpath-recruitment", "dealKey": "brightpath-screening-pilot" },
+    { "key": "act-12", "type": "call", "subject": "Intro call — Brightpath", "body": "Fifteen minutes; they want explainability more than speed.", "occurredAt": "2026-08-19T06:00:00.000Z", "contactKey": "jo-whelan", "companyKey": "brightpath-recruitment", "dealKey": "brightpath-screening-pilot" },
+    { "key": "act-13", "type": "email_in", "direction": "inbound", "subject": "Site rebuild — sign off", "body": "Tom confirmed the rebuild is signed off and live.", "occurredAt": "2026-07-15T11:00:00.000Z", "contactKey": "tom-okafor", "companyKey": "lantern-studio", "dealKey": "lantern-website" },
+    { "key": "act-14", "type": "stage_change", "subject": "Negotiation → Won", "body": "Invoice settled.", "occurredAt": "2026-07-16T09:00:00.000Z", "companyKey": "lantern-studio", "dealKey": "lantern-website" },
+    { "key": "act-15", "type": "note", "subject": "Referral source", "body": "Lantern Studio refers overflow work; treat as a partner, not a prospect.", "occurredAt": "2026-07-16T09:05:00.000Z", "contactKey": "tom-okafor", "companyKey": "lantern-studio" },
+    { "key": "act-16", "type": "email_in", "direction": "inbound", "subject": "Design handover question", "body": "Chris asked about component naming in the handover file.", "occurredAt": "2026-07-20T10:30:00.000Z", "contactKey": "chris-lund", "companyKey": "lantern-studio" },
+    { "key": "act-17", "type": "meeting", "subject": "Annual review — Vantage", "body": "Discussed what worked and what to change for next year.", "occurredAt": "2026-08-05T04:00:00.000Z", "contactKey": "anil-kapoor", "companyKey": "vantage-consulting" },
+    { "key": "act-18", "type": "email_out", "direction": "outbound", "subject": "Summary of our review", "body": "Sent a written summary of the annual review discussion.", "occurredAt": "2026-08-05T09:15:00.000Z", "contactKey": "anil-kapoor", "companyKey": "vantage-consulting" },
+    { "key": "act-19", "type": "email_in", "direction": "inbound", "subject": "Quick question about turnaround", "body": "Ravi asked how quickly a small automation project could start.", "occurredAt": "2026-08-20T15:40:00.000Z", "contactKey": "ravi-menon", "companyKey": "harborview-media" },
+    { "key": "act-20", "type": "email_in", "direction": "inbound", "subject": "Checkout issue on mobile", "body": "Marcus reported customers dropping at the payment step on mobile.", "occurredAt": "2026-08-21T12:10:00.000Z", "contactKey": "marcus-bell", "companyKey": "solstice-retail" }
+  ],
+
+  "notes": [
+    {
+      "key": "note-solstice-context",
+      "body": "Solstice runs a Shopify store with two support staff. They are the closest existing account to the kind of D2C business the chatbot project targets.",
+      "author": "Sameer",
+      "companyKey": "solstice-retail"
+    },
+    {
+      "key": "note-harborview-pair",
+      "body": "Harborview Digital and Harborview Media are separate businesses that share a founder. Mail from either can look like the other — check the domain before linking anything.",
+      "author": "Sameer",
+      "companyKey": "harborview-digital"
+    },
+    {
+      "key": "note-brightpath-fit",
+      "body": "Brightpath cares about explainable ranking, not throughput. Any pitch should lead with the written reasoning per candidate.",
+      "author": "Sameer",
+      "contactKey": "jo-whelan"
+    }
+  ]
+}

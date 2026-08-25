@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Design tokens — mirrored from the shared design system
+   ==========================================================================
+
+   The single source of truth is `portfolio/src/index.css` ("precise
+   instrument"). This dashboard is a separate Vite application and cannot
+   import that file, so it mirrors the token values here — exactly as
+   `sales-recovery-agent/web/index.html` already does for the Project 1 demo.
+
+   **When a token changes in the portfolio, change it here too.** There are now
+   three surfaces mirroring these values: the portfolio, the Project 1 demo,
+   and this dashboard. The reason to keep them in step is not tidiness — it is
+   that a prospect clicks from the portfolio into a demo, and two surfaces that
+   look like different companies undo the work the portfolio just did.
+
+   ONE DELIBERATE DIVERGENCE: this is a dense data product, not a marketing
+   page. It uses the same palette, type family, and radii at tighter spacing,
+   and it adds a success/danger pair the marketing surfaces have no use for —
+   an operations screen has to show "this failed" and "this worked", and
+   neither can be signalled with the brand indigo without losing its meaning.
+   ========================================================================== */
+@theme static {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* --- Colour (mirrored) --- */
+  --color-ink: #0b0f1a;
+  --color-ink-muted: #4a5568;
+  --color-canvas: #fafaf9;
+  --color-surface: #ffffff;
+  --color-line: #e7e5e4;
+  --color-line-strong: #d6d3d1;
+  --color-brand: #4f46e5;
+  --color-brand-tint: #eef2ff;
+  --color-signal: #b45309;
+  --color-signal-tint: #fffbeb;
+
+  /* --- Colour (dashboard-only additions) ---
+     Chosen to hold their meaning next to the brand indigo and the signal
+     amber, and to stay legible against both canvas and surface. Status is
+     never communicated by colour alone (NFR-11) — every state chip carries
+     its label as text too. */
+  --color-success: #15803d;
+  --color-success-tint: #f0fdf4;
+  --color-danger: #b91c1c;
+  --color-danger-tint: #fef2f2;
+
+  /* --- Type scale (mirrored) --- */
+  --text-display: 3.75rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+
+  --text-section: 1.875rem;
+  --text-section--line-height: 1.2;
+  --text-section--letter-spacing: -0.015em;
+  --text-section--font-weight: 700;
+
+  --text-subhead: 1.125rem;
+  --text-subhead--line-height: 1.4;
+  --text-subhead--letter-spacing: -0.01em;
+  --text-subhead--font-weight: 600;
+
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.55;
+
+  /* 12px is the floor for anything a client has to read. Nothing goes below it. */
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.4;
+
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1.4;
+  --text-eyebrow--letter-spacing: 0.08em;
+  --text-eyebrow--font-weight: 600;
+
+  /* --- Radii and elevation (mirrored) --- */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+
+  --shadow-resting: 0 1px 2px 0 rgb(11 15 26 / 0.04),
+    0 1px 3px 0 rgb(11 15 26 / 0.06);
+  --shadow-hover: 0 2px 4px -1px rgb(11 15 26 / 0.06),
+    0 8px 16px -4px rgb(11 15 26 / 0.1);
+
+  --spacing-control: 2.5rem;
+  --spacing-control-lg: 2.75rem;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Keyboard focus is visible everywhere by default rather than being
+     something each component has to remember (NFR-11). :focus-visible, so a
+     mouse click does not leave a ring behind. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}

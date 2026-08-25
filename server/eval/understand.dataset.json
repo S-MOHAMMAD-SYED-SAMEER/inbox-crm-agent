@@ -1,0 +1,236 @@
+{
+  "version": "understand-1.0.0",
+  "note": [
+    "M1 evaluation cases. Scoped to UNDERSTAND only — the full harness (§20) is M6.",
+    "",
+    "These expectations are written against the SPECIFICATION (§22), not copied from the canned",
+    "model responses. That distinction is what makes the suite meaningful: several cases assert an",
+    "outcome that differs from what the model said, so passing requires the deterministic layers to",
+    "have actually done their job.",
+    "",
+    "The two that matter most:",
+    "  E-02 — the model claims a budget of $5,000. The email states no budget. The expectation is",
+    "         not_provided plus a recorded drop, so this case fails if provenance validation stops",
+    "         working.",
+    "  E-10 — the model is fooled and reports a clean sales inquiry with no injection flag. The",
+    "         expectation is needs_review with possible_injection, so this case fails if the",
+    "         deterministic detector ever stops being authoritative over the model's opinion."
+  ],
+  "cases": [
+    {
+      "id": "E-01",
+      "providerMessageId": "demo-e01",
+      "description": "Strong lead: Shopify store asking about an AI chatbot and its cost.",
+      "expected": {
+        "category": "sales_inquiry",
+        "priority": "high",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Sarah Williams",
+          "contactEmail": "sarah@acmecommerce.io",
+          "companyDomain": "acmecommerce.io"
+        },
+        "mustBePresent": ["companyName", "serviceInterest", "requirementSummary"],
+        "mustBeNotProvided": ["budget", "timeline", "contactPhone", "jobTitle"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-02",
+      "providerMessageId": "demo-e02",
+      "description": "Service inquiry with NO budget stated. The model invents one; it must be discarded.",
+      "expected": {
+        "category": "service_inquiry",
+        "priority": "medium",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Tom Reyes",
+          "companyName": "Northline Studio",
+          "companyDomain": "northlinestudio.com"
+        },
+        "mustBePresent": ["requirementSummary", "serviceInterest"],
+        "mustBeNotProvided": ["budget", "timeline"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": ["budget"]
+      }
+    },
+    {
+      "id": "E-03",
+      "providerMessageId": "demo-e03",
+      "description": "Pricing request with an explicit budget and a stated deadline; both are real and must survive.",
+      "expected": {
+        "category": "pricing_request",
+        "priority": "high",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Priya Nair",
+          "jobTitle": "Operations Lead",
+          "companyName": "Vantage Consulting",
+          "budget": "$2-3k",
+          "timeline": "6 weeks"
+        },
+        "mustBePresent": ["requirementSummary", "serviceInterest", "urgencyCues"],
+        "mustBeNotProvided": ["contactPhone"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-04",
+      "providerMessageId": "demo-e04",
+      "description": "Sender whose company resembles two seeded records. M1 reads it normally; the conflict is M2's.",
+      "expected": {
+        "category": "service_inquiry",
+        "priority": "medium",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Mark Doyle",
+          "companyDomain": "harborview-group.com"
+        },
+        "mustBePresent": ["companyName", "requirementSummary"],
+        "mustBeNotProvided": ["budget", "timeline"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-05",
+      "providerMessageId": "demo-e05",
+      "description": "Support request from an existing customer — not a lead, and must not be read as one.",
+      "expected": {
+        "category": "support_request",
+        "priority": "medium",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Marcus Bell",
+          "companyDomain": "solsticeretail.com"
+        },
+        "mustBePresent": ["requirementSummary", "urgencyCues"],
+        "mustBeNotProvided": ["budget", "timeline", "jobTitle"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-06",
+      "providerMessageId": "demo-e06",
+      "description": "In-thread follow-up. Its timeline is worded, not numbered, and must still be kept.",
+      "expected": {
+        "category": "follow_up",
+        "priority": "high",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Dana Iqbal",
+          "timeline": "Before the November peak"
+        },
+        "mustBePresent": ["requirementSummary", "urgencyCues"],
+        "mustBeNotProvided": ["budget"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-07",
+      "providerMessageId": "demo-e07",
+      "description": "Partnership approach. Must not be classified as a sales lead.",
+      "expected": {
+        "category": "partnership",
+        "priority": "low",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {
+          "contactName": "Ines Halvorsen",
+          "companyName": "Meridian Craft"
+        },
+        "mustBePresent": ["requirementSummary"],
+        "mustBeNotProvided": ["budget", "timeline"],
+        "questionAsked": true,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-08",
+      "providerMessageId": "demo-e08",
+      "description": "Genuinely ambiguous. Must stay explicitly uncertain and go to a person, not be guessed at.",
+      "expected": {
+        "category": "ambiguous",
+        "priority": "low",
+        "confidenceBand": "low",
+        "state": "needs_review",
+        "reviewReason": "ambiguous_intent",
+        "mustExtract": {},
+        "mustBePresent": ["contactEmail"],
+        "mustBeNotProvided": [
+          "contactName",
+          "companyName",
+          "companyDomain",
+          "budget",
+          "timeline",
+          "requirementSummary",
+          "serviceInterest"
+        ],
+        "questionAsked": false,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-09",
+      "providerMessageId": "demo-e09",
+      "description": "Cold SEO spam. Must be recognised as noise rather than becoming a lead.",
+      "expected": {
+        "category": "spam",
+        "priority": "low",
+        "confidenceBand": "high",
+        "state": "resolving",
+        "reviewReason": null,
+        "mustExtract": {},
+        "mustBePresent": ["contactEmail"],
+        "mustBeNotProvided": ["budget", "timeline", "companyName", "requirementSummary"],
+        "questionAsked": false,
+        "injectionSuspected": false,
+        "droppedFields": []
+      }
+    },
+    {
+      "id": "E-10",
+      "providerMessageId": "demo-e10",
+      "description": "Prompt injection. The model is fooled and does not flag it; the detector must catch it anyway.",
+      "expected": {
+        "category": "sales_inquiry",
+        "priority": "high",
+        "confidenceBand": "medium",
+        "state": "needs_review",
+        "reviewReason": "possible_injection",
+        "mustExtract": {},
+        "mustBePresent": ["contactEmail"],
+        "mustBeNotProvided": ["budget", "timeline", "companyName"],
+        "questionAsked": false,
+        "injectionSuspected": true,
+        "injectionRules": ["instruction_override", "role_marker", "new_instructions", "autonomy_escalation", "concealment"],
+        "droppedFields": []
+      }
+    }
+  ]
+}
