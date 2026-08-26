@@ -121,6 +121,55 @@ export function createEntityMatchRepository({ db, clock, newId }: RepoDeps) {
       return rows.map(mapRow);
     },
 
+    /**
+     * The latest run per entity type for many emails, in ONE query (M7-F).
+     *
+     * This was the inbox's most expensive lookup by far: `getLatestRun` costs
+     * two round trips (find the newest run, then read it) and the inbox called
+     * it twice per email — 36 of the 57 round trips a ten-email load used to
+     * make.
+     *
+     * One query fetches every match row for the emails in question, newest
+     * first, and the grouping happens here. The rule is unchanged and still
+     * matters: contact and company rows SHARE a `resolution_run`, so a run has
+     * to be selected per entity type or every caller reads the wrong verdict.
+     */
+    async getLatestRunsForEmails(
+      emailIds: readonly string[],
+    ): Promise<Map<string, { contact: ResolutionRecord[]; company: ResolutionRecord[] }>> {
+      const byEmail = new Map<string, { contact: ResolutionRecord[]; company: ResolutionRecord[] }>();
+      if (emailIds.length === 0) return byEmail;
+
+      const rows = await db.query(
+        `SELECT * FROM entity_matches WHERE email_id IN (${emailIds.map(() => '?').join(', ')})
+         ORDER BY created_at DESC, rank ASC`,
+        [...emailIds],
+      );
+
+      // First row seen for an (email, entityType) names that pair's latest run,
+      // because the ordering is newest-first. Later rows join it only if they
+      // belong to the same run.
+      const chosenRun = new Map<string, string>();
+      for (const row of rows) {
+        const record = mapRow(row);
+        const key = `${record.emailId}:${record.entityType}`;
+        if (!chosenRun.has(key)) chosenRun.set(key, record.resolutionRun);
+        if (chosenRun.get(key) !== record.resolutionRun) continue;
+
+        const entry = byEmail.get(record.emailId) ?? { contact: [], company: [] };
+        if (record.entityType === 'contact') entry.contact.push(record);
+        else entry.company.push(record);
+        byEmail.set(record.emailId, entry);
+      }
+
+      // `getLatestRun` returns rows ordered by rank; preserve that.
+      for (const entry of byEmail.values()) {
+        entry.contact.sort((a, b) => a.rank - b.rank);
+        entry.company.sort((a, b) => a.rank - b.rank);
+      }
+      return byEmail;
+    },
+
     /** The latest run for every entity type, flattened — powers the detail screen. */
     async listLatestForEmail(emailId: string): Promise<ResolutionRecord[]> {
       const contact = await this.getLatestRun(emailId, 'contact');

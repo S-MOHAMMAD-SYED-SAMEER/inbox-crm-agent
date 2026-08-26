@@ -36,7 +36,9 @@ const ACTION_LABELS: Record<string, string> = {
   send_email: 'Send reply',
 };
 
-const TIER_LABELS: Record<number, string> = {
+// Exported so the approvals queue shows the same words. A client should never
+// have to learn what "tier 2" means to use this screen; the label says it.
+export const TIER_LABELS: Record<number, string> = {
   0: 'Safe — append-only',
   1: 'Creates a record',
   2: 'Consequential',
@@ -69,9 +71,8 @@ export function DecisionCard({ decision }: { decision: Decision }): ReactNode {
     <section className="rounded-card border border-line bg-surface p-5 shadow-resting">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-eyebrow uppercase text-ink-muted">② Decide</h3>
-        <span className="text-meta text-ink-muted">
-          {plan.actions.length} action{plan.actions.length === 1 ? '' : 's'} · tier {plan.riskTier} ·{' '}
-          {TIER_LABELS[plan.riskTier]}
+        <span className="text-meta text-ink-muted" title={`Risk tier ${plan.riskTier}`}>
+          {plan.actions.length} action{plan.actions.length === 1 ? '' : 's'} · {TIER_LABELS[plan.riskTier]}
         </span>
       </div>
 

@@ -191,6 +191,36 @@ export async function decideEmail(
   };
 
   // --- persist ---------------------------------------------------------------
+  //
+  // CLAIM THE EMAIL BEFORE WRITING ANYTHING (M7-F)
+  //
+  // `handleDecidePending` selects every email in `deciding`, and nothing used
+  // to stop two overlapping batches selecting the same rows. Each then created
+  // its own decision, superseding the other's, and production ended up with
+  // emails carrying three decisions apiece and pending approvals that could
+  // never be actioned.
+  //
+  // The claim is a compare-and-swap out of `deciding` — the same mechanism the
+  // expiry sweep already uses — and it happens FIRST. Ordering is the whole
+  // point: a claim taken after the decision was written would detect the loser
+  // only once the duplicate row already existed. A batch that loses the race
+  // writes nothing at all and reports that it did not win.
+  //
+  // `nextState` is computed here rather than further down for the same reason:
+  // the claim needs to know where the email is going.
+  const { state, reviewReason } = nextState(plan);
+
+  // Compare against the state this run actually read, not a hardcoded one:
+  // `assertDecidable` also permits re-deciding from `awaiting_approval`, and
+  // pinning the guard to `deciding` turned every legitimate re-decide into a
+  // silent no-op. The guarantee wanted here is "nothing has moved since I
+  // looked", which is exactly `expectedFrom: email.state`.
+  const claimed = await repos.emails.setState(email.id, state, { reviewReason, expectedFrom: email.state });
+  if (claimed === null) {
+    logger.info('Another run decided this email first; writing nothing.', { emailId: email.id });
+    const current = (await repos.emails.getById(email.id)) as EmailRecord;
+    return { email: current, decision: null, plan: null, state: current.state, reviewReason: current.reviewReason };
+  }
 
   const decision = await repos.decisions.create({
     emailId: email.id,
@@ -264,8 +294,8 @@ export async function decideEmail(
   });
 
   // --- state -----------------------------------------------------------------
-
-  const { state, reviewReason } = nextState(plan);
+  //
+  // Already claimed above; `updated` is the row that claim returned.
 
   if (state === 'awaiting_approval') {
     // Open the approval request now, so the SLA clock starts when the plan was
@@ -287,7 +317,7 @@ export async function decideEmail(
     });
   }
 
-  const updated = await repos.emails.setState(email.id, state, { reviewReason });
+  const updated = claimed;
   await repos.audit.append({
     correlationId: email.correlationId,
     emailId: email.id,

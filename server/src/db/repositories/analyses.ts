@@ -134,6 +134,30 @@ export function createAnalysisRepository({ db, clock, newId }: RepoDeps) {
       return rows[0] ? mapAnalysis(rows[0]) : null;
     },
 
+    /**
+     * The latest analysis for many emails, in one query (M7-F).
+     *
+     * The inbox used to call `getLatestForEmail` once per row. At ten emails
+     * that was ten round trips, and a round trip to a hosted database is the
+     * expensive part — not the query.
+     */
+    async getLatestForEmails(emailIds: readonly string[]): Promise<Map<string, AnalysisRecord>> {
+      const latest = new Map<string, AnalysisRecord>();
+      if (emailIds.length === 0) return latest;
+
+      const rows = await db.query(
+        `SELECT * FROM email_analyses WHERE email_id IN (${emailIds.map(() => '?').join(', ')})
+         ORDER BY created_at DESC, attempt DESC`,
+        [...emailIds],
+      );
+      // Ordered newest-first, so the first row seen for an email is its latest.
+      for (const row of rows) {
+        const analysis = mapAnalysis(row);
+        if (!latest.has(analysis.emailId)) latest.set(analysis.emailId, analysis);
+      }
+      return latest;
+    },
+
     /** Every reading, newest first — the history of how understanding changed. */
     async listForEmail(emailId: string): Promise<AnalysisRecord[]> {
       const rows = await db.query(

@@ -185,19 +185,37 @@ export async function handleListEmails(
     ...(offset === null ? {} : { offset }),
   });
 
-  // One analysis lookup per email. Fine at demo scale and honest about it; a
-  // single joined query is the right answer once the inbox is long enough for
-  // it to matter, and that is a change to this function alone.
-  const summaries = await Promise.all(
-    emails.map(async (email) =>
-      toSummary(
-        email,
-        await deps.repos.analyses.getLatestForEmail(email.id),
-        await resolutionSummary(deps.repos, email.id),
-        await deps.repos.decisions.getCurrentForEmail(email.id),
-      ),
-    ),
-  );
+  // Four queries, whatever the inbox length (M7-F).
+  //
+  // This used to look up the analysis, both resolution runs and the decision
+  // once per email: 57 round trips for ten emails. Against a hosted database
+  // the round trip is the cost, not the query, and the inbox took seconds to
+  // appear. The comment that stood here said a set-based query was the right
+  // answer "once the inbox is long enough for it to matter" — ten emails and a
+  // remote database turned out to be long enough.
+  //
+  // Same response shape, same values; only the number of trips changed.
+  const ids = emails.map((email) => email.id);
+  const [analyses, resolutions, decisions] = await Promise.all([
+    deps.repos.analyses.getLatestForEmails(ids),
+    deps.repos.entityMatches.getLatestRunsForEmails(ids),
+    deps.repos.decisions.getCurrentForEmails(ids),
+  ]);
+
+  const summaries = emails.map((email) => {
+    const runs = resolutions.get(email.id);
+    // Unchanged rule: no runs at all means the email has not been resolved, and
+    // that is reported as null rather than as two empty verdicts.
+    const resolution =
+      runs === undefined || (runs.contact.length === 0 && runs.company.length === 0)
+        ? null
+        : {
+            contact: runToResolution('contact', runs.contact).verdict,
+            company: runToResolution('company', runs.company).verdict,
+          };
+
+    return toSummary(email, analyses.get(email.id) ?? null, resolution, decisions.get(email.id) ?? null);
+  });
 
   return { status: 200, body: { emails: summaries } };
 }

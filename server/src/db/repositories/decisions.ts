@@ -174,6 +174,40 @@ export function createDecisionRepository({ db, clock, newId }: RepoDeps) {
           'UPDATE decisions SET superseded_by = ? WHERE email_id = ? AND id != ? AND superseded_by IS NULL',
           [id, input.emailId, id],
         );
+
+        // A superseded decision must not leave an approvable approval behind.
+        //
+        // Superseding the DECISION was never enough. `revise.ts` also settled
+        // the old approval as `superseded`, but the plain re-decide path did
+        // not — so a second decision on the same email left the first one's
+        // approval sitting at `pending` forever. Those rows are worse than
+        // useless: they appear in the queue as work a person can do, and the
+        // executor then refuses them, because the email has usually moved on.
+        // In production this produced emails that were already `completed`
+        // while still showing a pending approval nobody could ever action.
+        //
+        // Same transaction as the supersede above, so a decision and the
+        // approval it invalidates can never disagree. This tightens the model
+        // rather than loosening it: a plan that is no longer current becomes
+        // unapprovable instead of deceptively actionable, which is exactly what
+        // `superseded` already means everywhere else.
+        // Only for a plain re-decide. A revision (`human_edit`) settles the
+        // approval it replaces in `revise.ts`, with a reason naming the
+        // revision and its editor — provenance worth more than this sweep can
+        // record. Superseding it here first would clobber that, and the second
+        // call would then fail as an already-settled conflict. The path that
+        // was actually broken is this one.
+        if (origin === 'agent') {
+          await tx.execute(
+            `UPDATE approvals SET state = 'superseded', decided_by = ?, decided_at = ?, reason = ?
+               WHERE state = 'pending'
+                 AND decision_id IN (
+                   SELECT id FROM decisions
+                    WHERE email_id = ? AND id != ? AND superseded_by IS NOT NULL
+                 )`,
+            ['system', clock.nowIso(), 'The email was decided again, so this plan is no longer current.', input.emailId, id],
+          );
+        }
       });
 
       const rows = await db.query('SELECT * FROM decisions WHERE id = ?', [id]);
@@ -192,6 +226,24 @@ export function createDecisionRepository({ db, clock, newId }: RepoDeps) {
         [emailId],
       );
       return rows[0] ? mapDecision(rows[0]) : null;
+    },
+
+    /** The current decision for many emails, in one query (M7-F). */
+    async getCurrentForEmails(emailIds: readonly string[]): Promise<Map<string, DecisionRecord>> {
+      const current = new Map<string, DecisionRecord>();
+      if (emailIds.length === 0) return current;
+
+      const rows = await db.query(
+        `SELECT * FROM decisions
+          WHERE email_id IN (${emailIds.map(() => '?').join(', ')}) AND superseded_by IS NULL
+          ORDER BY created_at DESC`,
+        [...emailIds],
+      );
+      for (const row of rows) {
+        const decision = mapDecision(row as Record<string, unknown>);
+        if (!current.has(decision.emailId)) current.set(decision.emailId, decision);
+      }
+      return current;
     },
 
     /** Every decision ever made for this email, newest first. */

@@ -11,6 +11,7 @@ import {
   presentApproval,
   revisionSuccessMessage,
 } from '../revision/approvalPresentation.ts';
+import { TIER_LABELS } from '../components/decision.tsx';
 
 // The approval queue (spec §13.4, extended by M4-C.3).
 //
@@ -217,8 +218,11 @@ export function Approvals(): ReactNode {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-pill border border-line-strong px-2 py-0.5 text-meta text-ink-muted">
-                        tier {row.riskTier}
+                      <span
+                        className="rounded-pill border border-line-strong px-2 py-0.5 text-meta text-ink-muted"
+                        title={`Risk tier ${row.riskTier}`}
+                      >
+                        {TIER_LABELS[row.riskTier] ?? `tier ${row.riskTier}`}
                       </span>
                       {row.confidenceBand !== null ? (
                         <span className="rounded-pill border border-line-strong px-2 py-0.5 text-meta text-ink-muted">
@@ -288,7 +292,11 @@ export function Approvals(): ReactNode {
                           }
                           className="h-control rounded-control bg-brand px-3 text-meta font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
                         >
-                          {busy === row.approval.id ? 'Working…' : 'Approve and run'}
+                          {busy === row.approval.id
+                            ? 'Working…'
+                            : `Approve and carry out ${row.decision.plan.actions.length} action${
+                                row.decision.plan.actions.length === 1 ? '' : 's'
+                              }`}
                         </button>
                         <button
                           type="button"
