@@ -4,6 +4,7 @@ import type { EmailSummary } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
 import { CategoryChip, ConfidenceBadge, PriorityChip, StateChip } from '../components/understanding.tsx';
 import { VerdictChip } from '../components/resolution.tsx';
+import { describeDecideBatch } from '../inbox/batchReport.ts';
 
 // The Inbox list (M1 scope).
 //
@@ -107,7 +108,9 @@ export function Inbox(): ReactNode {
           onClick={() =>
             run('decide', async () => {
               const result = await api.decidePending();
-              return `Decided ${result.decided} email(s); ${result.awaitingApproval} waiting for approval.`;
+              // Via `describeDecideBatch`, so a batch where every email failed
+              // cannot render the same sentence as a batch with nothing to do.
+              return describeDecideBatch(result);
             })
           }
           className="h-control rounded-control border border-line-strong px-4 text-small font-semibold text-ink disabled:opacity-50"

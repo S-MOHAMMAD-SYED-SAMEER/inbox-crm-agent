@@ -4,18 +4,44 @@ import type { Database, QueryResult, SqlParam } from './types.ts';
 
 // PostgreSQL driver (D1) — the hosted path, Neon or otherwise.
 //
-// STATUS, STATED HONESTLY: this driver is implemented and typechecked, but it
-// has not been run against a live PostgreSQL server, because this machine has
-// no Postgres, no Docker, and (by instruction) no Neon account. Its behaviour
-// is therefore *unverified* in a way the SQLite driver's is not. The first task
-// of whichever milestone provisions a database is to run the existing
-// repository and migration suites against it — they are driver-agnostic by
-// construction, so that is a configuration change, not new tests.
+// STATUS: verified against a live PostgreSQL 18.6 server (M5-E, M7-C) and
+// running in production since M7-D. The note that used to sit here said the
+// driver was unverified and that the first job of whichever milestone
+// provisioned a database was to run the suites against it. That happened, and
+// it was not enough: the suites are driver-agnostic in their SQL but they all
+// run on SQLite, so a divergence in how a driver *returns* a value passed every
+// one of them. See the JSON note below for the one that reached production.
 //
 // This module is loaded lazily by `db/index.ts` so that a machine without a
 // database URL never imports `pg` at all.
 
 const { Pool } = pg;
+
+// --- JSON columns must look the same from both drivers (M7-F) ---------------
+//
+// `node:sqlite` returns a JSON column as the text it stored. `pg` parses JSONB
+// and hands back a real JavaScript value. For an object or an array that made
+// no difference — `toJson` passes those through untouched — so this divergence
+// stayed invisible for as long as every JSON column held one.
+//
+// `settings.value` is the exception, and the only column in the schema storing
+// JSON *scalars*: 24, false, "assisted". Through pg those arrive as a number, a
+// boolean and an already-unwrapped string, and `toJson` threw on the first two
+// and tried to `JSON.parse('assisted')` on the third. Every caller of
+// `settings.getAll()` therefore failed on PostgreSQL and only on PostgreSQL —
+// DECIDE, the executor's verification, and the revise engine among them — while
+// every test and the whole walkthrough passed on SQLite.
+//
+// Asking pg for the raw text puts both drivers back on the same contract, so
+// `toJson` parses exactly once no matter where the row came from. Fixing it
+// here rather than in `toJson` is deliberate: teaching `toJson` to accept a
+// number and a boolean would still leave the string case wrong, because a JSON
+// string that happens to contain valid JSON (`"123"`) would be parsed twice.
+//
+// Safe because every JSONB read in the codebase goes through `toJson`; the one
+// direct access, in `approvals.ts`, is a null comparison rather than a parse.
+pg.types.setTypeParser(pg.types.builtins.JSON, (value) => value);
+pg.types.setTypeParser(pg.types.builtins.JSONB, (value) => value);
 
 function toPgParams(params: readonly SqlParam[]): unknown[] {
   return [...params];

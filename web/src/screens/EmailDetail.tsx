@@ -49,6 +49,16 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [hovered, setHovered] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Above the early returns below, and it has to stay there. React counts hooks
+  // per render: this used to sit further down, past `if (state.status ===
+  // 'loading') return`, so the first render registered five hooks and the
+  // second — once the fetch resolved — registered six. That is React error #310
+  // ("Rendered more hooks than during the previous render"), and with no error
+  // boundary anywhere it unmounted the tree and left a blank page. It meant
+  // this screen had never once rendered successfully in a browser; only a
+  // *failed* load survived, because the error branch returns before reaching
+  // the sixth hook.
+  const [refusal, setRefusal] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -79,8 +89,6 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   const { email, analysis, resolution, decision, approval, executions, outbox, audit, stages } = state.detail;
   const understanding = analysis?.understanding;
   const highlight = hovered ? (understanding?.extracted[hovered]?.sourceSpan ?? null) : null;
-
-  const [refusal, setRefusal] = useState<string | null>(null);
 
   const runAction = async (action: () => Promise<{ refusalMessage?: string | null; detail?: EmailDetailPayload }>): Promise<void> => {
     setBusy(true);
