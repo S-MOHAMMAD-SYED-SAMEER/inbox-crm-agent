@@ -15,6 +15,7 @@
     "hash-password": "node scripts/hash-password.ts",
     "verify:postgres": "node scripts/verify-postgres.ts",
     "verify:production": "node scripts/verify-production.ts",
+    "verify:deployment": "node scripts/verify-deployment.ts",
     "demo:walkthrough": "node scripts/demo-walkthrough.ts",
     "eval:understand": "node scripts/eval-understand.ts",
     "eval:resolve": "node scripts/eval-resolve.ts",
