@@ -86,7 +86,7 @@
         "contact": {
           "verdict": "MATCH",
           "outcome": "auto_linked",
-          "selectedLabel": "Marcus Bell <marcus@solsticeretail.com>",
+          "selectedLabel": "Marcus Bell <marcus@solsticeretail.invalid>",
           "topMethod": "exact_email",
           "topScore": 1
         },
@@ -109,7 +109,7 @@
         "contact": {
           "verdict": "MATCH",
           "outcome": "auto_linked",
-          "selectedLabel": "Dana Iqbal <dana@solsticeretail.com>",
+          "selectedLabel": "Dana Iqbal <dana@solsticeretail.invalid>",
           "topMethod": "exact_email"
         },
         "company": { "verdict": "MATCH", "outcome": "auto_linked", "selectedLabel": "Solstice Retail" }

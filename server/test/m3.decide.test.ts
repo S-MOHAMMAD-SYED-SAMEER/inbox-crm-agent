@@ -34,8 +34,8 @@ function understanding(overrides: Partial<Understanding> = {}): Understanding {
     extracted: {
       ...emptyExtraction(),
       contactName: { value: 'Sarah Williams', confidence: 0.95, sourceSpan: 'Sarah Williams' },
-      companyName: { value: 'Acme Commerce', confidence: 0.7, sourceSpan: 'sarah@acmecommerce.io' },
-      companyDomain: { value: 'acmecommerce.io', confidence: 0.9, sourceSpan: 'sarah@acmecommerce.io' },
+      companyName: { value: 'Acme Commerce', confidence: 0.7, sourceSpan: 'sarah@acmecommerce.invalid' },
+      companyDomain: { value: 'acmecommerce.invalid', confidence: 0.9, sourceSpan: 'sarah@acmecommerce.invalid' },
       serviceInterest: { value: 'AI chatbot', confidence: 0.9, sourceSpan: 'AI chatbot' },
       requirementSummary: { value: 'Shopify chatbot', confidence: 0.9, sourceSpan: 'Shopify' },
     },
@@ -63,7 +63,7 @@ function email(overrides: Partial<EmailRecord> = {}): EmailRecord {
     providerMessageId: 'demo-e01',
     threadId: null,
     fromName: 'Sarah Williams',
-    fromEmail: 'sarah@acmecommerce.io',
+    fromEmail: 'sarah@acmecommerce.invalid',
     toEmail: 'hello@x.test',
     cc: null,
     subject: 'Shopify AI chatbot project',
@@ -388,7 +388,7 @@ const GROUNDING = buildGroundingText(
   {
     subject: 'Shopify AI chatbot project',
     bodyText: 'We run a small Shopify store. Our budget is around $2-3k and we need it in 6 weeks.',
-    fromEmail: 'sarah@acmecommerce.io',
+    fromEmail: 'sarah@acmecommerce.invalid',
     fromName: 'Sarah Williams',
   },
   understanding(),
@@ -401,7 +401,7 @@ function guard(body: string) {
     draftBody: body,
     groundingText: GROUNDING,
     understanding: understanding(),
-    senderEmail: 'sarah@acmecommerce.io',
+    senderEmail: 'sarah@acmecommerce.invalid',
     businessName: 'AI Business Automation',
   });
 }
@@ -465,7 +465,7 @@ test('an email address the sender never gave is blocked', () => {
 });
 
 test("replying to the sender's own address is fine", () => {
-  const result = guard('I have replied to sarah@acmecommerce.io directly.');
+  const result = guard('I have replied to sarah@acmecommerce.invalid directly.');
   assert.ok(!result.violations.some((v) => v.guardrail === 'no_pii_echo'));
 });
 

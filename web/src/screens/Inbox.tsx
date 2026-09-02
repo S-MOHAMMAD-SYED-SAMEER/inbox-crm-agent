@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { usePublicDemo } from '../auth/publicDemo.tsx';
 import { api, ApiError } from '../api/client.ts';
 import type { EmailSummary } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -22,6 +23,7 @@ type LoadState =
   | { status: 'error'; message: string };
 
 export function Inbox(): ReactNode {
+  const publicDemo = usePublicDemo();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -57,6 +59,9 @@ export function Inbox(): ReactNode {
 
   return (
     <div className="space-y-5">
+      {/* Every control here drives the pipeline, so none of them is offered in
+          the read-only demo — the server would refuse each one. */}
+      {publicDemo ? null : (
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -120,6 +125,7 @@ export function Inbox(): ReactNode {
 
         {notice ? <p className="text-small text-ink-muted">{notice}</p> : null}
       </div>
+      )}
 
       {state.status === 'loading' ? <p className="text-small text-ink-muted">Loading…</p> : null}
 
@@ -134,7 +140,9 @@ export function Inbox(): ReactNode {
         <div className="rounded-card border border-dashed border-line-strong bg-surface p-6">
           <p className="text-body">No email yet.</p>
           <p className="mt-1 text-small text-ink-muted">
-            Use “Ingest new email” to pull the demo messages in, then “Analyse waiting email”.
+            {publicDemo
+              ? 'This demo has not been populated yet. Nothing can be started from a read-only view.'
+              : 'Use “Ingest new email” to pull the demo messages in, then “Analyse waiting email”.'}
           </p>
         </div>
       ) : null}

@@ -13,6 +13,7 @@
     "seed": "node scripts/seed.ts",
     "reset": "node scripts/reset.ts",
     "demo:reset": "node scripts/demo-reset.ts",
+    "demo:populate": "node scripts/demo-populate.ts",
     "hash-password": "node scripts/hash-password.ts",
     "verify:postgres": "node scripts/verify-postgres.ts",
     "verify:production": "node scripts/verify-production.ts",

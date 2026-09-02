@@ -12,13 +12,13 @@ test('a company round-trips and computes its match key', async () => {
 
   const created = await repos.companies.create({
     name: 'Harborview Media Ltd',
-    domain: 'HarborviewMedia.com',
+    domain: 'HarborviewMedia.INVALID',
     source: 'human',
   });
 
   assert.equal(created.name, 'Harborview Media Ltd');
   assert.equal(created.nameNorm, 'harborview media', 'name_norm is the stored match key');
-  assert.equal(created.domain, 'harborviewmedia.com', 'domains are normalised on write');
+  assert.equal(created.domain, 'harborviewmedia.invalid', 'domains are normalised on write');
   assert.equal(created.source, 'human');
 
   const fetched = await repos.companies.getById(created.id);
@@ -28,10 +28,10 @@ test('a company round-trips and computes its match key', async () => {
 
 test('a duplicate company domain is a domain-language conflict, not a driver error', async () => {
   const { repos, close } = await createTestContext();
-  await repos.companies.create({ name: 'Lantern Studio', domain: 'lanternstudio.dev', source: 'seed' });
+  await repos.companies.create({ name: 'Lantern Studio', domain: 'lanternstudio.invalid', source: 'seed' });
 
   const err = await rejects(() =>
-    repos.companies.create({ name: 'Lantern Studio Two', domain: 'lanternstudio.dev', source: 'agent' }),
+    repos.companies.create({ name: 'Lantern Studio Two', domain: 'lanternstudio.invalid', source: 'agent' }),
   );
   assert.match(err.message, /already exists/);
   assert.equal((err as { code?: string }).code, 'CONFLICT');
@@ -40,9 +40,9 @@ test('a duplicate company domain is a domain-language conflict, not a driver err
 
 test('contacts are found by email case-insensitively', async () => {
   const { repos, close } = await createTestContext();
-  await repos.contacts.create({ fullName: 'Elena Marsh', email: 'Elena@Harborview.IO', source: 'seed' });
+  await repos.contacts.create({ fullName: 'Elena Marsh', email: 'Elena@Harborview.INVALID', source: 'seed' });
 
-  const found = await repos.contacts.findByEmail('elena@harborview.io');
+  const found = await repos.contacts.findByEmail('elena@harborview.invalid');
   assert.ok(found);
   assert.equal(found.fullName, 'Elena Marsh');
   await close();
@@ -186,12 +186,12 @@ const SAMPLE_EMAIL = {
   providerMessageId: 'msg-1',
   threadId: null,
   fromName: 'Sarah Williams',
-  fromEmail: 'sarah@acmecommerce.io',
+  fromEmail: 'sarah@acmecommerce.invalid',
   toEmail: 'hello@example.test',
   cc: null,
   subject: 'Shopify AI chatbot project',
   bodyText: 'Could you tell us roughly how much this would cost?',
-  headers: { 'message-id': '<msg-1@acmecommerce.io>' },
+  headers: { 'message-id': '<msg-1@acmecommerce.invalid>' },
   receivedAt: '2026-08-24T09:00:00.000Z',
 };
 
@@ -203,7 +203,7 @@ test('an ingested email starts in received with a correlation id', async () => {
   assert.equal(email.state, 'received');
   assert.equal(email.reviewReason, null);
   assert.ok(email.correlationId);
-  assert.deepEqual(email.headers, { 'message-id': '<msg-1@acmecommerce.io>' });
+  assert.deepEqual(email.headers, { 'message-id': '<msg-1@acmecommerce.invalid>' });
   await close();
 });
 

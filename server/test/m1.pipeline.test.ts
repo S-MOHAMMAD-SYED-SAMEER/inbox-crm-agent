@@ -139,7 +139,7 @@ test('an ingestion audit summary names the domain, not the sender address', asyn
   const received = events.find((event) => event.eventType === 'email_received');
 
   assert.ok(received);
-  assert.doesNotMatch(received.summary, /sarah@|@acmecommerce\.io/);
+  assert.doesNotMatch(received.summary, /sarah@|@acmecommerce\.invalid/);
   await close();
 });
 

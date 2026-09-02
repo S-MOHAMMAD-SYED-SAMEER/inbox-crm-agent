@@ -310,13 +310,13 @@ test('the created records are linked to each other and marked as agent-made', as
   const { decision } = await pipelineToDecision(repos, 'demo-e01');
   await handleApprove(deps(repos), decision.id, 'sameer');
 
-  const contact = await repos.contacts.findByEmail('sarah@acmecommerce.io');
+  const contact = await repos.contacts.findByEmail('sarah@acmecommerce.invalid');
   assert.ok(contact);
   assert.equal(contact.source, 'agent');
   assert.ok(contact.companyId, 'the {kind:"new"} company reference resolved to a real id');
 
   const company = await repos.companies.getById(contact.companyId);
-  assert.equal(company?.domain, 'acmecommerce.io');
+  assert.equal(company?.domain, 'acmecommerce.invalid');
 
   const deals = await repos.deals.listByCompany(company?.id as string);
   assert.equal(deals.length, 1);
@@ -436,14 +436,14 @@ test('a duplicate company domain links to the existing record instead of creatin
   const { decision } = await pipelineToDecision(repos, 'demo-e01');
 
   // The world moved between planning and executing: someone added the company.
-  await repos.companies.create({ name: 'Acme Commerce', domain: 'acmecommerce.io', source: 'human' });
+  await repos.companies.create({ name: 'Acme Commerce', domain: 'acmecommerce.invalid', source: 'human' });
   const before = await repos.companies.count();
 
   await handleApprove(deps(repos), decision.id, 'sameer');
   assert.equal(await repos.companies.count(), before, 'no duplicate company');
 
-  const contact = await repos.contacts.findByEmail('sarah@acmecommerce.io');
-  const company = await repos.companies.findByDomain('acmecommerce.io');
+  const contact = await repos.contacts.findByEmail('sarah@acmecommerce.invalid');
+  const company = await repos.companies.findByDomain('acmecommerce.invalid');
   assert.equal(contact?.companyId, company?.id, 'the contact linked to the record that already existed');
   await close();
 });
@@ -521,7 +521,7 @@ test('19. an approved reply reaches the outbox as suppressed and is never sent',
   assert.equal(outbox.suppressedReason, 'outbound_send_disabled');
   assert.equal(outbox.sentAt, null);
   assert.equal(outbox.providerMessageId, null);
-  assert.equal(outbox.toEmail, 'sarah@acmecommerce.io');
+  assert.equal(outbox.toEmail, 'sarah@acmecommerce.invalid');
   assert.ok(outbox.body.length > 0, 'the reply is preserved for a person to review');
 
   assert.equal((await repos.outbox.listByStatus('sent')).length, 0, 'nothing is ever marked sent');

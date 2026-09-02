@@ -3,7 +3,7 @@ import { createHealthRouter } from './routes/health.ts';
 import { createEmailRouter } from './routes/emails.ts';
 import { createCrmRouter } from './routes/crm.ts';
 import { createAuthRouter } from './routes/auth.ts';
-import { attachSession, requireSession } from './auth/middleware.ts';
+import { attachSession, requireSessionOrPublicRead } from './auth/middleware.ts';
 import { requireCsrf } from './auth/csrf.ts';
 import { cors } from './http/cors.ts';
 import { rateLimit } from './http/rateLimit.ts';
@@ -42,7 +42,10 @@ export function createApp({
   config = defaultConfig,
   provider,
   source,
-  rateLimiter = rateLimit(),
+  // Built from `config` so the limiter knows whether the public demo window is
+  // open (P19). A caller that injects its own limiter owns that decision, which
+  // is what the deployment tests rely on.
+  rateLimiter = rateLimit({ publicReadsEnabled: config.demoPublicReadonly }),
 }: AppDeps): Express {
   const app = express();
 
@@ -127,7 +130,9 @@ export function createApp({
   //   2. attachSession — resolves a session if one is presented. Never rejects.
   //   3. auth routes — login/logout/session. The only endpoints reachable
   //                    without a session, which is why they sit above the gate.
-  //   4. requireSession — the gate. Everything past it is authenticated.
+  //   4. the gate     — `requireSessionOrPublicRead`. Everything past it is
+  //                    authenticated, except the fixed read-only list when
+  //                    DEMO_PUBLIC_READONLY is on (off by default).
   //   5. email routes — every mutation in the product.
   //
   // Anything added after step 4 is protected by default. That is deliberate:
@@ -151,7 +156,12 @@ export function createApp({
 
   app.use('/api', createAuthRouter({ repos, config, logger }));
 
-  app.use('/api', requireSession());
+  // The gate. With DEMO_PUBLIC_READONLY off — the default, and the only state
+  // any existing deployment has — this behaves exactly as `requireSession` did:
+  // no session, no access past this line. With it on, the fixed read-only list
+  // in `middleware.ts` also passes, and nothing else does. A public reader is
+  // still anonymous: no session is created, so every mutation below still fails.
+  app.use('/api', requireSessionOrPublicRead({ publicReadsEnabled: config.demoPublicReadonly }));
   app.use('/api', createEmailRouter({ repos, source: emailSource, provider: llmProvider, logger }));
 
   // Read-only CRM projections (M6-C). Below the gate, so authenticated by

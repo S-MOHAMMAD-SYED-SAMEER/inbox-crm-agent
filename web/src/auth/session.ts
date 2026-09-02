@@ -74,6 +74,17 @@ export type SessionResponse = {
 export type SessionState =
   | { status: 'loading' }
   | { status: 'anonymous' }
+  /**
+   * Nobody is signed in, and the server has opened its read-only demo window
+   * (P19). A fourth state rather than a flag on `anonymous`, because the app
+   * genuinely behaves differently here and a boolean beside a status is the
+   * kind of pair that drifts.
+   *
+   * It is not an authenticated state and must never be treated as one:
+   * `isAuthenticated` returns false for it, there is no operator, and every
+   * mutating control is hidden because the server would refuse it anyway.
+   */
+  | { status: 'public-demo' }
   | { status: 'authenticated'; operator: string; expiresAt: string | null };
 
 /**
@@ -101,4 +112,24 @@ export function sessionFromResponse(body: unknown): SessionState {
 
 export function isAuthenticated(state: SessionState): boolean {
   return state.status === 'authenticated';
+}
+
+/**
+ * Whether the server says its public read-only demo window is open (P19).
+ *
+ * Read from `/api/health`, which is public and already reports what the
+ * deployment is configured for. Pure and total, and false for anything it does
+ * not recognise: an unreachable or malformed health response must land on the
+ * sign-in screen, never on a demo the server is not actually serving.
+ */
+export function publicDemoFromHealth(body: unknown): boolean {
+  if (!body || typeof body !== 'object') return false;
+  const adapters = (body as { adapters?: unknown }).adapters;
+  if (!adapters || typeof adapters !== 'object') return false;
+  return (adapters as Record<string, unknown>).demoPublicReadonly === true;
+}
+
+/** Whether the app should render the product without a session. */
+export function isPublicDemo(state: SessionState): boolean {
+  return state.status === 'public-demo';
 }

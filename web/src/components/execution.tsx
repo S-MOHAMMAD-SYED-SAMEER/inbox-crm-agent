@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { usePublicDemo } from '../auth/publicDemo.tsx';
 import type { Approval, Execution, Outbox } from '../api/types.ts';
 import { presentOutbox } from '../revision/outboxPresentation.ts';
 import { describeExecution } from '../revision/executionSummary.ts';
@@ -53,7 +54,12 @@ export function ExecutionCard({
 
   const succeeded = executions.filter((execution) => execution.status === 'succeeded');
   const failed = executions.filter((execution) => execution.status === 'failed');
-  const showControls = stage === 'awaiting_approval' || (stage === 'pending' && !requiresApproval);
+  const publicDemo = usePublicDemo();
+  // Approve, Reject and Run are the mutations this card offers. The read-only
+  // demo shows the plan and what it would do, and offers none of them — the
+  // server refuses each one without a session anyway.
+  const showControls =
+    !publicDemo && (stage === 'awaiting_approval' || (stage === 'pending' && !requiresApproval));
 
   return (
     <section className="rounded-card border border-line bg-surface p-5 shadow-resting">
@@ -153,7 +159,7 @@ export function ExecutionCard({
         </div>
       ) : null}
 
-      {stage === 'failed' ? (
+      {stage === 'failed' && !publicDemo ? (
         <button
           type="button"
           disabled={busy}

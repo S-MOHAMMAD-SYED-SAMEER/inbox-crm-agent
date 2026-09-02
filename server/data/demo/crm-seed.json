@@ -13,7 +13,7 @@
     "company with no CRM match. Those two cannot both be true. The near-duplicate pair is",
     "therefore Harborview Digital / Harborview Media, and Acme Commerce is deliberately",
     "absent so E-01 stays a genuine new-lead case. E-04's sender address must be chosen in",
-    "M1 to match neither Harborview domain exactly (e.g. @harborview-group.com), so that",
+    "M1 to match neither Harborview domain exactly (e.g. @harborview-group.invalid), so that",
     "entity resolution produces a real conflict rather than a staged one."
   ],
 
@@ -21,8 +21,8 @@
     {
       "key": "harborview-digital",
       "name": "Harborview Digital",
-      "domain": "harborview.io",
-      "website": "https://harborview.io",
+      "domain": "harborview.invalid",
+      "website": "https://harborview.invalid",
       "industry": "Marketing agency",
       "sizeBand": "11-25",
       "country": "United Kingdom"
@@ -30,8 +30,8 @@
     {
       "key": "harborview-media",
       "name": "Harborview Media Ltd",
-      "domain": "harborviewmedia.com",
-      "website": "https://harborviewmedia.com",
+      "domain": "harborviewmedia.invalid",
+      "website": "https://harborviewmedia.invalid",
       "industry": "Video production",
       "sizeBand": "1-10",
       "country": "United Kingdom"
@@ -39,8 +39,8 @@
     {
       "key": "lantern-studio",
       "name": "Lantern Studio",
-      "domain": "lanternstudio.dev",
-      "website": "https://lanternstudio.dev",
+      "domain": "lanternstudio.invalid",
+      "website": "https://lanternstudio.invalid",
       "industry": "Web design agency",
       "sizeBand": "1-10",
       "country": "Ireland"
@@ -48,8 +48,8 @@
     {
       "key": "vantage-consulting",
       "name": "Vantage Consulting",
-      "domain": "vantageconsulting.com",
-      "website": "https://vantageconsulting.com",
+      "domain": "vantageconsulting.invalid",
+      "website": "https://vantageconsulting.invalid",
       "industry": "Management consulting",
       "sizeBand": "26-50",
       "country": "Singapore"
@@ -57,8 +57,8 @@
     {
       "key": "brightpath-recruitment",
       "name": "Brightpath Recruitment",
-      "domain": "brightpath.works",
-      "website": "https://brightpath.works",
+      "domain": "brightpath.invalid",
+      "website": "https://brightpath.invalid",
       "industry": "Recruitment",
       "sizeBand": "11-25",
       "country": "Australia"
@@ -66,8 +66,8 @@
     {
       "key": "solstice-retail",
       "name": "Solstice Retail",
-      "domain": "solsticeretail.com",
-      "website": "https://solsticeretail.com",
+      "domain": "solsticeretail.invalid",
+      "website": "https://solsticeretail.invalid",
       "industry": "D2C ecommerce",
       "sizeBand": "11-25",
       "country": "Canada"
@@ -79,7 +79,7 @@
       "key": "elena-marsh",
       "companyKey": "harborview-digital",
       "fullName": "Elena Marsh",
-      "email": "elena@harborview.io",
+      "email": "elena@harborview.invalid",
       "jobTitle": "Head of Delivery",
       "phone": "+44 20 7946 0102",
       "lifecycle": "customer"
@@ -88,7 +88,7 @@
       "key": "nadia-farrell",
       "companyKey": "harborview-digital",
       "fullName": "Nadia Farrell",
-      "email": "nadia@harborview.io",
+      "email": "nadia@harborview.invalid",
       "jobTitle": "Marketing Lead",
       "lifecycle": "customer"
     },
@@ -96,7 +96,7 @@
       "key": "ravi-menon",
       "companyKey": "harborview-media",
       "fullName": "Ravi Menon",
-      "email": "ravi@harborviewmedia.com",
+      "email": "ravi@harborviewmedia.invalid",
       "jobTitle": "Executive Producer",
       "lifecycle": "lead"
     },
@@ -104,7 +104,7 @@
       "key": "tom-okafor",
       "companyKey": "lantern-studio",
       "fullName": "Tom Okafor",
-      "email": "tom@lanternstudio.dev",
+      "email": "tom@lanternstudio.invalid",
       "jobTitle": "Founder",
       "lifecycle": "partner"
     },
@@ -112,7 +112,7 @@
       "key": "chris-lund",
       "companyKey": "lantern-studio",
       "fullName": "Chris Lund",
-      "email": "chris@lanternstudio.dev",
+      "email": "chris@lanternstudio.invalid",
       "jobTitle": "Design Lead",
       "lifecycle": "partner"
     },
@@ -120,7 +120,7 @@
       "key": "anil-kapoor",
       "companyKey": "vantage-consulting",
       "fullName": "Anil Kapoor",
-      "email": "anil@vantageconsulting.com",
+      "email": "anil@vantageconsulting.invalid",
       "jobTitle": "Managing Partner",
       "phone": "+65 6011 2244",
       "lifecycle": "customer"
@@ -129,7 +129,7 @@
       "key": "jo-whelan",
       "companyKey": "brightpath-recruitment",
       "fullName": "Jo Whelan",
-      "email": "jo@brightpath.works",
+      "email": "jo@brightpath.invalid",
       "jobTitle": "Talent Director",
       "lifecycle": "lead"
     },
@@ -137,7 +137,7 @@
       "key": "marcus-bell",
       "companyKey": "solstice-retail",
       "fullName": "Marcus Bell",
-      "email": "marcus@solsticeretail.com",
+      "email": "marcus@solsticeretail.invalid",
       "jobTitle": "Ecommerce Manager",
       "lifecycle": "customer"
     },
@@ -145,7 +145,7 @@
       "key": "dana-iqbal",
       "companyKey": "solstice-retail",
       "fullName": "Dana Iqbal",
-      "email": "dana@solsticeretail.com",
+      "email": "dana@solsticeretail.invalid",
       "jobTitle": "Founder",
       "lifecycle": "customer"
     }

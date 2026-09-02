@@ -125,7 +125,7 @@ test('optionalString treats undefined, null and empty as absent', () => {
 
 test('requireEmail normalises case and trims', () => {
   const problems = new ProblemCollector();
-  assert.equal(requireEmail('  Sarah@AcmeCommerce.IO ', 'email', problems), 'sarah@acmecommerce.io');
+  assert.equal(requireEmail('  Sarah@AcmeCommerce.INVALID ', 'email', problems), 'sarah@acmecommerce.invalid');
   assert.equal(problems.count, 0);
 });
 
@@ -163,14 +163,14 @@ test('optionalInteger enforces bounds only when a value is present', () => {
 // --- redaction (NFR-12) -----------------------------------------------------
 
 test('an email address is masked but its domain survives', () => {
-  assert.equal(maskEmail('sarah@acmecommerce.io'), 's***h@acmecommerce.io');
-  assert.equal(maskEmail('jo@brightpath.works'), '**@brightpath.works');
+  assert.equal(maskEmail('sarah@acmecommerce.invalid'), 's***h@acmecommerce.invalid');
+  assert.equal(maskEmail('jo@brightpath.invalid'), '**@brightpath.invalid');
 });
 
 test('redactText masks addresses and phone numbers inside free text', () => {
-  const out = redactText('Contact sarah@acmecommerce.io or call +44 20 7946 0102 today');
+  const out = redactText('Contact sarah@acmecommerce.invalid or call +44 20 7946 0102 today');
   assert.doesNotMatch(out, /sarah@/);
-  assert.match(out, /acmecommerce\.io/);
+  assert.match(out, /acmecommerce\.invalid/);
   assert.match(out, /\[phone:\d+d\]/);
 });
 
@@ -190,10 +190,10 @@ test('an email body is never logged, whatever it contains', () => {
 
 test('the logger redacts context before it reaches the sink', () => {
   const { logger, entries } = createMemoryLogger('test');
-  logger.info('processing', { fromEmail: 'sarah@acmecommerce.io', bodyText: 'secret contents' });
+  logger.info('processing', { fromEmail: 'sarah@acmecommerce.invalid', bodyText: 'secret contents' });
 
   const context = entries[0]?.context as Record<string, unknown>;
-  assert.doesNotMatch(JSON.stringify(context), /sarah@acmecommerce\.io/);
+  assert.doesNotMatch(JSON.stringify(context), /sarah@acmecommerce\.invalid/);
   assert.doesNotMatch(JSON.stringify(context), /secret contents/);
 });
 
@@ -290,7 +290,7 @@ test('a leading suffix-like word is part of the name', () => {
 });
 
 test('domainFromEmail returns null rather than guessing', () => {
-  assert.equal(domainFromEmail('Sarah@AcmeCommerce.io'), 'acmecommerce.io');
+  assert.equal(domainFromEmail('Sarah@AcmeCommerce.invalid'), 'acmecommerce.invalid');
   assert.equal(domainFromEmail('not-an-email'), null);
   assert.equal(domainFromEmail('two@@at.com'), null);
   assert.equal(domainFromEmail('missing@domain'), null);

@@ -82,7 +82,7 @@ test('1. a pending approval appears in the queue with its full context', async (
   assert.ok(row);
 
   assert.equal(row.approval.state, 'pending');
-  assert.equal(row.email.fromEmail, 'sarah@acmecommerce.io');
+  assert.equal(row.email.fromEmail, 'sarah@acmecommerce.invalid');
   assert.equal(row.email.fromName, 'Sarah Williams');
   assert.equal(row.riskTier, 2);
   assert.equal(row.confidence, 0.91);

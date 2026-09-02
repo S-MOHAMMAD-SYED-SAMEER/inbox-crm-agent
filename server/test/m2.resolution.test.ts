@@ -34,7 +34,7 @@ function contact(overrides: Partial<Contact> = {}): Contact {
     id: 'contact-1',
     companyId: 'company-1',
     fullName: 'Marcus Bell',
-    email: 'marcus@solsticeretail.com',
+    email: 'marcus@solsticeretail.invalid',
     phone: null,
     jobTitle: null,
     lifecycle: 'customer',
@@ -52,7 +52,7 @@ function company(overrides: Partial<Company> = {}): Company {
     id: 'company-1',
     name,
     nameNorm: overrides.nameNorm ?? normaliseCompanyName(name),
-    domain: 'solsticeretail.com',
+    domain: 'solsticeretail.invalid',
     website: null,
     industry: null,
     sizeBand: null,
@@ -67,7 +67,7 @@ function company(overrides: Partial<Company> = {}): Company {
 
 function input(overrides: Partial<ResolutionInput> = {}): ResolutionInput {
   return {
-    senderEmail: 'marcus@solsticeretail.com',
+    senderEmail: 'marcus@solsticeretail.invalid',
     senderName: 'Marcus Bell',
     extractedContactName: null,
     extractedContactEmail: null,
@@ -94,7 +94,7 @@ function candidate(overrides: Partial<Candidate> = {}): Candidate {
 // =========================================================== normalisation
 
 test('email normalisation lowercases and trims but preserves the local part', () => {
-  assert.equal(normaliseEmail('  Marcus@SolsticeRetail.com '), 'marcus@solsticeretail.com');
+  assert.equal(normaliseEmail('  Marcus@SolsticeRetail.invalid '), 'marcus@solsticeretail.invalid');
   // Dots and +tags are NOT stripped: at many providers they are different
   // people, and merging two colleagues into one contact is unrecoverable.
   assert.notEqual(normaliseEmail('first.last@acme.com'), normaliseEmail('firstlast@acme.com'));
@@ -102,7 +102,7 @@ test('email normalisation lowercases and trims but preserves the local part', ()
 });
 
 test('domain extraction returns null rather than guessing', () => {
-  assert.equal(emailDomain('Sarah@AcmeCommerce.io'), 'acmecommerce.io');
+  assert.equal(emailDomain('Sarah@AcmeCommerce.invalid'), 'acmecommerce.invalid');
   assert.equal(emailDomain('not-an-email'), null);
   assert.equal(emailDomain('two@@at.com'), null);
 });
@@ -152,12 +152,12 @@ test('1. exact contact email match scores 1.00', () => {
   assert.ok(scored);
   assert.equal(scored.score, SCORES.contactExactEmail);
   assert.equal(scored.method, 'exact_email');
-  assert.match(scored.evidence, /marcus@solsticeretail\.com/);
+  assert.match(scored.evidence, /marcus@solsticeretail\.invalid/);
 });
 
 test('5. same domain plus an exact normalised name scores 0.85', () => {
   const scored = scoreContact(
-    input({ senderEmail: 'm.bell@solsticeretail.com', extractedContactName: 'Dr Marcus Bell' }),
+    input({ senderEmail: 'm.bell@solsticeretail.invalid', extractedContactName: 'Dr Marcus Bell' }),
     contact(),
   );
   assert.ok(scored);
@@ -169,7 +169,7 @@ test('same domain plus a fuzzy name scores 0.70', () => {
   // "Marcus B Bell" vs "Marcus Bell" is 0.92 similar — above the 0.85 contact
   // threshold but not identical, which is exactly the middle rule.
   const scored = scoreContact(
-    input({ senderEmail: 'marcus.b@solsticeretail.com', extractedContactName: 'Marcus B Bell' }),
+    input({ senderEmail: 'marcus.b@solsticeretail.invalid', extractedContactName: 'Marcus B Bell' }),
     contact(),
   );
   assert.ok(scored);
@@ -203,7 +203,7 @@ test('an extracted address can never redirect resolution away from the sender', 
     input({
       senderEmail: 'stranger@elsewhere.example',
       senderName: null,
-      extractedContactEmail: 'marcus@solsticeretail.com',
+      extractedContactEmail: 'marcus@solsticeretail.invalid',
     }),
     contact(),
   );
@@ -221,7 +221,7 @@ test('2. exact company domain match scores 1.00', () => {
 
 test('an extracted domain also matches, even when the sender is elsewhere', () => {
   const scored = scoreCompany(
-    input({ senderEmail: 'dana@gmail.example', extractedCompanyDomain: 'solsticeretail.com' }),
+    input({ senderEmail: 'dana@gmail.example', extractedCompanyDomain: 'solsticeretail.invalid' }),
     company(),
   );
   assert.ok(scored);
@@ -242,7 +242,7 @@ test('a fuzzy company name at or above 0.88 scores 0.65', () => {
   // 0.88 exactly — the boundary the spec names for company fuzzy matching.
   const scored = scoreCompany(
     input({ senderEmail: 'x@unknown.example', extractedCompanyName: 'Brightpath Recruitments' }),
-    company({ id: 'company-2', name: 'Brightpath Recruitment', domain: 'brightpath.works' }),
+    company({ id: 'company-2', name: 'Brightpath Recruitment', domain: 'brightpath.invalid' }),
   );
   assert.ok(scored);
   assert.equal(scored.score, SCORES.companyFuzzyName);
@@ -251,8 +251,8 @@ test('a fuzzy company name at or above 0.88 scores 0.65', () => {
 
 test('a shared distinctive token scores 0.65 and can never auto-link alone', () => {
   const scored = scoreCompany(
-    input({ senderEmail: 'mark@harborview-group.com', extractedCompanyName: 'Harborview Group' }),
-    company({ id: 'company-3', name: 'Harborview Digital', domain: 'harborview.io' }),
+    input({ senderEmail: 'mark@harborview-group.invalid', extractedCompanyName: 'Harborview Group' }),
+    company({ id: 'company-3', name: 'Harborview Digital', domain: 'harborview.invalid' }),
   );
   assert.ok(scored);
   assert.equal(scored.score, SCORES.companyDistinctiveToken);
@@ -263,7 +263,7 @@ test('a shared distinctive token scores 0.65 and can never auto-link alone', () 
 test('sharing only a generic word is not evidence', () => {
   const scored = scoreCompany(
     input({ senderEmail: 'x@unknown.example', extractedCompanyName: 'Northline Digital' }),
-    company({ id: 'company-4', name: 'Harborview Digital', domain: 'harborview.io' }),
+    company({ id: 'company-4', name: 'Harborview Digital', domain: 'harborview.invalid' }),
   );
   assert.equal(scored, null, '"digital" is shared by half the industry');
 });

@@ -54,7 +54,7 @@ const read = (relative: string): string => fs.readFileSync(path.join(SRC, relati
 function plan(overrides: Partial<ActionPlan> = {}): ActionPlan {
   return {
     actions: [
-      { type: 'create_company', payload: { name: 'Acme Commerce', domain: 'acmecommerce.io' } },
+      { type: 'create_company', payload: { name: 'Acme Commerce', domain: 'acmecommerce.invalid' } },
       {
         type: 'create_task',
         payload: {
@@ -67,7 +67,7 @@ function plan(overrides: Partial<ActionPlan> = {}): ActionPlan {
       },
       { type: 'add_note', payload: { body: 'Asked about cart recovery.' } },
       { type: 'log_activity', payload: { subject: 'Inbound enquiry', body: 'Sarah got in touch.' } },
-      { type: 'send_email', payload: { toEmail: 'sarah@acmecommerce.io' } },
+      { type: 'send_email', payload: { toEmail: 'sarah@acmecommerce.invalid' } },
     ],
     riskTier: 2,
     requiresApproval: true,
@@ -613,7 +613,7 @@ test('the revision surfaces speak product language, not implementation vocabular
 test('only a server-confirmed send is described as sent', () => {
   const base = {
     id: 'o1',
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: 's',
     body: 'b',
     suppressedReason: null,
@@ -637,7 +637,7 @@ test('only a server-confirmed send is described as sent', () => {
 test('a suppressed reply says outbound sending is disabled', () => {
   const view = presentOutbox({
     id: 'o1',
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: 's',
     body: 'b',
     status: 'suppressed',
@@ -656,7 +656,7 @@ test('a failed delivery says whether retrying would help', () => {
   const make = (reason: string) =>
     presentOutbox({
       id: 'o1',
-      toEmail: 'sarah@acmecommerce.io',
+      toEmail: 'sarah@acmecommerce.invalid',
       subject: 's',
       body: 'b',
       status: 'failed',
@@ -712,8 +712,8 @@ test('an executed action names the record it created', () => {
   // "done · Add the company — company". The record is in the snapshot the
   // executor already stores; this reads a name out of it.
   const cases: Array<[string, Record<string, unknown>, string]> = [
-    ['create_company', { id: 'c1', name: 'Acme Commerce', domain: 'acmecommerce.io' }, 'Acme Commerce · acmecommerce.io'],
-    ['create_contact', { id: 'p1', fullName: 'Sarah Williams', email: 'sarah@acmecommerce.io' }, 'Sarah Williams · sarah@acmecommerce.io'],
+    ['create_company', { id: 'c1', name: 'Acme Commerce', domain: 'acmecommerce.invalid' }, 'Acme Commerce · acmecommerce.invalid'],
+    ['create_contact', { id: 'p1', fullName: 'Sarah Williams', email: 'sarah@acmecommerce.invalid' }, 'Sarah Williams · sarah@acmecommerce.invalid'],
     ['create_deal', { id: 'd1', title: 'Acme — AI chatbot', stage: 'new_lead' }, 'Acme — AI chatbot · new_lead'],
     ['log_activity', { id: 'a1', subject: 'Shopify AI chatbot project' }, 'Shopify AI chatbot project'],
   ];

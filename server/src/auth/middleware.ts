@@ -88,6 +88,63 @@ export function requireSession() {
 }
 
 /**
+ * The read-only surface a public demo may expose (P19).
+ *
+ * A literal list, matched on method AND full path, and deliberately not derived
+ * from the routers. Deriving it would mean a GET added later joined the public
+ * surface the moment it was written; naming each one here means a new route is
+ * private until somebody edits this array on purpose.
+ *
+ * Every entry is a projection the dashboard reads to draw itself. None of them
+ * writes, and the CRM router is GET-only by construction.
+ */
+export const PUBLIC_DEMO_READS: readonly RegExp[] = [
+  /^\/emails$/,
+  /^\/emails\/[^/]+$/,
+  /^\/approvals$/,
+  /^\/(?:deals|contacts|companies|tasks|audit)$/,
+];
+
+/** Whether this exact request is one of the public reads. GET only. */
+export function isPublicDemoRead(method: string, path: string): boolean {
+  if (method.toUpperCase() !== 'GET') return false;
+  return PUBLIC_DEMO_READS.some((pattern) => pattern.test(path));
+}
+
+/**
+ * The gate, with an optional read-only window for the public demo (P19).
+ *
+ * WHY THIS REPLACES `requireSession` RATHER THAN SITTING BESIDE IT
+ *
+ * The alternative was to mount the read routes above the gate when the flag is
+ * on. That splits the routers in two and makes the mounting order in `app.ts`
+ * depend on configuration — and the property that file relies on is precisely
+ * that everything after one line is protected. Keeping one gate keeps that
+ * sentence true; the exception is visible inside it rather than hidden in a
+ * conditional route table.
+ *
+ * WHAT AN ALLOWED REQUEST DOES NOT GET
+ *
+ * A session. `req.session` and `req.operator` stay undefined, so `operatorOf`
+ * still throws for anyone who reaches it, every mutation still fails closed,
+ * and the rate limiter still keys the caller by IP. This opens a window onto
+ * synthetic data; it does not authenticate anybody.
+ */
+export function requireSessionOrPublicRead(options: { publicReadsEnabled: boolean }) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (req.session) {
+      next();
+      return;
+    }
+    if (options.publicReadsEnabled && isPublicDemoRead(req.method, req.path)) {
+      next();
+      return;
+    }
+    next(new AppError('UNAUTHORIZED', 'Sign in to continue.'));
+  };
+}
+
+/**
  * The authenticated operator for a request.
  *
  * The single place the rest of the server asks "who is doing this?". It reads

@@ -69,6 +69,7 @@ async function withServer(
       login: { limit: options.loginLimit ?? 1, windowMs: 60_000 },
       expensive: { limit: 1000, windowMs: 60_000 },
       mutation: { limit: 1000, windowMs: 60_000 },
+      publicRead: { limit: 1000, windowMs: 60_000 },
     },
   });
 

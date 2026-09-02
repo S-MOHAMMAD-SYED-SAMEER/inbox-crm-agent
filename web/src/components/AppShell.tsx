@@ -50,6 +50,14 @@ type AppShellProps = {
    */
   operator: string;
   onSignOut(): void;
+  /**
+   * Renders the product for a visitor with no session (P19).
+   *
+   * Presentation only. It hides the controls that would fail anyway and states
+   * plainly what the visitor is looking at — the server is what actually
+   * refuses a mutation, and it refuses whether or not this prop is right.
+   */
+  publicDemo?: boolean;
   /** A recoverable problem worth telling the operator about. */
   notice: string | null;
   onDismissNotice(): void;
@@ -62,6 +70,7 @@ export function AppShell({
   onSignOut,
   notice,
   onDismissNotice,
+  publicDemo = false,
 }: AppShellProps): ReactNode {
   const current = NAV.find((item) => item.route === route.name);
 
@@ -117,18 +126,39 @@ export function AppShell({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-meta text-ink-muted">
-                Signed in as <span className="font-semibold text-ink">{operator}</span>
-              </span>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="h-control rounded-control border border-line-strong px-3 text-meta font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                Sign out
-              </button>
+              {publicDemo ? (
+                <span className="text-meta text-ink-muted">Read-only demo · not signed in</span>
+              ) : (
+                <>
+                  <span className="text-meta text-ink-muted">
+                    Signed in as <span className="font-semibold text-ink">{operator}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="h-control rounded-control border border-line-strong px-3 text-meta font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    Sign out
+                  </button>
+                </>
+              )}
             </div>
           </header>
+
+          {publicDemo ? (
+            <section
+              aria-label="Demo mode"
+              className="mb-6 rounded-card border border-line-strong bg-surface p-4"
+            >
+              <p className="text-eyebrow uppercase text-ink-muted">Demo mode · read-only</p>
+              <p className="mt-2 text-small text-ink">
+                You are looking at the real application running on synthetic data. Every email,
+                company and contact below is invented. Nothing here can be approved, edited, sent or
+                deleted — the server accepts no changes from this view, and no real mailbox or CRM is
+                connected to it.
+              </p>
+            </section>
+          ) : null}
 
           <div aria-live="polite">
             {notice ? (

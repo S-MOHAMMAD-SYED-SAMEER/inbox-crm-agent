@@ -47,6 +47,9 @@ const TINY: Record<RateLimitClass, RateLimitRule> = {
   login: { limit: 3, windowMs: 60_000 },
   expensive: { limit: 2, windowMs: 60_000 },
   mutation: { limit: 4, windowMs: 60_000 },
+  // Present so this record stays exhaustive; these tests do not open the demo
+  // window, so nothing here is ever classed `publicRead`.
+  publicRead: { limit: 5, windowMs: 60_000 },
 };
 
 type Server = {

@@ -156,7 +156,7 @@ test('evidence is trimmed so a banner and a log line stay bounded', () => {
 
 const SAMPLE_EMAIL: PromptEmail = {
   fromName: 'Sarah Williams',
-  fromEmail: 'sarah@acmecommerce.io',
+  fromEmail: 'sarah@acmecommerce.invalid',
   toEmail: 'hello@example.test',
   cc: null,
   subject: 'Shopify AI chatbot project',
@@ -207,7 +207,7 @@ test('escapeFence neutralises both fence markers regardless of case', () => {
 test('the provenance corpus includes headers as well as the body', () => {
   const corpus = provenanceCorpus(SAMPLE_EMAIL);
   assert.match(corpus, /Sarah Williams/);
-  assert.match(corpus, /sarah@acmecommerce\.io/);
+  assert.match(corpus, /sarah@acmecommerce\.invalid/);
   assert.match(corpus, /Shopify AI chatbot project/);
   assert.match(corpus, /Shopify store/);
 });
@@ -230,7 +230,7 @@ test('the tool schema offers exactly the domain categories and fields', () => {
 
 const CORPUS = [
   'Sarah Williams',
-  'sarah@acmecommerce.io',
+  'sarah@acmecommerce.invalid',
   'hello@example.test',
   'Shopify AI chatbot project',
   'We run a small Shopify store and want an AI chatbot. Our budget is around $2-3k and we need it in 6 weeks.',
@@ -435,7 +435,7 @@ test('a paraphrased company name is allowed when its evidence is real', () => {
     baseOutput({
       extracted: {
         ...emptyExtraction(),
-        companyName: { value: 'Acme Commerce', confidence: 0.7, sourceSpan: 'sarah@acmecommerce.io' },
+        companyName: { value: 'Acme Commerce', confidence: 0.7, sourceSpan: 'sarah@acmecommerce.invalid' },
       },
     }),
     { corpus: CORPUS },

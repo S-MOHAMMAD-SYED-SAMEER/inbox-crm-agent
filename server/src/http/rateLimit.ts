@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../lib/errors.ts';
 import { systemClock, type Clock } from '../lib/clock.ts';
+import { isPublicDemoRead } from '../auth/middleware.ts';
 
 // Rate limiting (M5-C, audit F-02, spec §11).
 //
@@ -117,6 +118,22 @@ export const RATE_LIMITS = Object.freeze({
   login: { limit: 10, windowMs: 60_000 },
   expensive: { limit: 20, windowMs: 60_000 },
   mutation: { limit: 120, windowMs: 60_000 },
+  /**
+   * Anonymous reads of the public demo (P19).
+   *
+   * Reads are otherwise unlimited on purpose — see `classify` — and that was
+   * correct while a read required a session, because the population was one
+   * operator. With DEMO_PUBLIC_READONLY on, eight GETs face the internet, and
+   * an unlimited endpoint in front of a free-tier database is a denial-of-
+   * service waiting to be discovered.
+   *
+   * 60 a minute is chosen against the actual traffic: a visitor clicking every
+   * one of the eight sections twice spends about twenty, so this is roughly
+   * three times what a person browsing hard would use, while capping a scraper
+   * at one request a second. Deliberately looser than `expensive` (no model
+   * call, no spend) and tighter than `mutation`.
+   */
+  publicRead: { limit: 60, windowMs: 60_000 },
 } satisfies Record<string, RateLimitRule>);
 
 export type RateLimitClass = keyof typeof RATE_LIMITS;
@@ -124,11 +141,54 @@ export type RateLimitClass = keyof typeof RATE_LIMITS;
 /** Endpoints that trigger a model call, and therefore spend. */
 const EXPENSIVE_PATHS = [/^\/emails\/understand$/, /^\/emails\/[^/]+\/understand$/, /^\/emails\/decide$/, /^\/emails\/[^/]+\/decide$/];
 
-export function classify(method: string, path: string): RateLimitClass | null {
+/**
+ * What the limiter needs to know beyond the method and path (P19).
+ *
+ * Both fields default to the pre-P19 answer, so `classify(method, path)` with
+ * no context behaves exactly as it always did — which is what every existing
+ * caller and test relies on.
+ */
+export type ClassifyContext = {
+  /** Whether the public demo window is open. Off unless an operator opened it. */
+  publicReadsEnabled?: boolean;
+  /** Whether this request carries a live session. */
+  authenticated?: boolean;
+};
+
+export function classify(
+  method: string,
+  path: string,
+  context: ClassifyContext = {},
+): RateLimitClass | null {
   if (path === '/auth/login') return 'login';
-  // Reads are not limited: they are cheap, and limiting them would make a busy
-  // dashboard look like an attack.
-  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return null;
+
+  if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    // The one read that is limited: an anonymous request, to one of the eight
+    // allow-listed demo paths, while the demo window is open (P19).
+    //
+    // All three conditions matter. Anonymous, because a signed-in operator's
+    // dashboard must keep the unlimited reads it has always had. Allow-listed,
+    // because this must never become "GET is limited" and thereby suggest "GET
+    // is public". And only while the window is open, because with it shut these
+    // requests are refused by the gate anyway, and limiting them would turn the
+    // 401 an existing deployment returns today into a 429.
+    //
+    // FAIL-CLOSED, VIA THE SAME VALUE THE GATE READS
+    //
+    // `publicReadsEnabled` is the same config field the gate uses, and that
+    // field is false for anything that is not the literal string 'true'. So a
+    // malformed or missing configuration cannot reach the dangerous state:
+    // there is no way to serve these reads publicly while failing to recognise
+    // them here, because one boolean decides both.
+    if (context.publicReadsEnabled === true && context.authenticated !== true) {
+      if (isPublicDemoRead(method, path)) return 'publicRead';
+    }
+
+    // Everything else stays as it was: reads are cheap, and limiting them would
+    // make a busy dashboard look like an attack.
+    return null;
+  }
+
   if (EXPENSIVE_PATHS.some((pattern) => pattern.test(path))) return 'expensive';
   return 'mutation';
 }
@@ -150,15 +210,29 @@ export type RateLimitDeps = {
   limiter?: FixedWindowLimiter;
   clock?: Clock;
   limits?: Record<RateLimitClass, RateLimitRule>;
+  /**
+   * Whether the public demo window is open (P19).
+   *
+   * Passed in rather than read from config here, so this module stays a pure
+   * function of its inputs and a test can drive both states without touching
+   * the environment. Defaults false, matching the config default.
+   */
+  publicReadsEnabled?: boolean;
 };
 
 export function rateLimit(deps: RateLimitDeps = {}) {
   const limiter = deps.limiter ?? new FixedWindowLimiter(deps.clock);
   const limits = deps.limits ?? RATE_LIMITS;
+  const publicReadsEnabled = deps.publicReadsEnabled === true;
   let sinceLastPrune = 0;
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const rateClass = classify(req.method, req.path);
+    // `attachSession` runs before this middleware, so `req.session` is already
+    // resolved and an operator is never mistaken for an anonymous visitor.
+    const rateClass = classify(req.method, req.path, {
+      publicReadsEnabled,
+      authenticated: req.session !== undefined,
+    });
     if (rateClass === null) {
       next();
       return;

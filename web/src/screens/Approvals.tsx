@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { usePublicDemo } from '../auth/publicDemo.tsx';
 import { api, ApiError } from '../api/client.ts';
 import type { ApprovalQueueRow, ApprovalState, EmailDetail, RevisionResult } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -51,6 +52,7 @@ type LoadState =
   | { status: 'error'; message: string };
 
 export function Approvals(): ReactNode {
+  const publicDemo = usePublicDemo();
   const [filter, setFilter] = useState<ApprovalState>('pending');
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -277,7 +279,10 @@ export function Approvals(): ReactNode {
                       {isOpen ? 'Hide' : 'Show'} what will happen ({row.decision.plan.actions.length} actions)
                     </button>
 
-                    {row.actionable ? (
+                    {/* Approve and Reject are the only entry points to a
+                        mutation on this screen, and both live in this block —
+                        so the read-only demo simply does not render it. */}
+                    {row.actionable && !publicDemo ? (
                       <>
                         <button
                           type="button"
@@ -358,7 +363,10 @@ export function Approvals(): ReactNode {
 
                 {isOpen ? (
                   <div className="space-y-4 border-t border-line bg-canvas p-4">
-                    {editing === row.approval.id && rowDetail?.decision ? (
+                    {/* Belt and braces: the Edit control that sets `editing`
+                        is already hidden in the demo, so this can only matter
+                        if that block is ever refactored. */}
+                    {editing === row.approval.id && rowDetail?.decision && !publicDemo ? (
                       <ReviseForm
                         decisionId={rowDetail.decision.id}
                         plan={rowDetail.decision.plan}

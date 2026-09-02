@@ -14,10 +14,10 @@ const EMAIL_RE = /\b[^\s@,;<>()[\]]+@[^\s@,;<>()[\]]+\.[a-z]{2,}\b/gi;
 const PHONE_RE = /(?:\+\d{1,3}[\s.-]?)?(?:\(\d{2,4}\)[\s.-]?)?\d{3,4}[\s.-]?\d{3,4}(?:[\s.-]?\d{2,4})?/g;
 
 /**
- * Masks an email address to `s***h@acmecommerce.io`.
+ * Masks an email address to `s***h@acmecommerce.invalid`.
  *
  * The domain survives deliberately — it is the part that makes a log line
- * useful for debugging ("the acmecommerce.io message failed"), and it is not
+ * useful for debugging ("the acmecommerce.invalid message failed"), and it is not
  * personal data in the way the local part is.
  */
 export function maskEmail(email: string): string {

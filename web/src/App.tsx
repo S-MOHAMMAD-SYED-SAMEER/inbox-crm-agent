@@ -9,6 +9,7 @@ import { isPlaceholderRoute } from './screens/placeholderRoutes.ts';
 import { AuditLog, Companies, Contacts, Deals, Tasks } from './screens/Crm.tsx';
 import { Login } from './screens/Login.tsx';
 import { useSession } from './auth/useSession.ts';
+import { PublicDemoProvider } from './auth/publicDemo.tsx';
 import { DEFAULT_ROUTE, parseRoute, type Route } from './router.ts';
 
 /**
@@ -55,13 +56,22 @@ export function App(): ReactNode {
     return <Login onSignedIn={() => void session.refresh()} />;
   }
 
+  // The public read-only demo (P19). The same shell and the same screens, drawn
+  // from the same endpoints — what differs is that there is no operator, no
+  // sign-out, and no control that would attempt a change. This branch is not a
+  // permission: the server has already decided, and it refuses every mutation
+  // from here regardless of what this component renders.
+  const publicDemo = session.state.status === 'public-demo';
+
   return (
+    <PublicDemoProvider value={publicDemo}>
     <AppShell
       route={route}
-      operator={session.state.operator}
+      operator={session.state.status === 'authenticated' ? session.state.operator : ''}
       onSignOut={() => void session.signOut()}
       notice={session.notice}
       onDismissNotice={session.dismissNotice}
+      publicDemo={publicDemo}
     >
       {route.name === 'overview' ? <Overview /> : null}
       {/* An id on the inbox route selects one email — the router already parses
@@ -80,5 +90,6 @@ export function App(): ReactNode {
 
       {isPlaceholderRoute(route.name) ? <PlaceholderScreen route={route.name} /> : null}
     </AppShell>
+    </PublicDemoProvider>
   );
 }

@@ -201,7 +201,7 @@ test('seeded relationships resolve to real records', async () => {
   const { repos, close } = await createTestContext();
   await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
 
-  const contact = await repos.contacts.findByEmail('dana@solsticeretail.com');
+  const contact = await repos.contacts.findByEmail('dana@solsticeretail.invalid');
   assert.ok(contact);
   assert.ok(contact.companyId);
 
@@ -239,8 +239,8 @@ test('Acme Commerce is deliberately absent so the hero lead is genuinely new', a
   const { repos, close } = await createTestContext();
   await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
 
-  assert.equal(await repos.companies.findByDomain('acmecommerce.io'), null);
-  assert.equal(await repos.contacts.findByEmail('sarah@acmecommerce.io'), null);
+  assert.equal(await repos.companies.findByDomain('acmecommerce.invalid'), null);
+  assert.equal(await repos.contacts.findByEmail('sarah@acmecommerce.invalid'), null);
   await close();
 });
 

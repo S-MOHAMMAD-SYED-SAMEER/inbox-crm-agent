@@ -29,8 +29,8 @@
         "reviewReason": null,
         "mustExtract": {
           "contactName": "Sarah Williams",
-          "contactEmail": "sarah@acmecommerce.io",
-          "companyDomain": "acmecommerce.io"
+          "contactEmail": "sarah@acmecommerce.invalid",
+          "companyDomain": "acmecommerce.invalid"
         },
         "mustBePresent": ["companyName", "serviceInterest", "requirementSummary"],
         "mustBeNotProvided": ["budget", "timeline", "contactPhone", "jobTitle"],
@@ -52,7 +52,7 @@
         "mustExtract": {
           "contactName": "Tom Reyes",
           "companyName": "Northline Studio",
-          "companyDomain": "northlinestudio.com"
+          "companyDomain": "northlinestudio.invalid"
         },
         "mustBePresent": ["requirementSummary", "serviceInterest"],
         "mustBeNotProvided": ["budget", "timeline"],
@@ -97,7 +97,7 @@
         "reviewReason": null,
         "mustExtract": {
           "contactName": "Mark Doyle",
-          "companyDomain": "harborview-group.com"
+          "companyDomain": "harborview-group.invalid"
         },
         "mustBePresent": ["companyName", "requirementSummary"],
         "mustBeNotProvided": ["budget", "timeline"],
@@ -118,7 +118,7 @@
         "reviewReason": null,
         "mustExtract": {
           "contactName": "Marcus Bell",
-          "companyDomain": "solsticeretail.com"
+          "companyDomain": "solsticeretail.invalid"
         },
         "mustBePresent": ["requirementSummary", "urgencyCues"],
         "mustBeNotProvided": ["budget", "timeline", "jobTitle"],

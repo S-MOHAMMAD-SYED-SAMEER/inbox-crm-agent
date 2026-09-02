@@ -112,7 +112,7 @@ test('E-04: the Harborview conflict is detected, not guessed', async () => {
   await pipelineToUnderstand(repos);
 
   const email = await emailFor(repos, 'demo-e04');
-  assert.equal(email.fromEmail, 'mark@harborview-group.com');
+  assert.equal(email.fromEmail, 'mark@harborview-group.invalid');
 
   const outcome = await resolveEmail(email, { repos, logger: quiet });
   const company = await enrichCandidateLabels(repos, outcome.company);
@@ -203,9 +203,9 @@ test('two equally exact company signals conflict rather than picking one', async
   // are exact domain matches, so neither can win.
   const email = await understandOne(
     repos,
-    { id: 'tied-domains', fromName: 'Marcus Bell', fromEmail: 'marcus@solsticeretail.com',
-      body: 'I am at Harborview Digital now, harborview.io.' },
-    analysisFixture({ contactName: 'Marcus Bell', companyDomain: 'harborview.io' }),
+    { id: 'tied-domains', fromName: 'Marcus Bell', fromEmail: 'marcus@solsticeretail.invalid',
+      body: 'I am at Harborview Digital now, harborview.invalid.' },
+    analysisFixture({ contactName: 'Marcus Bell', companyDomain: 'harborview.invalid' }),
   );
 
   const outcome = await resolveEmail(email, { repos, logger: quiet });
@@ -226,7 +226,7 @@ test('12. a matched contact whose company differs from the email company is a co
   // A contact on a personal address, filed under Solstice Retail, writing about
   // Harborview. Both signals are individually confident and they disagree —
   // which must not add up to a confident answer.
-  const solstice = await repos.companies.findByDomain('solsticeretail.com');
+  const solstice = await repos.companies.findByDomain('solsticeretail.invalid');
   assert.ok(solstice);
   await repos.contacts.create({
     fullName: 'Marcus Bell', email: 'marcus@personal.example', companyId: solstice.id, source: 'seed',
@@ -235,8 +235,8 @@ test('12. a matched contact whose company differs from the email company is a co
   const email = await understandOne(
     repos,
     { id: 'cross-conflict', fromName: 'Marcus Bell', fromEmail: 'marcus@personal.example',
-      body: 'I am at Harborview Digital now, harborview.io.' },
-    analysisFixture({ contactName: 'Marcus Bell', companyDomain: 'harborview.io' }),
+      body: 'I am at Harborview Digital now, harborview.invalid.' },
+    analysisFixture({ contactName: 'Marcus Bell', companyDomain: 'harborview.invalid' }),
   );
 
   const outcome = await resolveEmail(email, { repos, logger: quiet });
@@ -490,14 +490,14 @@ test('candidate generation finds contacts by email domain, anchored so it cannot
   const { repos, close } = await createTestContext();
   await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
 
-  const solstice = await repos.contacts.listByEmailDomain('solsticeretail.com');
+  const solstice = await repos.contacts.listByEmailDomain('solsticeretail.invalid');
   assert.equal(solstice.length, 2);
 
-  // `notsolsticeretail.com` must not be pulled in by a bare LIKE.
+  // `notsolsticeretail.invalid` must not be pulled in by a bare LIKE.
   await repos.contacts.create({
-    fullName: 'Impostor', email: 'x@notsolsticeretail.com', source: 'human',
+    fullName: 'Impostor', email: 'x@notsolsticeretail.invalid', source: 'human',
   });
-  assert.equal((await repos.contacts.listByEmailDomain('solsticeretail.com')).length, 2);
+  assert.equal((await repos.contacts.listByEmailDomain('solsticeretail.invalid')).length, 2);
   await close();
 });
 

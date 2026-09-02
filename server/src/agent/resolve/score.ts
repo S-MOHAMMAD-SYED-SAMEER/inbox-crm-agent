@@ -36,7 +36,7 @@ import {
 // `distinctive_token` (0.65) is not in the spec's table. It was added because
 // the spec's own worked example cannot happen without it.
 //
-// Spec §22 requires E-04 — a message from `mark@harborview-group.com` against
+// Spec §22 requires E-04 — a message from `mark@harborview-group.invalid` against
 // seeded companies *Harborview Digital* and *Harborview Media* — to produce a
 // match conflict. Under the table above it produces nothing at all: the domain
 // matches neither, and trigram similarity between "harborview group" and

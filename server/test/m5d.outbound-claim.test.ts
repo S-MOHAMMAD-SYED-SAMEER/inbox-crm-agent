@@ -145,7 +145,7 @@ test('only one of two concurrent claims succeeds', async () => {
   const created = await f.repos.outbox.create({
     emailId: f.email.id,
     decisionId: f.decision.id,
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: 's',
     body: 'b',
     status: 'queued',
@@ -175,7 +175,7 @@ test('a sent or suppressed message can never be claimed', async () => {
     const row = await f.repos.outbox.create({
       emailId: f.email.id,
       decisionId: f.decision.id,
-      toEmail: 'sarah@acmecommerce.io',
+      toEmail: 'sarah@acmecommerce.invalid',
       subject: 's',
       body: 'b',
       status,
@@ -192,7 +192,7 @@ test('a failed message can be claimed again, which is what makes retry possible'
   const row = await f.repos.outbox.create({
     emailId: f.email.id,
     decisionId: f.decision.id,
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: 's',
     body: 'b',
     status: 'failed',
@@ -300,7 +300,7 @@ test('a stale claim is recovered to failed by an explicit deterministic rule', a
   const row = await f.repos.outbox.create({
     emailId: f.email.id,
     decisionId: f.decision.id,
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: 's',
     body: 'b',
     status: 'queued',
@@ -336,7 +336,7 @@ test('recovery only ever touches rows that are sending', async () => {
     await f.repos.outbox.create({
       emailId: f.email.id,
       decisionId: f.decision.id,
-      toEmail: 'sarah@acmecommerce.io',
+      toEmail: 'sarah@acmecommerce.invalid',
       subject: 's',
       body: 'b',
       status,
@@ -392,7 +392,7 @@ test('a recovered message can be retried and then delivers', async () => {
   const row = await f.repos.outbox.create({
     emailId: f.email.id,
     decisionId: f.decision.id,
-    toEmail: 'sarah@acmecommerce.io',
+    toEmail: 'sarah@acmecommerce.invalid',
     subject: f.decision.plan.draft?.subject as string,
     body: f.decision.plan.draft?.body as string,
     status: 'queued',

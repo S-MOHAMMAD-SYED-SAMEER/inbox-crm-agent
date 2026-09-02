@@ -133,6 +133,25 @@ export type AppConfig = {
   approvalSlaHours: number;
   autonomyLevel: AutonomyLevel;
   demoDataDir: string;
+  /**
+   * Opens an unauthenticated, read-only window onto the demo data (P19).
+   *
+   * WHAT IT DOES, AND THE THREE THINGS IT DOES NOT
+   *
+   * When true, a fixed list of GET endpoints — the ones the dashboard reads to
+   * draw itself — answer without a session. That is the whole of it.
+   *
+   * It does not touch `requireSession`, which still gates every mutation in the
+   * product. It does not create a second way to authenticate: nothing about
+   * this flag issues a session, sets a cookie, or makes `req.operator` defined,
+   * so a public reader is anonymous everywhere it matters. And it does not
+   * widen with time — the allow-list is a literal in `app.ts`, so a route added
+   * later is protected unless someone deliberately adds it there too.
+   *
+   * Default false, and false is the safe direction: an environment that forgets
+   * to set it behaves exactly as it did before this flag existed.
+   */
+  demoPublicReadonly: boolean;
   migrationsDir: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 };
@@ -290,6 +309,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
       approvalSlaHours: readInt('APPROVAL_SLA_HOURS', 24, problems),
       autonomyLevel: readEnum('AUTONOMY_LEVEL', AUTONOMY_LEVELS, 'manual', problems),
       demoDataDir: readString('DEMO_DATA_DIR', path.join(SERVER_ROOT, 'data', 'demo')),
+      // Off unless an operator turns it on, by name, in the environment.
+      demoPublicReadonly: readBool('DEMO_PUBLIC_READONLY', false),
       migrationsDir: readString('MIGRATIONS_DIR', path.join(SERVER_ROOT, 'migrations')),
       // Zero by default, deliberately. See the field's documentation: trusting
       // a forwarding header nobody is writing hands every client the ability to
@@ -335,5 +356,8 @@ export function configSummary(cfg: AppConfig = config): Record<string, string | 
     /** How many origins are allowed — never which, that is operator detail. */
     corsAllowedOrigins: cfg.corsAllowedOrigins.length,
     autonomyLevel: cfg.autonomyLevel,
+    // Surfaced so an operator can see from outside whether the public demo
+    // window is open, without having to read the deployment environment.
+    demoPublicReadonly: cfg.demoPublicReadonly,
   };
 }

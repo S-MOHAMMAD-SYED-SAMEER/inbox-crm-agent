@@ -220,7 +220,7 @@ function crmReaderConformance(label: string, build: () => Promise<{ reader: CrmR
 
   test(`${label}: finds a contact by email, case-insensitively`, async () => {
     const { reader, close } = await build();
-    const found = await reader.findContactByEmail('ELENA@harborview.io');
+    const found = await reader.findContactByEmail('ELENA@harborview.invalid');
     assert.ok(found);
     assert.equal(found.fullName, 'Elena Marsh');
     await close();
@@ -236,7 +236,7 @@ function crmReaderConformance(label: string, build: () => Promise<{ reader: CrmR
 
   test(`${label}: finds a company by domain`, async () => {
     const { reader, close } = await build();
-    const found = await reader.findCompanyByDomain('harborview.io');
+    const found = await reader.findCompanyByDomain('harborview.invalid');
     assert.ok(found);
     assert.equal(found.name, 'Harborview Digital');
     await close();
@@ -247,13 +247,13 @@ function crmReaderConformance(label: string, build: () => Promise<{ reader: CrmR
     // Raw, un-normalised input must work: normalising twice is a no-op.
     const found = await reader.searchCompaniesByName('Harborview Media Ltd');
     assert.equal(found.length, 1);
-    assert.equal(found[0]?.domain, 'harborviewmedia.com');
+    assert.equal(found[0]?.domain, 'harborviewmedia.invalid');
     await close();
   });
 
   test(`${label}: returns a stable, newest-first timeline`, async () => {
     const { reader, close } = await build();
-    const contact = await reader.findContactByEmail('elena@harborview.io');
+    const contact = await reader.findContactByEmail('elena@harborview.invalid');
     assert.ok(contact);
 
     const timeline = await reader.getTimeline('contact', contact.id);
@@ -270,10 +270,10 @@ function crmReaderConformance(label: string, build: () => Promise<{ reader: CrmR
 
 crmReaderConformance('local CRM reader', async () => {
   const ctx = await createTestContext();
-  const company = await ctx.repos.companies.create({ name: 'Harborview Digital', domain: 'harborview.io', source: 'seed' });
-  await ctx.repos.companies.create({ name: 'Harborview Media Ltd', domain: 'harborviewmedia.com', source: 'seed' });
+  const company = await ctx.repos.companies.create({ name: 'Harborview Digital', domain: 'harborview.invalid', source: 'seed' });
+  await ctx.repos.companies.create({ name: 'Harborview Media Ltd', domain: 'harborviewmedia.invalid', source: 'seed' });
   const contact = await ctx.repos.contacts.create({
-    fullName: 'Elena Marsh', email: 'elena@harborview.io', companyId: company.id, source: 'seed',
+    fullName: 'Elena Marsh', email: 'elena@harborview.invalid', companyId: company.id, source: 'seed',
   });
   await ctx.repos.activities.create({
     type: 'email_in', subject: 'First', occurredAt: '2026-08-01T00:00:00.000Z', contactId: contact.id, source: 'seed',

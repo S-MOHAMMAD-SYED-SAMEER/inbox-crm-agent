@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, setCsrfFailureHandler, setUnauthorizedHandler } from '../api/client.ts';
-import { sessionFromResponse, type SessionState } from './session.ts';
+import { publicDemoFromHealth, sessionFromResponse, type SessionState } from './session.ts';
 
 // The session gate (M6-A).
 //
@@ -36,12 +36,29 @@ export function useSession(): Session {
   const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
+    let resolved: SessionState;
     try {
-      setState(sessionFromResponse(await api.session()));
+      resolved = sessionFromResponse(await api.session());
     } catch {
       // Unreachable server, malformed answer — either way this browser cannot
       // be shown as signed in. Failing toward the sign-in screen is the only
       // safe direction.
+      setState({ status: 'anonymous' });
+      return;
+    }
+
+    if (resolved.status === 'authenticated') {
+      setState(resolved);
+      return;
+    }
+
+    // Nobody is signed in. Ask the server — not this browser — whether it is
+    // serving a public demo (P19). Only the server knows, and only the server
+    // enforces it: if this check were ever wrong in the permissive direction,
+    // the app would render and every request behind it would still 401.
+    try {
+      setState(publicDemoFromHealth(await api.health()) ? { status: 'public-demo' } : { status: 'anonymous' });
+    } catch {
       setState({ status: 'anonymous' });
     }
   }, []);

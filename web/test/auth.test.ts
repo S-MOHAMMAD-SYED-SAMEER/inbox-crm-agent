@@ -467,7 +467,13 @@ test('the operator shown in the shell comes from the session, not from input', (
   // The shell takes it as a prop and renders it; App passes the value the
   // server returned.
   assert.match(shell, /operator: string;/);
-  assert.match(app, /operator=\{session\.state\.operator\}/);
+  // Narrowed for the read-only demo (P19), which has no operator at all — but
+  // still read from `session.state` and from nowhere else, which is the
+  // property this test exists to defend.
+  assert.match(
+    app,
+    /operator=\{session\.state\.status === 'authenticated' \? session\.state\.operator : ''\}/,
+  );
   assert.ok(!/prompt\(|localStorage/.test(shell), 'the operator name came from the browser');
 });
 
