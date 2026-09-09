@@ -330,10 +330,15 @@ guardrails, a real-provider mode) belongs to M6, when the stages those metrics d
 
 ## Not built yet
 
-No Gmail, no HubSpot, no email sending, no deployment, no authentication, no background workers. The
-expiry sweep is a callable command (`POST /api/approvals/expire`) rather than a timer, because the
-rest of the pipeline is explicitly triggered too — a scheduler can call it, but nothing here runs on
-its own.
+No Gmail, no HubSpot, no email sending, no background workers. The expiry sweep is a callable
+command (`POST /api/approvals/expire`) rather than a timer, because the rest of the pipeline is
+explicitly triggered too — a scheduler can call it, but nothing here runs on its own.
+
+Deployment and authentication were both built after this section was first written. The agent is
+deployed at <https://inbox-crm-agent.onrender.com> behind session-based operator authentication
+(scrypt-hashed password, `httpOnly` `SameSite=Strict` cookies). That deployment also serves a
+public read-only demo: anonymous GET requests reach an allow-listed set of read routes over
+synthetic data, they are granted no session, and every mutation still fails closed with a 401.
 
 Approve-with-edits is not built. The diff on the approval screen is read-only: a reviewer can approve
 a plan or reject it with a reason, and changing an action before approving is M4-C. A control that
