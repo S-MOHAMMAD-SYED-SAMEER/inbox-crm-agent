@@ -3,13 +3,17 @@
 Turns inbound business email into tracked CRM records with drafted replies — while a human approves
 anything consequential.
 
-**Status: M4-B (approval queue + expiry) complete.** The full chain runs: ingest → understand →
+**Status: the M0–M7 milestones are complete, including approve-with-edits (M4-C) and a mock outbound
+adapter (M4-D); the project is deployed with session-based operator authentication and a public
+read-only demo.** The full chain runs: ingest → understand →
 resolve → decide → approve → execute. An approved plan is applied to the CRM atomically and
 idempotently, with before/after snapshots on every action. Work waiting on a person now has a real
 queue — sorted by how little time is left on it, with a before/after diff of what approving would
 change — and an approval that outlives its window is swept to human review rather than staying
 silently executable. **Nothing is ever sent**: an approved reply stops at the outbox as `suppressed`.
-Remaining M4 work is approve-with-edits (M4-C) and the outbound adapter.
+The remaining known gap is a real outbound email provider: only a deterministic mock sender is
+implemented, and `ALLOW_OUTBOUND_SEND`/`OUTBOUND_PROVIDER` refuse to deliver anything until one
+exists.
 
 Full specification: [`docs/PROJECT2_INBOX_CRM_SPEC.md`](../docs/PROJECT2_INBOX_CRM_SPEC.md).
 
@@ -340,13 +344,21 @@ deployed at <https://inbox-crm-agent.onrender.com> behind session-based operator
 public read-only demo: anonymous GET requests reach an allow-listed set of read routes over
 synthetic data, they are granted no session, and every mutation still fails closed with a 401.
 
-Approve-with-edits is not built. The diff on the approval screen is read-only: a reviewer can approve
-a plan or reject it with a reason, and changing an action before approving is M4-C. A control that
-looked editable but silently was not would be worse than no control.
+**Approve-with-edits (M4-C) is built.** A reviewer can edit a plan's whitelisted fields before
+approving; the edit produces a new decision (v2) with its own approval while the original is kept,
+intact, as the paired correction — not overwritten. The same draft guardrails and the same
+approval-policy floor apply to the edited version as to the model's original.
+
+**The outbound adapter (M4-D) is built, but only with a deterministic mock provider.** Sending stays
+behind two server-side locks, `ALLOW_OUTBOUND_SEND` and `OUTBOUND_PROVIDER`; with both set, an approved
+reply reaches the mock sender rather than the outbox's `suppressed` state. `OUTBOUND_PROVIDER=gmail`
+is a declared name with no implementation — real email delivery is not built and is not
+production-ready.
 
 **The Anthropic provider is implemented and unit-tested against a stub client, but has never been run
 against the real API** — no credentials were added and no API credits were spent. Its request
 shaping, response parsing and every failure path are covered; what is unverified is the wire contract
 itself.
 
-Next: **M4-C** — approve-with-edits, then the outbound adapter behind `ALLOW_OUTBOUND_SEND`.
+Next: a real outbound provider — a Gmail (or equivalent) implementation of `OutboundSender` behind
+`OUTBOUND_PROVIDER`, so `ALLOW_OUTBOUND_SEND` has something beyond the mock to turn on.
