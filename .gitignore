@@ -1,16 +1,52 @@
-# Project 2 local artefacts.
-#
-# The root .gitignore already covers node_modules/, dist/, .env and *.sqlite.
-# What it does not cover is SQLite's WAL sidecar files, which exist only while
-# the database is open — long enough for a `git add -A` during a running server
-# to sweep a binary journal into a commit. Kept here rather than in the root
-# .gitignore because spec §25 reserves root changes for M8.
+# Merged by local restructuring (Milestone 1, prepared not committed):
+# previously this project relied on ai-business-automation's root
+# .gitignore for the generic rules below. Now standalone, it needs its
+# own copy of them. The project-specific rules beneath are unchanged
+# from the monorepo version.
 
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Local SQLite databases (conversation memory, etc.)
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# --- Project-specific (unchanged from the monorepo) ---
+# SQLite's WAL sidecar files, which exist only while the database is
+# open — long enough for a `git add -A` during a running server to
+# sweep a binary journal into a commit.
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite-journal
 
-# Generated evaluation output (the dataset itself stays committed). Nothing
-# writes here until the eval harness lands in M6; the rule exists first so the
-# first run cannot accidentally commit its results.
+# Generated evaluation output (the dataset itself stays committed).
 server/eval-results/
