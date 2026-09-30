@@ -9,6 +9,12 @@ or is marked **NOT VERIFIED**.
 **Baseline at audit time:** 531 server tests, 53 web tests, 7 schema-parity tests, 6 evaluations —
 all passing. No credentials, no outbound mail sent, no deployment.
 
+> **This is a historical snapshot, not the current security posture.** It covers M0 through
+> M4-D only, as dated above. In particular, the findings below of missing authentication (F-01),
+> missing CSRF protection (F-03), and missing rate limiting (F-02) are **superseded by M5**, which
+> implemented all three. For the system's current state — including authentication, CSRF/CORS,
+> rate limiting, and deployment — see `README.md` and the current repository, not this document.
+
 ---
 
 ## 1. Executive summary

@@ -107,12 +107,15 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                435 tests
+  test/                746 tests
 web/
   src/router.ts        ~60-line hash router (D4), unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
   src/screens/         Overview · Inbox · email detail · Approvals + placeholders for the rest
+  test/                149 tests
 ```
+
+895 tests total (746 server + 149 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
