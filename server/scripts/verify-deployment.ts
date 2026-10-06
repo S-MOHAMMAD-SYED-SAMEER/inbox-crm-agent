@@ -1,9 +1,9 @@
 import { createInterface } from 'node:readline/promises';
 
-// M7-E — verification of a LIVE deployment.
+// M7-E — verification of a running deployment, for anyone hosting their own.
 //
-//   npm run verify:deployment -- https://inbox-crm-agent.onrender.com
-//   npm run verify:deployment -- https://... --auth      (adds the signed-in checks)
+//   npm run verify:deployment -- https://<your-host>
+//   npm run verify:deployment -- https://<your-host> --auth   (adds the signed-in checks)
 //
 // WHY THIS EXISTS SEPARATELY FROM verify-production.ts
 //
@@ -31,10 +31,13 @@ import { createInterface } from 'node:readline/promises';
 // Nothing else mutates. No approval is granted, no plan is executed, no reply
 // is ever delivered.
 
-const DEFAULT_URL = 'https://inbox-crm-agent.onrender.com';
-
 const args = process.argv.slice(2);
-const baseUrl = (args.find((a) => !a.startsWith('--')) ?? DEFAULT_URL).replace(/\/$/, '');
+const target = args.find((a) => !a.startsWith('--'));
+if (target === undefined) {
+  console.error('Usage: npm run verify:deployment -- https://<your-host> [--auth]');
+  process.exit(2);
+}
+const baseUrl = target.replace(/\/$/, '');
 const wantAuth = args.includes('--auth');
 
 let passed = 0;

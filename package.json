@@ -1,0 +1,12 @@
+{
+  "name": "inbox-crm-agent",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Inbox-to-CRM Agent. The application lives in server/ and web/; this file only provides the one-command local demo.",
+  "scripts": {
+    "demo": "npm install --prefix server && npm install --prefix web && npm run build --prefix web && npm run demo --prefix server"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

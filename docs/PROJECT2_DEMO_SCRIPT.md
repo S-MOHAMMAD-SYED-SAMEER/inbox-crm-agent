@@ -1,6 +1,7 @@
 # Project 2 — Inbox-to-CRM Agent — Demo Runbook
 
-**Live demo:** https://inbox-crm-agent.onrender.com
+**Run it locally:** `npm run demo` from the repository root (see "Run it locally" in the README).
+No instance is hosted.
 
 This is the runbook for showing Project 2 to a client. The narrative is not new:
 it is §25 of `PROJECT2_SYSTEM_AUDIT.md` ("the strongest demo flow") turned into
@@ -16,33 +17,28 @@ closers are what actually sell it.
 
 ---
 
-## 0. Before the call — the warm-up ritual
+## 0. Before the call — start it
 
-**Do this 5 minutes before, every time. It is not optional.**
+**Do this 5 minutes before, every time.**
 
-The demo runs on Render's free tier, which **sleeps after ~15 minutes idle**.
-A cold first request takes **up to 50 seconds** — measured warm latency is
-~0.9 s, so the difference is glaring and it will happen at exactly the wrong
-moment.
+Nothing is hosted: the demo runs on your own machine, needs no network and no account, and opens
+on a pristine state every time it starts.
 
 | When | Do this |
 |---|---|
-| T-5 min | Open https://inbox-crm-agent.onrender.com and let it load |
-| T-4 min | Sign in. Leave the tab open — the session lasts 12 hours |
-| T-3 min | Confirm the Inbox is **empty** (see §1). If not, reset — §9 |
-| T-2 min | Click once every minute or so to keep it awake |
+| T-5 min | From the repository root run `npm run demo`, and wait for **Open http://localhost:3100** |
+| T-4 min | Open that address and sign in with the password printed in the terminal. Leave the tab open — the session lasts 12 hours |
+| T-3 min | Confirm the Inbox is **empty** (see §1). If not, stop the server (Ctrl+C) and run `npm run demo` again |
 
-Optional pre-flight from your machine, which also warms it:
+Optional pre-flight, in a second terminal. It runs entirely in memory, so it does not touch the
+demo you just started:
 
 ```bash
 cd inbox-crm-agent/server
-npm run verify:deployment -- https://inbox-crm-agent.onrender.com --auth
+npm run demo:walkthrough
 ```
 
-51 checks. Expect **51 passed, 0 failed, 1 warning** (the warning is the known
-CORS allow-list entry and is intentional). Note this ingests the demo emails —
-which is fine, but it means you skip the live ingest moment. If you want that
-moment, run the reset in §9 afterwards.
+153 checks covering the same journey. Expect them all to pass.
 
 ---
 
@@ -235,6 +231,10 @@ A full demonstration **consumes the demo state**. Emails reach terminal states,
 approvals settle, and agent-created CRM rows accumulate. Reset before the next
 client, or they will see a used system with the best moment already spent.
 
+**Running locally with `npm run demo`:** stop it (Ctrl+C) and run `npm run demo` again — every
+start resets to the pristine state. The steps below are only for someone hosting their own
+instance against a Postgres database.
+
 **One-time setup** (pins the target so the reset can never wander):
 
 ```bash
@@ -265,14 +265,13 @@ demo data. It aborts rather than guessing.
 
 | Symptom | Cause | What to do |
 |---|---|---|
-| First page takes ~50 s | Free-tier cold start | Keep talking. Warm up next time (§0) |
-| "That did not match" on sign-in | Wrong password | The session lasts 12 h — sign in *before* the call |
-| A screen shows "Could not load" | Instance went to sleep mid-demo | Click **Try again**; it wakes in seconds |
-| Inbox already full at the start | A previous demo, or `verify:deployment --auth` | Reset (§9). If mid-call, skip Ingest and open e01 directly |
+| "That did not match" on sign-in | Wrong password | The password changes every run — use the one in the terminal. The session lasts 12 h — sign in *before* the call |
+| A screen shows "Could not load" | The server has stopped | Check the terminal running `npm run demo`; start it again and sign in with its new password |
+| Inbox already full at the start | A previous demo | Reset (§9). If mid-call, skip Ingest and open e01 directly |
 | Approvals queue already settled | Previous demo | Reset (§9). Mid-call, pivot to the audit trail and e10 |
 | Sign-in refuses repeatedly | Login is rate limited to 10/min | Wait 60 seconds |
 
-**If the deployment is unreachable entirely**, run the whole story locally:
+**If the app will not start at all**, run the whole story as a script:
 
 ```bash
 cd inbox-crm-agent/server && npm run demo:walkthrough
@@ -294,17 +293,15 @@ Being straight about the edges is more persuasive than dodging.
 - **The model runs on recorded responses**, so the demo behaves identically every
   time. The same pipeline, validation and guardrails run either way.
 - **Automation and Settings screens are not built.** They say so on screen.
-- **Free-tier hosting** — hence the cold start.
 
 ---
 
 ## Manual browser verification — REQUIRED BEFORE FIRST CLIENT USE
 
 Everything below the API layer is verified automatically (789 tests, 153-check
-walkthrough, 51-check live deployment verification). **The rendering is not.**
+walkthrough, 51-check deployment verification). **The rendering is not.**
 There is no browser automation in this project — Playwright and jsdom are
-excluded by NFR-9 — so the screens themselves have never been machine-checked
-against the live deployment.
+excluded by NFR-9 — so the screens themselves have never been machine-checked.
 
 Walk through §2–§8 once in a real browser and confirm each of these renders:
 
