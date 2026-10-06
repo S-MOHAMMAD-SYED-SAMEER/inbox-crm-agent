@@ -4,8 +4,8 @@ Turns inbound business email into tracked CRM records with drafted replies — w
 anything consequential.
 
 **Status: the M0–M7 milestones are complete, including approve-with-edits (M4-C) and a mock outbound
-adapter (M4-D); the project is deployed with session-based operator authentication and a public
-read-only demo.** The full chain runs: ingest → understand →
+adapter (M4-D); it has session-based operator authentication and a public read-only demo mode that
+is off by default.** The full chain runs: ingest → understand →
 resolve → decide → approve → execute. An approved plan is applied to the CRM atomically and
 idempotently, with before/after snapshots on every action. Work waiting on a person now has a real
 queue — sorted by how little time is left on it, with a before/after diff of what approving would
@@ -17,9 +17,32 @@ exists.
 
 Full specification: [`docs/PROJECT2_INBOX_CRM_SPEC.md`](../docs/PROJECT2_INBOX_CRM_SPEC.md).
 
-## Run it
+## Run it locally
 
-Nothing here needs an API key, a database server, Docker, or an account.
+**Prerequisites:** Node.js 24 or newer (the `engines` field in `package.json`). Nothing else — no
+database server, Docker, API key or account.
+
+```bash
+npm run demo
+```
+
+Run that from the repository root. It installs the dependencies, builds the dashboard, resets a local
+SQLite database to the seeded demo CRM, and starts the app. When it prints `Open http://localhost:3100`,
+open that address and sign in with the password printed in the terminal (made fresh for each run,
+local only). Then use **Inbox → Ingest → Understand → Resolve → Decide**.
+
+One terminal is enough: the server serves the dashboard on the same address as the API. It runs on
+synthetic data with the deterministic mock LLM provider, so **no API key is needed**, and nothing is
+ever sent. Every run starts from the same pristine state.
+
+<!-- DEMO_VIDEO: 60–90s screen recording of the app running locally goes here -->
+
+## Development setup
+
+The two-process setup below is for working on the code. The API refuses requests without a session, so
+either use `npm run demo` above, or set `OPERATOR_PASSWORD_HASH` (from `npm run hash-password`) and
+`COOKIE_SECURE=false` in `server/.env`. Nothing here needs an API key, a database server, Docker, or
+an account.
 
 ```bash
 # API
@@ -341,11 +364,12 @@ No Gmail, no HubSpot, no email sending, no background workers. The expiry sweep 
 command (`POST /api/approvals/expire`) rather than a timer, because the rest of the pipeline is
 explicitly triggered too — a scheduler can call it, but nothing here runs on its own.
 
-Deployment and authentication were both built after this section was first written. The agent is
-deployed at <https://inbox-crm-agent.onrender.com> behind session-based operator authentication
-(scrypt-hashed password, `httpOnly` `SameSite=Strict` cookies). That deployment also serves a
-public read-only demo: anonymous GET requests reach an allow-listed set of read routes over
-synthetic data, they are granted no session, and every mutation still fails closed with a 401.
+Authentication was built after this section was first written: session-based operator
+authentication (scrypt-hashed password, `httpOnly` `SameSite=Strict` cookies). A public read-only
+demo mode (`DEMO_PUBLIC_READONLY`, off by default) is built in for anyone hosting their own
+instance: anonymous GET requests reach an allow-listed set of read routes over synthetic data, they
+are granted no session, and every mutation still fails closed with a 401. No instance is hosted;
+the app is run locally.
 
 **Approve-with-edits (M4-C) is built.** A reviewer can edit a plan's whitelisted fields before
 approving; the edit produces a new decision (v2) with its own approval while the original is kept,
