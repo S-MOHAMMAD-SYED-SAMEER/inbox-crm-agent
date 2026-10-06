@@ -298,7 +298,7 @@ Being straight about the edges is more persuasive than dodging.
 
 ## Manual browser verification — REQUIRED BEFORE FIRST CLIENT USE
 
-Everything below the API layer is verified automatically (789 tests, 153-check
+Everything below the API layer is verified automatically (895 tests, 153-check
 walkthrough, 51-check deployment verification). **The rendering is not.**
 There is no browser automation in this project — Playwright and jsdom are
 excluded by NFR-9 — so the screens themselves have never been machine-checked.
