@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runEvaluation } from '../src/eval/understand/runner.ts';
 import { THRESHOLDS, MAXIMUM_METRICS, thresholdFailures } from '../src/eval/understand/metrics.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:understand`
 //
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`\nUNDERSTAND evaluation — dataset ${report.version} (mock provider, no API calls)\n`);
+  for (const line of goldBanner()) console.log(line);
 
   for (const result of report.results) {
     const failed = result.checks.filter((check) => !check.passed);

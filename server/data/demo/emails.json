@@ -1,6 +1,7 @@
 [
   {
     "providerMessageId": "demo-e01",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-01 — the hero lead. A Shopify store asking about an AI chatbot and, directly, about cost. Ties Project 2 back to the locked D2C niche and to Project 1 in one screen.",
     "threadId": null,
     "fromName": "Sarah Williams",
@@ -91,6 +92,7 @@
   },
   {
     "providerMessageId": "demo-e02",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-02 — service inquiry with no stated budget. The canned model response deliberately INVENTS a budget so the provenance validator can be seen discarding it: the span it cites is real but contains no number.",
     "threadId": null,
     "fromName": "Tom Reyes",
@@ -181,6 +183,7 @@
   },
   {
     "providerMessageId": "demo-e03",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-03 — pricing request with an explicit budget and deadline, from a new contact at a company already in the CRM. The tempting case for a draft to quote a price; M3 guardrails will hold there.",
     "threadId": null,
     "fromName": "Priya Nair",
@@ -271,6 +274,7 @@
   },
   {
     "providerMessageId": "demo-e04",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-04 — the entity-resolution conflict case. The domain matches neither seeded Harborview company exactly while the name resembles both. M1 reads it normally; the conflict itself is raised by M2.",
     "threadId": null,
     "fromName": "Mark Doyle",
@@ -361,6 +365,7 @@
   },
   {
     "providerMessageId": "demo-e05",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-05 — a support request from an existing customer. Shows that not everything is a lead and that the system does not ask a human about everything.",
     "threadId": null,
     "fromName": "Marcus Bell",
@@ -447,6 +452,7 @@
   },
   {
     "providerMessageId": "demo-e06",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-06 — an in-thread follow-up on an existing deal. In M3 this becomes a deal stage change, which is tier 2 and therefore always needs a human.",
     "threadId": "thread-solstice-support-automation",
     "fromName": "Dana Iqbal",
@@ -533,6 +539,7 @@
   },
   {
     "providerMessageId": "demo-e07",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-07 — a partnership approach rather than a lead. Correctly classified as partnership so it does not become a fake deal in the pipeline.",
     "threadId": null,
     "fromName": "Ines Halvorsen",
@@ -619,6 +626,7 @@
   },
   {
     "providerMessageId": "demo-e08",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-08 — genuinely ambiguous. No thread, no CRM match, and nothing to act on. The system declines to guess and routes it to a person.",
     "threadId": null,
     "fromName": null,
@@ -705,6 +713,7 @@
   },
   {
     "providerMessageId": "demo-e09",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-09 — cold SEO spam. Filtered as noise so a human never has to read it to discover it was not worth reading.",
     "threadId": null,
     "fromName": "Growth Team",
@@ -791,6 +800,7 @@
   },
   {
     "providerMessageId": "demo-e10",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
     "scenario": "E-10 — a prompt-injection attempt (D6). The canned model response is deliberately FOOLED: it reads the message as a normal sales inquiry and does NOT set possibleInjection. The deterministic detector catches it anyway and forces human review, which is the point — the safety property does not depend on the model noticing.",
     "threadId": null,
     "fromName": "Procurement",

@@ -1,5 +1,7 @@
 # Project 2 — Inbox-to-CRM Agent: Full System Audit
 
+> **Provenance:** written by Claude (an AI assistant) under the project owner's direction. Not human-reviewed. See [`server/data/demo/PROVENANCE.md`](../server/data/demo/PROVENANCE.md).
+
 **Date:** 2026-08-25
 **Scope:** M0 through M4-D, complete system
 **Purpose:** determine whether the system is ready for Gmail and HubSpot integrations

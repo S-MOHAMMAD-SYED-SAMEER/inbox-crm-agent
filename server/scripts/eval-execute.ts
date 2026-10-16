@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runExecuteEvaluation, executeThresholdFailures } from '../src/eval/execute/runner.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:execute`
 //
@@ -18,6 +19,7 @@ async function main(): Promise<void> {
 
   const m = report.metrics;
   console.log('\nEXECUTION evaluation — approval and execution safety (deterministic, no API calls)\n');
+  for (const line of goldBanner()) console.log(line);
   console.log(`    plansConsidered         ${m.plansConsidered}`);
   console.log(`    approvedAndExecuted     ${m.approvedAndExecuted}`);
   console.log(`    refusedWithoutApproval  ${m.refusedWithoutApproval}`);

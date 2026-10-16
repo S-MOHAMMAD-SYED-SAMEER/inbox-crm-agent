@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runDecideEvaluation, decideThresholdFailures } from '../src/eval/decide/runner.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:decide`
 //
@@ -18,6 +19,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`\nDECIDE evaluation — dataset ${report.version} (mock provider, no API calls)\n`);
+  for (const line of goldBanner()) console.log(line);
 
   for (const result of report.results) {
     console.log(`  ${result.passed ? 'PASS' : 'FAIL'}  ${result.id.padEnd(5)} ${result.description}`);

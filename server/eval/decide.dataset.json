@@ -1,5 +1,6 @@
 {
   "version": "decide-1.0.0",
+  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
   "autonomyLevel": "assisted",
   "note": [
     "M3 evaluation cases. Scoped to DECIDE — the full harness (§20) is M6.",

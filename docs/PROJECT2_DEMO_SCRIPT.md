@@ -1,5 +1,7 @@
 # Project 2 — Inbox-to-CRM Agent — Demo Runbook
 
+> **Provenance:** written by Claude (an AI assistant) under the project owner's direction. Not human-reviewed. See [`server/data/demo/PROVENANCE.md`](../server/data/demo/PROVENANCE.md).
+
 **Run it locally:** `npm run demo` from the repository root (see "Run it locally" in the README).
 No instance is hosted.
 
