@@ -162,9 +162,12 @@ test('the mock provider stays the default', () => {
   assert.equal(provider.name, 'mock');
 });
 
-test('gemini is refused for this project rather than half-supported', () => {
+test('gemini with a key is a real provider, never the mock; without one it is refused', () => {
   const { config } = loadConfig({ LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'x' });
-  assert.throws(() => createLlmProvider(config), /not implemented for this project/);
+  const provider = createLlmProvider(config);
+  assert.equal(provider.name, 'gemini');
+  assert.equal(provider.configured, true);
+  assert.throws(() => createLlmProvider(loadConfig({ LLM_PROVIDER: 'gemini' }).config), /no API key is configured/);
 });
 
 test('the demo fixtures register a canned response per email, plus the drafts', () => {

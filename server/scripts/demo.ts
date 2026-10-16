@@ -1,8 +1,4 @@
-import { spawn } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { hashPassword } from '../src/lib/password.ts';
+import { startStack } from './lib/stack.ts';
 
 // `npm run demo` (from the repository root, or from `server/` once the
 // dashboard has been built)
@@ -39,36 +35,4 @@ import { hashPassword } from '../src/lib/password.ts';
 //   - ALLOW_OUTBOUND_SEND=false → nothing is ever sent
 //   - COOKIE_SECURE=false    → browsers refuse Secure cookies over http://localhost
 
-const SERVER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEMO_DATABASE = path.join(SERVER_ROOT, 'data', 'demo-local.sqlite');
-
-const password = randomBytes(8).toString('hex');
-const port = process.env.PORT?.trim() || '3100';
-
-const env: NodeJS.ProcessEnv = {
-  ...process.env,
-  PORT: port,
-  DATABASE_URL: '',
-  SQLITE_PATH: DEMO_DATABASE,
-  LLM_PROVIDER: 'mock',
-  EMAIL_SOURCE: 'demo',
-  ALLOW_OUTBOUND_SEND: 'false',
-  COOKIE_SECURE: 'false',
-  OPERATOR_PASSWORD_HASH: await hashPassword(password),
-};
-
-function run(script: string): Promise<number> {
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, [script], { cwd: SERVER_ROOT, env, stdio: 'inherit' });
-    child.on('error', () => resolve(1));
-    child.on('exit', (code) => resolve(code ?? 1));
-  });
-}
-
-const resetCode = await run('scripts/reset.ts');
-if (resetCode !== 0) process.exit(resetCode);
-
-console.log(`\n[demo] Open http://localhost:${port}`);
-console.log(`[demo] Sign in with this password (made for this run, local only): ${password}\n`);
-
-process.exit(await run('src/index.ts'));
+await startStack({ provider: 'mock', tag: 'demo' });

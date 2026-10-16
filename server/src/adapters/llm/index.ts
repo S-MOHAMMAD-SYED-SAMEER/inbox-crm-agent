@@ -1,6 +1,7 @@
 import { config, type AppConfig } from '../../config/env.ts';
 import { createMockLlmProvider } from './mock.ts';
 import { createAnthropicProvider } from './anthropic.ts';
+import { createGeminiProvider } from './gemini.ts';
 import { LlmUnavailableError, type LlmProvider } from './types.ts';
 
 export type {
@@ -17,6 +18,7 @@ export { summarizeUsage, formatUsage, type UsageSummary } from './usage.ts';
 export { withRetry, classifyFailure, isRetryable, requestedDelayMs, MAX_RETRY_WAIT_MS } from './resilience.ts';
 export { createMockLlmProvider, MockResponseNotFoundError, type MockLlmProvider } from './mock.ts';
 export { registerDemoFixtures, readMockUnderstandings } from './fixtures.ts';
+export { createGeminiProvider, toGeminiRequest, parseGeminiResponse, type GeminiLike } from './gemini.ts';
 export {
   createAnthropicProvider,
   toAnthropicRequest,
@@ -52,11 +54,16 @@ export function createLlmProvider(cfg: AppConfig = config): LlmProvider {
       return provider;
     }
 
-    case 'gemini':
-      throw new LlmUnavailableError(
-        'gemini',
-        'The Gemini provider is not implemented for this project. Use "mock" or "anthropic".',
-      );
+    case 'gemini': {
+      const provider = createGeminiProvider({ cfg });
+      if (!provider.configured) {
+        throw new LlmUnavailableError(
+          'gemini',
+          'LLM_PROVIDER is "gemini" but no API key is configured. Set GEMINI_API_KEY, or use LLM_PROVIDER=mock.',
+        );
+      }
+      return provider;
+    }
 
     default: {
       const exhaustive: never = cfg.llmProvider;
