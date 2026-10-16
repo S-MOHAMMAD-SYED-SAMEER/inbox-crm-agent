@@ -5,7 +5,7 @@ import { systemClock, type Clock } from '../lib/clock.ts';
 import type { Repositories } from '../db/repositories/index.ts';
 import type { SessionRecord } from '../domain/session.ts';
 
-// The authentication boundary (M5-A).
+// The authentication boundary.
 //
 // WHAT CHANGED, AND WHY IT MATTERS MORE THAN IT LOOKS
 //
@@ -23,7 +23,7 @@ import type { SessionRecord } from '../domain/session.ts';
 //
 // `attachSession` resolves a session if one is presented and never rejects —
 // so `/api/auth/session` can answer "not signed in" rather than 401, and so the
-// CSRF layer (M5-B) has the session available to compare against.
+// CSRF layer has the session available to compare against.
 // `requireSession` is the gate. Splitting them keeps "who is this?" separate
 // from "may they?", which is the same separation the executor draws between
 // verification and authorisation.
@@ -88,7 +88,7 @@ export function requireSession() {
 }
 
 /**
- * The read-only surface a public demo may expose (P19).
+ * The read-only surface a public demo may expose.
  *
  * A literal list, matched on method AND full path, and deliberately not derived
  * from the routers. Deriving it would mean a GET added later joined the public
@@ -112,7 +112,7 @@ export function isPublicDemoRead(method: string, path: string): boolean {
 }
 
 /**
- * The gate, with an optional read-only window for the public demo (P19).
+ * The gate, with an optional read-only window for the public demo.
  *
  * WHY THIS REPLACES `requireSession` RATHER THAN SITTING BESIDE IT
  *

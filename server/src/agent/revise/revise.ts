@@ -11,14 +11,14 @@ import { createLogger, type Logger } from '../../lib/logger.ts';
 import type { ActionPlan, DecisionRecord, Draft } from '../../domain/decision.ts';
 import type { Repositories } from '../../db/repositories/index.ts';
 
-// THE REVISION ENGINE (M4-C, FR-23, FR-26).
+// THE REVISION ENGINE.
 //
 // A human edits a plan. The plan they edited does not change.
 //
 // That sentence is the whole design. An edit produces a NEW decision — v2, with
 // `origin='human_edit'` and a parent — while v1 keeps saying exactly what the
 // model proposed, because v1 paired with v2 *is* the labelled correction that
-// §20's feedback loop is built from. Editing in place would throw away the more
+// the specification's feedback loop is built from. Editing in place would throw away the more
 // valuable half of the record to save a row.
 //
 // WHAT THIS MODULE DOES NOT DO
@@ -77,7 +77,7 @@ function refuse(code: ReviseRefusalCode, message: string): AppError {
  * The rule is narrow on purpose: **a pending approval and no execution rows**.
  * Anything else has either already been decided by a person or has already
  * changed the CRM, and in the second case a revision would be actively
- * dangerous — idempotency keys are derived from the decision id (§15), so a
+ * dangerous — idempotency keys are derived from the decision id, so a
  * revision's actions carry *fresh* keys and would re-apply every write that
  * already succeeded.
  */
@@ -164,7 +164,7 @@ export async function reviseDecision(
       draftSubject: draft.subject,
       draftBody: draft.body,
       // Rebuilt from the original email, the stored analysis and the business
-      // profile — the same three sources §7 allows a draft to draw on. An edit
+      // profile — the same three sources the specification allows a draft to draw on. An edit
       // may not widen what counts as grounded.
       groundingText: buildGroundingText(email, analysis.understanding, settings.business_profile),
       understanding: analysis.understanding,
@@ -303,7 +303,7 @@ export async function reviseDecision(
       outcome: 'ok',
       summary: `${input.editedBy} edited ${edits.diff.length} field(s); this is revision ${revision.revision}.`,
       // Paths and a digest, never values: an edited draft body quotes the
-      // customer's email, and §19 keeps message content out of the audit log.
+      // customer's email, and the specification keeps message content out of the audit log.
       payload: {
         fromDecisionId: decision.id,
         toDecisionId: revision.id,

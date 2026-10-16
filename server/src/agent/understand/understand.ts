@@ -22,7 +22,7 @@ import { createLogger, type Logger } from '../../lib/logger.ts';
 import { stableHash } from '../../lib/ids.ts';
 import { AppError } from '../../lib/errors.ts';
 
-// STAGE 1 — UNDERSTAND (spec §7).
+// STAGE 1 — UNDERSTAND.
 //
 // The order of operations is the design:
 //
@@ -34,15 +34,15 @@ import { AppError } from '../../lib/errors.ts';
 // Two things are deliberately *not* here:
 //
 //   * No decision. This stage produces a reading, never a plan. Nothing it
-//     returns can cause anything to happen — that is M3's job, behind the
-//     approval gate M0 already built.
+//     returns can cause anything to happen — that is DECIDE's job, behind the
+//     approval gate the foundation already built.
 //   * No trust. Nothing the model says is written to the database before
 //     deterministic code has checked it against the email it came from.
 //
 // The email ends in one of three states, and never in a state that implies
 // something is about to happen automatically:
 //
-//   resolving          — understood; ready for entity resolution (M2).
+//   resolving          — understood; ready for entity resolution.
 //   needs_review       — a person must look, with a machine-readable reason.
 //   understand_failed  — the provider failed; retryable, nothing persisted.
 
@@ -64,7 +64,7 @@ export type UnderstandDeps = {
   thresholds?: { high: number; medium: number };
 };
 
-const MAX_ATTEMPTS = 2; // one attempt, then one repair retry (spec §7)
+const MAX_ATTEMPTS = 2; // one attempt, then one repair retry
 
 export async function understandEmail(
   email: EmailRecord,
@@ -237,7 +237,7 @@ export async function understandEmail(
       promptVersion: UNDERSTAND_PROMPT_VERSION,
       // The input is recorded as a digest, not as text: it proves *that* the
       // same email produced this reading without copying the message into a
-      // second table that is never deleted (§17).
+      // second table that is never deleted.
       inputDigest: `sha256:${stableHash({ subject: email.subject, body: email.bodyText })}`,
       attempts: attempt,
     },
@@ -323,8 +323,8 @@ export async function understandEmail(
     };
   }
 
-  // Understood. `resolving` is the next stage in the §8 state machine (entity
-  // resolution, M2) — the email waits there rather than in a state that implies
+  // Understood. `resolving` is the next stage in the specification's state machine (entity
+  // resolution, RESOLVE) — the email waits there rather than in a state that implies
   // anything is about to be done to a CRM.
   const updated = await repos.emails.setState(email.id, 'resolving');
   await repos.audit.append({
@@ -350,7 +350,7 @@ export async function understandEmail(
 }
 
 /**
- * Which of the §18 conditions, if any, sends this email to a person.
+ * Which of the specification's conditions, if any, sends this email to a person.
  *
  * Order matters only for which reason gets reported; any one of them is
  * sufficient. Every branch here routes *towards* the human — there is no

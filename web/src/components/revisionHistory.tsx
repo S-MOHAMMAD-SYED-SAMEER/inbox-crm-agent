@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { buildRevisionHistory } from '../revision/approvalPresentation.ts';
 import type { DecisionRevision } from '../api/types.ts';
 
-// The decision history (M4-C.3 §3).
+// The decision history.
 //
 // The product idea this section carries, without saying it in so many words:
 // the assistant proposed something, a person changed it, and the changed

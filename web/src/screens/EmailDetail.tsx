@@ -14,7 +14,7 @@ import { describeDefence } from '../security/injectionPresentation.ts';
 import { DecisionCard } from '../components/decision.tsx';
 import { ExecutionCard } from '../components/execution.tsx';
 
-// The email detail screen — M1 scope.
+// The email detail screen — UNDERSTAND scope.
 //
 // It shows the original message beside stage ① UNDERSTAND, with the provenance
 // interaction that makes the whole product credible: hover an extracted field

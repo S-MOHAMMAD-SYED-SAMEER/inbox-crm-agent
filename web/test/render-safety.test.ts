@@ -5,10 +5,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describeDecideBatch } from '../src/inbox/batchReport.ts';
 
-// M7-F — the two frontend faults the first manual browser pass exposed.
+// the two frontend faults the first manual browser pass exposed.
 //
 // Both had been in the product since the freeze, and neither could be caught by
-// anything here: there is no jsdom, Playwright or Cypress (NFR-9), so no test
+// anything here: there is no jsdom, Playwright or Cypress, so no test
 // in this project renders a component. These tests close that gap in the only
 // way available — by reading the source for the specific shapes that break a
 // render, and by testing the message logic as a pure function.

@@ -100,10 +100,6 @@ export function summariseChanges(
   return rows;
 }
 
-export function hasChanges(plan: ActionPlan, edited: EditDraft): boolean {
-  return summariseChanges(plan, edited, (type) => type).length > 0;
-}
-
 /**
  * Whether the submit button may fire.
  *
@@ -119,7 +115,7 @@ export function canSubmit(input: { submitting: boolean; changeCount: number }): 
 /**
  * The request body for `POST /decisions/:id/revise`.
  *
- * Carries only changed paths, in the shape M4-C.2 defined. A nullable field
+ * Carries only changed paths, in the shape approve-with-edits defined. A nullable field
  * emptied by the reviewer is sent as `null` rather than `""` — the server
  * rejects an empty string, and "no details" is a legitimate thing to mean.
  */

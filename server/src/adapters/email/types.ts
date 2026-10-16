@@ -1,7 +1,7 @@
 import type { EmailSourceName } from '../../config/env.ts';
 import type { CanonicalEmail } from '../../domain/email.ts';
 
-// The email-source boundary (spec §23).
+// The email-source boundary.
 //
 // Every implementation returns `CanonicalEmail`, so nothing downstream of
 // ingestion knows whether a message came from a JSON fixture or from Gmail.

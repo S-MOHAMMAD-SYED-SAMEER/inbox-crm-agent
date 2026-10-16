@@ -14,7 +14,7 @@ import { aggregate, evaluateCase, type CaseResult, type EvalCase, type Metrics }
 import { ProblemCollector, requireOneOf, requireString } from '../../lib/validate.ts';
 import { EMAIL_CATEGORIES, EMAIL_STATES, PRIORITIES, CONFIDENCE_BANDS } from '../../domain/email.ts';
 
-// The M1 evaluation runner.
+// The UNDERSTAND evaluation runner.
 //
 // It runs the **real pipeline** — real ingestion, real sanitisation, real
 // validation, real provenance checking, real injection detection, real
@@ -27,8 +27,8 @@ import { EMAIL_CATEGORIES, EMAIL_STATES, PRIORITIES, CONFIDENCE_BANDS } from '..
 // Here, if provenance validation breaks, this suite fails; if the injection
 // detector stops being authoritative over the model, this suite fails.
 //
-// Mock mode only. A real-provider mode belongs to M6 alongside the rest of §20,
-// and would spend money that M1 has no reason to spend.
+// Mock mode only. A real-provider mode belongs to a later step alongside the rest of the specification,
+// and would spend money that UNDERSTAND has no reason to spend.
 
 export type EvalReport = {
   version: string;
@@ -78,7 +78,7 @@ export function loadDataset(filePath: string): { version: string; cases: EvalCas
     };
   });
 
-  problems.throwIfAny('The M1 evaluation dataset is not valid.');
+  problems.throwIfAny('The UNDERSTAND evaluation dataset is not valid.');
   return { version, cases };
 }
 

@@ -5,12 +5,12 @@
 // the second is the one that matters:
 //
 //   1. Determinism. A demo that must produce byte-identical output on every run
-//      (NFR-1) cannot have timestamps drifting through it, and neither can a
+// cannot have timestamps drifting through it, and neither can a
 //      test asserting an audit sequence.
 //   2. Portability. Postgres would happily fill `DEFAULT now()` for us, but
 //      SQLite's `now()` is spelled differently and returns a different format.
 //      Generating both values in application code means the two drivers agree
-//      by construction instead of by translation (§9).
+//      by construction instead of by translation.
 
 export type Clock = {
   /** ISO-8601, UTC, millisecond precision. The only timestamp format in this system. */

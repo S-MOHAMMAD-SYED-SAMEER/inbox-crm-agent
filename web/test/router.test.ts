@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseRoute, routeToHash, ROUTES, DEFAULT_ROUTE } from '../src/router.ts';
 
 // Frontend logic that matters lives in plain modules, so it is tested with
-// Node's own runner — no Vitest, no jsdom, no Testing Library (NFR-9). The
+// Node's own runner — no Vitest, no jsdom, no Testing Library. The
 // router is pure string handling, which is exactly the kind of thing that
 // breaks quietly on an edge case nobody tried by hand.
 

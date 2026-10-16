@@ -7,10 +7,10 @@ import { CategoryChip, ConfidenceBadge, PriorityChip, StateChip } from '../compo
 import { VerdictChip } from '../components/resolution.tsx';
 import { describeDecideBatch } from '../inbox/batchReport.ts';
 
-// The Inbox list (M1 scope).
+// The Inbox list (scope).
 //
 // Shows what the agent read and where each message ended up. The two actions
-// are the explicit triggers from spec §14 — there is no background worker, so
+// are the explicit triggers from the specification — there is no background worker, so
 // ingestion and analysis happen because somebody asked for them.
 //
 // Nothing here fabricates a later stage: an email that has been understood

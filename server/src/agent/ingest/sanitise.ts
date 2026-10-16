@@ -1,6 +1,6 @@
 import type { SanitisationRecord } from '../../domain/understanding.ts';
 
-// Email sanitisation (FR-4, spec §19).
+// Email sanitisation.
 //
 // Everything this system reads is attacker-controlled: anyone can send an
 // email. Sanitisation happens once, at ingestion, and the sanitised text is
@@ -30,7 +30,7 @@ import type { SanitisationRecord } from '../../domain/understanding.ts';
 // "render untrusted HTML safely" — and it is smaller precisely because the
 // product never needs to render it.
 
-/** Spec §11: the body is capped before it reaches a model. */
+/** the specification: the body is capped before it reaches a model. */
 export const MAX_BODY_LENGTH = 100_000;
 
 export const TRUNCATION_MARKER = '\n\n[… truncated for analysis …]';

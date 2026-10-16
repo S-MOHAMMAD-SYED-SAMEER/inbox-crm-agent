@@ -23,10 +23,10 @@ import {
 } from '../src/handlers/emails.ts';
 import type { Repositories } from '../src/db/repositories/index.ts';
 
-// M6-C — the CRM read layer.
+// the CRM read layer.
 //
 // These endpoints exist because the agent has been creating companies,
-// contacts, deals and tasks since M4-A and none of it was browsable. Spec §11
+// contacts, deals and tasks since the executor and none of it was browsable. The specification
 // describes them; nothing had built them.
 //
 // The property worth attacking: they are READ-ONLY. The executor is the only
@@ -52,7 +52,7 @@ function deps(repos: Repositories) {
 
 /** A seeded CRM with the hero plan applied, so agent-created rows exist. */
 async function withAgentRecords(): Promise<Awaited<ReturnType<typeof createTestContext>>> {
-  const ctx = await createTestContext({ idPrefix: 'm6c' });
+  const ctx = await createTestContext({ idPrefix: 'crm' });
   // `assisted`, because these tests are about the unattended tier-0 plan as well as the approved one.
   await seedDemoData(ctx.repos, readSeedFile(DEMO_DATA_DIR), { autonomyLevel: 'assisted' });
 
@@ -175,7 +175,7 @@ test('tasks list with their linked records resolved', async () => {
   const ctx = await withAgentRecords();
 
   const { body } = await handleListTasks(ctx.repos);
-  // CONTRACT CHANGE (M6-E): 5 from the seed, one from the hero plan a person
+  // CONTRACT CHANGE: 5 from the seed, one from the hero plan a person
   // approved, and one more from the support email — a tier-0 plan that needs no
   // approval and now runs as soon as it is decided rather than resting in
   // `deciding`. Both agent-created follow-ups are real records.
@@ -226,7 +226,7 @@ test('audit lists events chronologically with actor and outcome', async () => {
 });
 
 test('the audit list never carries a payload, and never message content', async () => {
-  // The payload is bounded and identifier-safe (M5-F), but it is written for an
+  // The payload is bounded and identifier-safe, but it is written for an
   // operator reading one email's trail with the email in front of them. In a
   // system-wide list a stray field could surface out of context, so the list
   // omits it entirely — the full payload stays on the email's own page.

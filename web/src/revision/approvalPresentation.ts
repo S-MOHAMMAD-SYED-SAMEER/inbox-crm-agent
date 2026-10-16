@@ -8,7 +8,7 @@ import type { Approval, ApprovalState, DecisionRevision } from '../api/types.ts'
 // detail, the revision history — has to agree about what "superseded" means and
 // whether it can be acted on, and three components each deciding for themselves
 // is how they drift. And this is the logic worth testing, which the project
-// tests with `node --test` on plain modules rather than by rendering (NFR-9).
+// tests with `node --test` on plain modules rather than by rendering.
 //
 // ACTIONABILITY IS NOT A STYLING CONCERN. `actionable` below is what decides
 // whether approve/reject controls exist at all. It is still only advice: the
@@ -26,7 +26,7 @@ export type ApprovalPresentation = {
   tone: ApprovalTone;
   /**
    * A shape/word cue that carries the meaning without colour, so the state is
-   * legible to someone who cannot distinguish the tones (§15).
+   * legible to someone who cannot distinguish the tones.
    */
   marker: string;
   /** Whether a person can still approve or reject this. */
@@ -88,7 +88,7 @@ export function presentApproval(state: ApprovalState): ApprovalPresentation {
  *
  * An overdue approval is not actionable even while its state still says
  * pending: the sweep may not have run yet, but the executor would refuse it
- * either way (M4-B), and offering a button that cannot work is worse than
+ * either way, and offering a button that cannot work is worse than
  * offering none.
  */
 export function isActionable(approval: Pick<Approval, 'state'>, overdue = false): boolean {
@@ -155,7 +155,7 @@ export function buildRevisionHistory(revisions: readonly DecisionRevision[]): Re
  * Whether the plan on screen can be edited.
  *
  * Derived from facts the detail response already carries, and mirroring the
- * server's rule (M4-C.2 `assertEditable`) so the UI does not offer an action
+ * server's rule (`assertEditable`) so the UI does not offer an action
  * that would certainly be refused. It is NOT the decision — `POST /revise`
  * re-checks all of this against the database, and that check is the real one.
  */

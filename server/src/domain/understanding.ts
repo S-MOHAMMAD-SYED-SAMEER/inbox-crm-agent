@@ -1,6 +1,6 @@
 import type { EmailCategory, Priority, ConfidenceBand } from './email.ts';
 
-// The UNDERSTAND stage's vocabulary and output shape (spec §7, FR-5..FR-11).
+// The UNDERSTAND stage's vocabulary and output shape.
 //
 // Everything the model is allowed to tell us is described here, as a closed
 // set. That is what makes the difference between "the model returned JSON" and
@@ -9,7 +9,7 @@ import type { EmailCategory, Priority, ConfidenceBand } from './email.ts';
 // deterministic code before it reaches a database row.
 
 /**
- * The fields the model may extract (FR-7).
+ * The fields the model may extract.
  *
  * Closed on purpose. A model that invents `estimatedDealSize` does not get a
  * new field — it gets a validation error, because a field nobody designed a
@@ -74,10 +74,6 @@ export const TEMPORAL_EVIDENCE_FIELDS: readonly ExtractedField[] = ['timeline'];
 export const TEMPORAL_EVIDENCE_PATTERN =
   /\d|\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|today|tomorrow|tonight|days?|weeks?|fortnight|months?|quarters?|years?|deadline|asap|immediately|urgent|soon|shortly|peak|season|launch)\b/i;
 
-export function isExtractedField(value: unknown): value is ExtractedField {
-  return typeof value === 'string' && (EXTRACTED_FIELDS as readonly string[]).includes(value);
-}
-
 /**
  * One extracted field.
  *
@@ -97,7 +93,7 @@ export type ExtractedValue = {
 export type UnderstandingFlags = {
   insufficientInformation: boolean;
   ambiguousIntent: boolean;
-  /** The model's own read. A deterministic detector runs independently (§19). */
+  /** The model's own read. A deterministic detector runs independently. */
   possibleInjection: boolean;
 };
 

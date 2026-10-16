@@ -6,7 +6,7 @@ import { CONTACT_LIFECYCLES, DEAL_STAGES, SERVICE_LINES, ACTIVITY_TYPES } from '
 import type { Repositories } from './repositories/index.ts';
 import type { AutonomyLevel } from '../domain/policy.ts';
 
-// Demo CRM seeding (spec §22).
+// Demo CRM seeding.
 //
 // Two properties matter more than the data itself:
 //
@@ -314,7 +314,7 @@ export async function seedDemoData(repos: Repositories, file: SeedFile, options:
     // emails file themselves and the consequential ones still stop and ask):
     // `AUTONOMY_LEVEL=assisted npm run demo`. Tier 2 is unaffected either way: no
     // autonomy level permits it to run unattended, and that is enforced in
-    // `requiresApproval`, not here (§16).
+    // `requiresApproval`, not here.
     await tx.settings.set('autonomy_level', options.autonomyLevel ?? 'manual', 'seed');
   });
 

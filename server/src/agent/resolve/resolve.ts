@@ -15,20 +15,20 @@ import { AppError } from '../../lib/errors.ts';
 import { createLogger, type Logger } from '../../lib/logger.ts';
 import { newId as defaultNewId } from '../../lib/ids.ts';
 
-// ENTITY RESOLUTION (spec §7, between stages 1 and 2).
+// ENTITY RESOLUTION (the specification, between stages 1 and 2).
 //
 // Deterministic from end to end. No model call happens here, and no model
 // output can override a verdict — the analysis contributes *evidence* (a
 // company name, a domain), and code decides what that evidence is worth.
 //
-// M2 WRITES NOTHING TO THE CRM. Resolution answers "which record is this?"; it
+// RESOLVE WRITES NOTHING TO THE CRM. Resolution answers "which record is this?"; it
 // never creates or changes one. A NO_MATCH result is a *proposal* to create,
-// which M3 turns into an action and M4 executes behind the approval gate. That
+// which DECIDE turns into an action and EXECUTE executes behind the approval gate. That
 // separation is why this stage can run automatically at all.
 //
 // The email leaves this stage in one of two states:
 //
-//   deciding      — resolved (matched, or cleanly new); ready for DECIDE (M3).
+//   deciding      — resolved (matched, or cleanly new); ready for DECIDE.
 //   needs_review  — a human must choose, with reason `match_conflict`.
 
 export type ResolutionOutcomeSummary = {
@@ -47,7 +47,7 @@ export type ResolveDeps = {
 };
 
 /**
- * Turns a ranked candidate list into a verdict (FR-15).
+ * Turns a ranked candidate list into a verdict.
  *
  * The three rules, in the order they are checked:
  *
@@ -277,8 +277,8 @@ export async function resolveEmail(
 }
 
 /**
- * Records a human's choice on a conflicted resolution (FR-15's "require a human
- * decision", spec §11's `/resolve-match`).
+ * Records a human's choice on a conflicted resolution (the specification's "require a human
+ * decision", the specification's `/resolve-match`).
  *
  * The person may pick a candidate or declare it a new record. Either way the
  * choice is written as a fresh run with outcome `human_selected` — the original
@@ -287,7 +287,7 @@ export async function resolveEmail(
  * stage produces.
  *
  * Still no CRM write: choosing an existing record links it, and choosing "new"
- * records the intent for M3 to act on.
+ * records the intent for DECIDE to act on.
  */
 export async function resolveMatchByHuman(
   email: EmailRecord,

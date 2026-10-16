@@ -13,7 +13,7 @@ import type { EmailSource, FetchResult } from './types.ts';
 // fails at the fixture rather than three stages downstream.
 //
 // `markProcessed` records ids in memory rather than writing to the file. The
-// database already knows what has been ingested (FR-2 dedupe on
+// database already knows what has been ingested (the specification dedupe on
 // provider_message_id), so persisting a second copy of that fact here would be
 // two sources of truth for the same thing. A restart re-offers the messages and
 // the database no-ops them — which is exactly the behaviour a real provider
@@ -26,7 +26,7 @@ export type DemoEmailFixture = CanonicalEmail & {
   /** Free-text note about what this fixture demonstrates. Ignored at runtime. */
   scenario?: string;
   /**
-   * The canned model response for this email (spec §22). Read by
+   * The canned model response for this email. Read by
    * adapters/llm/fixtures.ts, never by the pipeline — the pipeline has no idea
    * fixtures exist.
    */

@@ -35,12 +35,12 @@ export type ExecutionResponse = {
 //     then has exactly one error shape to render.
 //   * No secret ever reaches this layer, because there is nothing to send. The
 //     browser holds no key and no token: every provider call happens on the
-//     server (§19). If this file ever grows an API key, something has gone
+//     server. If this file ever grows an API key, something has gone
 //     badly wrong upstream of it.
 
 const BASE_URL = '/api';
 
-// --- authentication events (M6-A) -------------------------------------------
+// --- authentication events -------------------------------------------
 //
 // The client cannot navigate, and the app cannot see inside a fetch. These two
 // hooks are the seam: the client reports what the server said, and the app
@@ -78,7 +78,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  // The CSRF token rides along on every state-changing request (M5-B). It is
+  // The CSRF token rides along on every state-changing request. It is
   // read from the readable cookie at call time rather than cached, so a fresh
   // sign-in cannot leave a stale token behind. The session cookie itself is
   // HttpOnly and is never touched here — the browser attaches it.
@@ -156,7 +156,7 @@ function safeParse(text: string): unknown {
 export const api = {
   health: (): Promise<Health> => request<Health>('/health'),
 
-  // --- authentication (M6-A) ------------------------------------------------
+  // --- authentication ------------------------------------------------
 
   /** The server's answer to "am I signed in?". The only source of that truth. */
   session: (): Promise<SessionResponse> => request<SessionResponse>('/auth/session'),
@@ -170,7 +170,7 @@ export const api = {
    * from here except the CSRF token, by design.
    *
    * No CSRF token is sent, and none is required: there is no session yet to
-   * carry one, which is exactly the exemption M5-B makes for this endpoint.
+   * carry one, which is exactly the exemption the CSRF and CORS layer makes for this endpoint.
    */
   login: (password: string): Promise<{ operator: string; expiresAt: string }> =>
     request<{ operator: string; expiresAt: string }>('/auth/login', {
@@ -178,11 +178,11 @@ export const api = {
       body: JSON.stringify({ password }),
     }),
 
-  /** Signs out. CSRF-protected like any other state change (M5-B). */
+  /** Signs out. CSRF-protected like any other state change. */
   logout: (): Promise<{ signedOut: boolean }> =>
     request<{ signedOut: boolean }>('/auth/logout', { method: 'POST', body: JSON.stringify({}) }),
 
-  // --- CRM (M6-C). Read-only: there is no write counterpart to any of these.
+  // --- CRM. Read-only: there is no write counterpart to any of these.
   listDeals: (stage?: string): Promise<{ deals: DealRow[]; total: number }> =>
     request(`/deals${stage ? `?stage=${encodeURIComponent(stage)}` : ''}`),
 
@@ -250,7 +250,7 @@ export const api = {
     }),
 
   /**
-   * Creates a revision from a human's edits (M4-C).
+   * Creates a revision from a human's edits.
    *
    * Grants nothing on its own: the response carries a *pending* approval on a
    * new decision, which still has to go through `approve()`.

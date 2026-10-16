@@ -1,4 +1,4 @@
-// The frontend's half of the M5 authentication contract.
+// The frontend's half of the authentication contract.
 //
 // WHAT THE BROWSER HOLDS, AND WHAT IT DELIBERATELY DOES NOT
 //
@@ -8,7 +8,7 @@
 // directory tries to read it, and nothing stores a password anywhere.
 //
 // What the browser does hold is the CSRF token, in a *readable* cookie, because
-// M5-B's double-submit scheme requires the front end to echo it back in a
+// The CSRF and CORS layer's double-submit scheme requires the front end to echo it back in a
 // header. That is safe on its own: a cross-site page can cause the session
 // cookie to be sent but cannot read this one to copy the value.
 //
@@ -19,7 +19,7 @@
 // local flag that can drift out of step with the cookie, and no way to
 // construct an authenticated-looking state without the server having said so.
 
-/** The CSRF cookie M5-B sets alongside the session. Readable on purpose. */
+/** The CSRF cookie the CSRF and CORS layer sets alongside the session. Readable on purpose. */
 export const CSRF_COOKIE = 'inbox_csrf';
 export const CSRF_HEADER = 'x-csrf-token';
 
@@ -54,7 +54,7 @@ export function currentCsrfToken(): string | null {
 /**
  * Whether a request changes state and therefore needs a CSRF token.
  *
- * Mirrors M5-B's server rule. It is not a second mechanism — the server decides
+ * Mirrors the CSRF and CORS layer's server rule. It is not a second mechanism — the server decides
  * and refuses; this only avoids sending a header where the server would ignore
  * it, and avoids omitting one where the server would refuse.
  */
@@ -76,7 +76,7 @@ export type SessionState =
   | { status: 'anonymous' }
   /**
    * Nobody is signed in, and the server has opened its read-only demo window
-   * (P19). A fourth state rather than a flag on `anonymous`, because the app
+   *. A fourth state rather than a flag on `anonymous`, because the app
    * genuinely behaves differently here and a boolean beside a status is the
    * kind of pair that drifts.
    *
@@ -115,7 +115,7 @@ export function isAuthenticated(state: SessionState): boolean {
 }
 
 /**
- * Whether the server says its public read-only demo window is open (P19).
+ * Whether the server says its public read-only demo window is open.
  *
  * Read from `/api/health`, which is public and already reports what the
  * deployment is configured for. Pure and total, and false for anything it does

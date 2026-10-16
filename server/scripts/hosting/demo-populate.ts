@@ -26,7 +26,7 @@ import {
 //
 // HOW IT AUTHENTICATES, AND WHAT IT REFUSES TO DO WITH THE PASSWORD
 //
-// The same rules M7-E's verification script follows. The password is read from
+// The same rules the deployment verification script follows. The password is read from
 // an interactive prompt and held in memory only — never an argument (arguments
 // land in shell history and the process list), never a file, never a log line.
 // Nothing derived from it is printed either.

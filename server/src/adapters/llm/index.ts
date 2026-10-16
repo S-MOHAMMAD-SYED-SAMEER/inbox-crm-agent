@@ -29,8 +29,8 @@ export {
 /**
  * Selects the provider for the current configuration.
  *
- * `mock` remains the default (D3): the whole demo runs offline, deterministically
- * and for ₹0. `anthropic` is implemented as of M1 and is used only when
+ * `mock` remains the default: the whole demo runs offline, deterministically
+ * and for ₹0. `anthropic` is implemented as of UNDERSTAND and is used only when
  * explicitly selected *and* configured.
  *
  * There is no fallback path. Selecting a provider that cannot run raises

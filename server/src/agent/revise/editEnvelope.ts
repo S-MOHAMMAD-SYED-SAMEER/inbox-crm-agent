@@ -3,7 +3,7 @@ import { PRIORITIES } from '../../domain/email.ts';
 import type { ActionPlan, Draft } from '../../domain/decision.ts';
 import type { ProposedAction } from '../../domain/actions.ts';
 
-// The editable surface (M4-C, FR-23).
+// The editable surface.
 //
 // THIS FILE IS A WHITELIST, AND THAT IS THE ENTIRE SECURITY MODEL OF IT.
 //
@@ -29,7 +29,6 @@ import type { ProposedAction } from '../../domain/actions.ts';
 
 /** Everything the model wrote that a person may rewrite. */
 export const EDITABLE_DRAFT_FIELDS = ['subject', 'body'] as const;
-export type EditableDraftField = (typeof EDITABLE_DRAFT_FIELDS)[number];
 
 type ValueRule = (value: unknown, path: string, problems: ProblemCollector, now: string) => unknown;
 
@@ -110,13 +109,6 @@ export const EDITABLE_ACTION_FIELDS: Readonly<Record<string, Readonly<Record<str
     body: text(MAX_BODY),
   }),
 });
-
-/** One field of one action, changed. */
-export type ActionEdit = {
-  index: number;
-  field: string;
-  value: unknown;
-};
 
 export type EditDiffEntry = {
   path: string;

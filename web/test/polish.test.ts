@@ -8,7 +8,7 @@ import { describeDefence } from '../src/security/injectionPresentation.ts';
 import { reviewReasonLabel, stateLabel } from '../src/inbox/statePresentation.ts';
 import type { Health } from '../src/api/types.ts';
 
-// M6-E — the demo polish pass.
+// the demo polish pass.
 //
 // Everything here answers one question: would a client, watching this for ten
 // minutes, see something that reads as unfinished, internal, or untrue?

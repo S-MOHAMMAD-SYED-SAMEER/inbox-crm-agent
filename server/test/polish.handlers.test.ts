@@ -17,7 +17,7 @@ import {
 import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M6-E — the demo polish pass, server side.
+// the demo polish pass, server side.
 //
 // Two fixes are tested here. The second is the only behavioural change in the
 // whole pass, so it carries the weight.
@@ -26,13 +26,13 @@ import type { EmailRecord } from '../src/domain/email.ts';
 // FIX 6 — a plan that needs no approval never ran.
 //
 // On fix 6: `nextState` leaves an unattended plan in `deciding` and the comment
-// beside it says why — M3 could not execute, so moving the email to `executing`
-// would have claimed something was happening when nothing was. It ends "M4
-// makes that transition when it can honour it." M4 shipped the executor and
+// beside it says why — DECIDE could not execute, so moving the email to `executing`
+// would have claimed something was happening when nothing was. It ends "EXECUTE
+// makes that transition when it can honour it." EXECUTE shipped the executor and
 // nothing came back for this, so every tier-0 plan since has been decided and
 // then abandoned: not in the approval queue, because it needs no approval, and
-// not executed, because nobody asked. §8 is explicit that `deciding →
-// executing` is legal for a zero-risk plan, and §16 defines `assisted` as
+// not executed, because nobody asked. The specification is explicit that `deciding →
+// executing` is legal for a zero-risk plan, and the specification defines `assisted` as
 // "tier 0 auto-executes at high confidence". This restores that.
 
 const quiet = createLogger('test', { level: 'error' });
@@ -247,7 +247,7 @@ test('a plan that requires approval is never run by the unattended path', async 
 });
 
 test('no autonomy level lets a tier-2 action run unattended', async () => {
-  // The product guarantee from §16, asserted against the path this pass added
+  // The product guarantee from the specification, asserted against the path this pass added
   // rather than against the policy function alone.
   for (const autonomy of ['manual', 'assisted', 'autonomous_low_risk'] as const) {
     const { repos, close } = await createTestContext();

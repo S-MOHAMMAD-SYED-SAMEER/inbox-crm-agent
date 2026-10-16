@@ -19,7 +19,7 @@ import {
 import type { AppConfig } from '../src/config/env.ts';
 import type { Clock } from '../src/lib/clock.ts';
 
-// M5-C — rate limiting.
+// rate limiting.
 //
 // The limiter is in-memory and single-process. It is a guard against runaway
 // scripts and accidents, and against an unauthenticated stranger driving the
@@ -61,7 +61,7 @@ type Server = {
 };
 
 async function serve(over: Partial<AppConfig> = {}): Promise<Server> {
-  const ctx = await createTestContext({ idPrefix: 'm5c' });
+  const ctx = await createTestContext({ idPrefix: 'ratelimit' });
   const clock = movableClock('2026-06-01T00:00:00.000Z');
 
   const config: AppConfig = {
@@ -288,7 +288,7 @@ test('an expensive operation is limited more tightly than an ordinary mutation',
 
 test('no request header can move a caller into a fresh bucket', async () => {
   // The key is derived server-side from the session or the socket. `x-operator`
-  // was the reason F-01 existed; it must not be able to reset a budget either.
+  // was the reason the first audit raised this; it must not be able to reset a budget either.
   const s = await serve();
   try {
     const send = (headers: Record<string, string>) =>

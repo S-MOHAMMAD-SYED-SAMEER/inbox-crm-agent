@@ -42,7 +42,7 @@
   /* --- Colour (dashboard-only additions) ---
      Chosen to hold their meaning next to the brand indigo and the signal
      amber, and to stay legible against both canvas and surface. Status is
-     never communicated by colour alone (NFR-11) — every state chip carries
+     never communicated by colour alone — every state chip carries
      its label as text too. */
   --color-success: #15803d;
   --color-success-tint: #f0fdf4;
@@ -104,7 +104,7 @@
   }
 
   /* Keyboard focus is visible everywhere by default rather than being
-     something each component has to remember (NFR-11). :focus-visible, so a
+     something each component has to remember. :focus-visible, so a
      mouse click does not leave a ring behind. */
   :focus-visible {
     outline: 2px solid var(--color-brand);

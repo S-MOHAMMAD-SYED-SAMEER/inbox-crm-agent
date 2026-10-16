@@ -1,13 +1,13 @@
 import { randomUUID, createHash } from 'node:crypto';
 
-// Identity generation (spec §9 portability rules).
+// Identity generation (the specification portability rules).
 //
 // IDs are generated in application code, never by the database. Two
 // consequences, both load-bearing:
 //
 //   1. No `gen_random_uuid()`, so no pgcrypto extension, so the same DDL runs
 //      on Postgres and SQLite unchanged.
-//   2. An id exists *before* the row does. That is what lets EXECUTE (M4) build
+//   2. An id exists *before* the row does. That is what lets EXECUTE build
 //      a multi-action plan in memory — where action 3 references the company
 //      action 1 will create — and then write the whole thing in one
 //      transaction. If ids came back from INSERTs, the plan would have to be
@@ -24,7 +24,7 @@ export const newId: IdGenerator = () => randomUUID();
  * what makes a failing test reproducible and an evaluation comparable between
  * runs.
  *
- * IT MUST PRODUCE VALID UUIDs, AND THAT WAS LEARNED THE HARD WAY (M5-E).
+ * IT MUST PRODUCE VALID UUIDs, AND THAT WAS LEARNED THE HARD WAY.
  *
  * It used to return `prefix-1`, `prefix-2`, on the reasoning that a readable id
  * makes a failure easier to read. That worked only because SQLite maps the
@@ -48,7 +48,7 @@ export function createSequentialIds(prefix = 'id'): IdGenerator {
  * A stable UUID derived from a name — same name in, same id out, forever.
  *
  * The seed data uses this so that the demo can be reset to *exactly* the same
- * state, ids included (NFR-1), while the seed file itself stays readable: it
+ * state, ids included, while the seed file itself stays readable: it
  * references `company:harborview-digital` rather than a hex string nobody can
  * check. Deriving the id also means the fixture file cannot contain a typo'd
  * UUID that points at nothing.
@@ -76,8 +76,8 @@ export function isUuid(value: unknown): value is string {
  * that `{a,b}` and `{b,a}` hash identically.
  *
  * Used for two things that both depend on "same input ⇒ same output":
- *   - `idempotency_key` on an execution (FR-29), so a retry cannot double-write.
- *   - `inputDigest` in an audit payload (§17), which records *that* an input was
+ *   - `idempotency_key` on an execution, so a retry cannot double-write.
+ *   - `inputDigest` in an audit payload, which records *that* an input was
  *     the same without copying personal data into a second, never-deleted table.
  */
 export function stableHash(value: unknown): string {

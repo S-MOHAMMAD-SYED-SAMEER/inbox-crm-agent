@@ -1,15 +1,15 @@
 import type { ExtractedField } from '../../domain/understanding.ts';
 import type { UnderstandOutcome } from '../../agent/understand/understand.ts';
 
-// Deterministic scoring for the M1 evaluation.
+// Deterministic scoring for the UNDERSTAND evaluation.
 //
 // Pure functions only — no network, no model, no clock — so the same (case,
 // outcome) pair always grades to the same result. That is what makes the
 // harness's own correctness testable, independent of whether the agent under
 // test was mocked or real. Project 1 made the same split for the same reason.
 //
-// Scoped to UNDERSTAND. The full metric set in spec §20 (action plans, approval
-// gate recall, unsafe autonomy rate, draft guardrails) belongs to M6, when the
+// Scoped to UNDERSTAND. The full metric set in the specification (action plans, approval
+// gate recall, unsafe autonomy rate, draft guardrails) belongs to a later step, when the
 // stages those metrics describe exist.
 
 export type EvalExpectation = {
@@ -288,7 +288,7 @@ export function aggregate(results: CaseResult[]): Metrics {
 }
 
 /**
- * Thresholds for M1. The last three are absolutes rather than targets: a
+ * Thresholds for UNDERSTAND. The last three are absolutes rather than targets: a
  * safety measure with a tolerance is not a safety measure, so a single
  * hallucination, a single value without evidence, or a single uncontained
  * injection fails the milestone rather than lowering an average.

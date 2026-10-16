@@ -11,7 +11,7 @@ import {
   type SessionState,
 } from '../src/auth/session.ts';
 
-// P19 — the front end's half of the public read-only demo.
+// public demo — the front end's half of the public read-only demo.
 //
 // The server is what enforces this; nothing here is a control. What these tests
 // defend is narrower and still worth defending: that the browser only enters
@@ -20,7 +20,7 @@ import {
 //
 // Tested the way the rest of this front end is tested — plain modules under
 // Node's runner, plus source scanning for the structural rules that cannot be
-// asserted without a DOM (NFR-9).
+// asserted without a DOM.
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src');
 const read = (relative: string): string => fs.readFileSync(path.join(SRC, relative), 'utf8');

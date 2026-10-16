@@ -3,7 +3,7 @@ import { AppError } from '../lib/errors.ts';
 import { systemClock, type Clock } from '../lib/clock.ts';
 import { isPublicDemoRead } from '../auth/middleware.ts';
 
-// Rate limiting (M5-C, audit F-02, spec §11).
+// Rate limiting.
 //
 // IN-MEMORY AND SINGLE-PROCESS. THIS IS NOT DISTRIBUTED RATE LIMITING.
 //
@@ -28,7 +28,7 @@ import { isPublicDemoRead } from '../auth/middleware.ts';
 // THE KEY IS DERIVED SERVER-SIDE, ALWAYS.
 //
 // Session identity when authenticated, remote address when not. Never a header:
-// `x-operator` was the reason F-01 existed, and a limiter keyed on anything the
+// `x-operator` was the reason the first audit raised this, and a limiter keyed on anything the
 // caller can set is a limiter the caller can step around by changing it.
 
 export type RateLimitRule = {
@@ -108,7 +108,7 @@ export class FixedWindowLimiter {
 }
 
 /**
- * The three classes of traffic, per spec §11.
+ * The three classes of traffic, per the specification.
  *
  * `expensive` is the one that matters most: those endpoints call a model, so
  * exceeding them costs real money rather than merely load. That is why its
@@ -119,7 +119,7 @@ export const RATE_LIMITS = Object.freeze({
   expensive: { limit: 20, windowMs: 60_000 },
   mutation: { limit: 120, windowMs: 60_000 },
   /**
-   * Anonymous reads of the public demo (P19).
+   * Anonymous reads of the public demo.
    *
    * Reads are otherwise unlimited on purpose — see `classify` — and that was
    * correct while a read required a session, because the population was one
@@ -142,9 +142,9 @@ export type RateLimitClass = keyof typeof RATE_LIMITS;
 const EXPENSIVE_PATHS = [/^\/emails\/understand$/, /^\/emails\/[^/]+\/understand$/, /^\/emails\/decide$/, /^\/emails\/[^/]+\/decide$/];
 
 /**
- * What the limiter needs to know beyond the method and path (P19).
+ * What the limiter needs to know beyond the method and path.
  *
- * Both fields default to the pre-P19 answer, so `classify(method, path)` with
+ * Both fields default to the pre-public demo answer, so `classify(method, path)` with
  * no context behaves exactly as it always did — which is what every existing
  * caller and test relies on.
  */
@@ -164,7 +164,7 @@ export function classify(
 
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
     // The one read that is limited: an anonymous request, to one of the eight
-    // allow-listed demo paths, while the demo window is open (P19).
+    // allow-listed demo paths, while the demo window is open.
     //
     // All three conditions matter. Anonymous, because a signed-in operator's
     // dashboard must keep the unlimited reads it has always had. Allow-listed,
@@ -211,7 +211,7 @@ export type RateLimitDeps = {
   clock?: Clock;
   limits?: Record<RateLimitClass, RateLimitRule>;
   /**
-   * Whether the public demo window is open (P19).
+   * Whether the public demo window is open.
    *
    * Passed in rather than read from config here, so this module stays a pure
    * function of its inputs and a test can drive both states without touching

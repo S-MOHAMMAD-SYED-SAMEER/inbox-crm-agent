@@ -1,4 +1,4 @@
-// Entity-resolution vocabulary (spec §7, FR-12..FR-15).
+// Entity-resolution vocabulary.
 //
 // THE THREE-WAY VERDICT AND THE FOUR STORED OUTCOMES
 //
@@ -6,7 +6,7 @@
 // any, is this?" — with one of three verdicts: MATCH, NO_MATCH, MATCH_CONFLICT.
 //
 // What gets *stored* is the spec's own four-value set, fixed by the CHECK
-// constraint the M0 migration already created:
+// constraint the initial migration already created:
 //
 //   auto_linked     → MATCH           a candidate cleared the high threshold
 //   propose_create  → NO_MATCH        nothing qualified; this is a new record
@@ -42,7 +42,7 @@ export function resolutionVerdict(outcome: ResolutionOutcome): ResolutionVerdict
   }
 }
 
-/** The entity kinds resolution handles. `deal` is in the schema for M3. */
+/** The entity kinds resolution handles. `deal` is in the schema for DECIDE. */
 export const RESOLVABLE_ENTITY_TYPES = ['contact', 'company'] as const;
 export type ResolvableEntityType = (typeof RESOLVABLE_ENTITY_TYPES)[number];
 
@@ -50,7 +50,7 @@ export type ResolvableEntityType = (typeof RESOLVABLE_ENTITY_TYPES)[number];
  * How a candidate earned its score. Stored on every candidate row so the
  * evidence is machine-readable as well as human-readable.
  *
- * `distinctive_token` is the one method not named in spec §7 — see
+ * `distinctive_token` is the one method not named in the specification — see
  * agent/resolve/score.ts for why it exists and what it is worth.
  */
 export const MATCH_METHODS = [
@@ -112,7 +112,7 @@ export type ResolutionRecord = {
 };
 
 /**
- * Thresholds, exactly as spec §7 states them.
+ * Thresholds, exactly as the specification states them.
  *
  * Note what the middle band means in practice: a score between 0.50 and 0.80 is
  * not "a weak match", it is "a human decides". A candidate is never promoted
@@ -126,7 +126,3 @@ export const RESOLUTION_THRESHOLDS = {
   /** Two candidates within this of each other are too close to separate. */
   conflictWindow: 0.1,
 } as const;
-
-export function isResolutionOutcome(value: unknown): value is ResolutionOutcome {
-  return typeof value === 'string' && (RESOLUTION_OUTCOMES as readonly string[]).includes(value);
-}

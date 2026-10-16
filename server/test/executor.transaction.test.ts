@@ -22,7 +22,7 @@ import type { Database, SqlParam } from '../src/db/types.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// EXECUTOR TRANSACTION BINDING (FR-28).
+// EXECUTOR TRANSACTION BINDING.
 //
 // "Apply a multi-action plan atomically — all actions or none" is a claim about
 // two database drivers, and it used to be true of only one of them.
@@ -173,7 +173,7 @@ test('a mid-plan failure rolls back every repository the plan had already writte
 
   // Not "the tasks table is unchanged" — every table is unchanged. A rollback
   // that only covered the repository that threw would leave an orphan company,
-  // contact, activity and deal behind, which is the exact failure FR-28 exists
+  // contact, activity and deal behind, which is the exact failure the specification exists
   // to prevent.
   assert.deepEqual(await countAll(f.repos), before);
 

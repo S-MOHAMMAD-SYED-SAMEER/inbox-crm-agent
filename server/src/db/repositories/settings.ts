@@ -1,9 +1,9 @@
 import type { RepoDeps } from './crm.ts';
 import { toText, toJson, fromJson } from '../rows.ts';
-import { AUTONOMY_LEVELS, type AutonomyLevel } from '../../domain/policy.ts';
+import type { AutonomyLevel } from '../../domain/policy.ts';
 import { CONFIDENCE_THRESHOLDS } from '../../domain/email.ts';
 
-// Operator settings (§13.9).
+// Operator settings.
 //
 // A key/value table rather than a wide `settings` row: these values are read
 // rarely, written rarely, and change shape as milestones land. A JSON column
@@ -45,7 +45,7 @@ export const DEFAULT_SETTINGS: SettingsShape = {
       'AI Inbox & Lead Management',
     ],
     tone: 'Direct, concise, and concrete. No hype, no jargon, no over-promising.',
-    // Fed to the drafting prompt in M3 and enforced independently by the draft
+    // Fed to the drafting prompt in DECIDE and enforced independently by the draft
     // guardrails — the prompt asks, the guardrail checks. A model that ignores
     // the instruction still cannot get a price past the deterministic check.
     neverPromise: [
@@ -106,9 +106,3 @@ export function createSettingsRepository({ db, clock }: RepoDeps) {
     },
   };
 }
-
-export function isAutonomyLevel(value: unknown): value is AutonomyLevel {
-  return typeof value === 'string' && (AUTONOMY_LEVELS as readonly string[]).includes(value);
-}
-
-export type SettingsRepository = ReturnType<typeof createSettingsRepository>;

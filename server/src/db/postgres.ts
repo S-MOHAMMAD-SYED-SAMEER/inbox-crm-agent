@@ -2,10 +2,10 @@ import pg from 'pg';
 import { convertPlaceholders } from './dialect.ts';
 import type { Database, QueryResult, SqlParam } from './types.ts';
 
-// PostgreSQL driver (D1) — the hosted path, Neon or otherwise.
+// PostgreSQL driver — the hosted path, Neon or otherwise.
 //
-// STATUS: verified against a live PostgreSQL 18.6 server (M5-E, M7-C) and
-// running in production since M7-D. The note that used to sit here said the
+// STATUS: verified against a live PostgreSQL 18.6 server and
+// running in production since the Postgres verification. The note that used to sit here said the
 // driver was unverified and that the first job of whichever milestone
 // provisioned a database was to run the suites against it. That happened, and
 // it was not enough: the suites are driver-agnostic in their SQL but they all
@@ -17,7 +17,7 @@ import type { Database, QueryResult, SqlParam } from './types.ts';
 
 const { Pool } = pg;
 
-// --- JSON columns must look the same from both drivers (M7-F) ---------------
+// --- JSON columns must look the same from both drivers ---------------
 //
 // `node:sqlite` returns a JSON column as the text it stored. `pg` parses JSONB
 // and hands back a real JavaScript value. For an object or an array that made

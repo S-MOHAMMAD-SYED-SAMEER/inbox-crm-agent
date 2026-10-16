@@ -22,7 +22,7 @@ import { runResolveEvaluation, resolveThresholdFailures } from '../src/eval/reso
 import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M2 integration tests: the real resolver against a real schema and the real
+// RESOLVE integration tests: the real resolver against a real schema and the real
 // seeded CRM. Only the model call is replaced — resolution makes none at all,
 // so the code under test here is exactly what runs in production.
 
@@ -352,7 +352,7 @@ test('re-resolving is deterministic and appends a run rather than editing one', 
 
 // ================================================== workflow transitions
 
-test('resolution moves a resolved email to deciding, ready for M3', async () => {
+test('resolution moves a resolved email to deciding, ready for DECIDE', async () => {
   const { repos, close } = await createTestContext();
   await pipelineToUnderstand(repos);
 
@@ -367,7 +367,7 @@ test('an email that never reached resolution cannot be resolved', async () => {
   const { repos, close } = await createTestContext();
   await pipelineToUnderstand(repos);
 
-  // E-10 is held at needs_review by the injection detector in M1.
+  // E-10 is held at needs_review by the injection detector in UNDERSTAND.
   const injected = await emailFor(repos, 'demo-e10');
   assert.equal(injected.state, 'needs_review');
   assert.throws(() => assertResolvable(injected), /cannot be matched/);
@@ -421,7 +421,7 @@ test('a human can declare a conflicted match a new record instead', async () => 
   assert.equal(settled.company.verdict, 'NO_MATCH');
   assert.equal(settled.company.selectedEntityId, null);
   assert.equal(settled.state, 'deciding');
-  // Still no CRM write: choosing "new" records the intent for M3, nothing more.
+  // Still no CRM write: choosing "new" records the intent for DECIDE, nothing more.
   assert.equal(await repos.companies.count(), 6);
   await close();
 });
@@ -524,7 +524,7 @@ test('the resolve endpoints move emails through the pipeline and expose the verd
   await handleUnderstandPending(d, {});
 
   const batch = await handleResolvePending(d, {});
-  assert.equal(batch.body.resolved, 8, 'E-08 and E-10 are held at needs_review by M1');
+  assert.equal(batch.body.resolved, 8, 'E-08 and E-10 are held at needs_review by UNDERSTAND');
   assert.equal(batch.body.conflicts, 1);
   assert.equal(batch.body.failed, 0);
 
@@ -547,7 +547,7 @@ test('the detail payload exposes candidates with real names, and reports DECIDE 
   const detail = await handleGetEmail(d, email.id);
 
   assert.equal(detail.body.stages.resolve, 'conflict');
-  // CONTRACT CHANGE (M3): DECIDE exists now, so it reports 'pending' rather
+  // CONTRACT CHANGE: DECIDE exists now, so it reports 'pending' rather
   // than 'not_implemented'. A conflicted email never reaches it either way.
   assert.equal(detail.body.stages.decide, 'pending');
   assert.ok(detail.body.resolution);
@@ -607,7 +607,7 @@ test('resolving an email that does not exist is a 404', async () => {
 
 // ============================================================ evaluation
 
-test('the M2 evaluation passes every threshold, deterministically', async () => {
+test('the entity-resolution evaluation passes every threshold, deterministically', async () => {
   const options = {
     datasetPath: path.join(MIGRATIONS_DIR, '..', 'eval', 'resolve.dataset.json'),
     demoDataDir: DEMO_DATA_DIR,

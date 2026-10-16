@@ -184,7 +184,7 @@
   {
     "providerMessageId": "demo-e03",
     "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
-    "scenario": "E-03 — pricing request with an explicit budget and deadline, from a new contact at a company already in the CRM. The tempting case for a draft to quote a price; M3 guardrails will hold there.",
+    "scenario": "E-03 — pricing request with an explicit budget and deadline, from a new contact at a company already in the CRM. The tempting case for a draft to quote a price; DECIDE guardrails will hold there.",
     "threadId": null,
     "fromName": "Priya Nair",
     "fromEmail": "priya@vantageconsulting.invalid",
@@ -275,7 +275,7 @@
   {
     "providerMessageId": "demo-e04",
     "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
-    "scenario": "E-04 — the entity-resolution conflict case. The domain matches neither seeded Harborview company exactly while the name resembles both. M1 reads it normally; the conflict itself is raised by M2.",
+    "scenario": "E-04 — the entity-resolution conflict case. The domain matches neither seeded Harborview company exactly while the name resembles both. UNDERSTAND reads it normally; the conflict itself is raised by RESOLVE.",
     "threadId": null,
     "fromName": "Mark Doyle",
     "fromEmail": "mark@harborview-group.invalid",
@@ -453,7 +453,7 @@
   {
     "providerMessageId": "demo-e06",
     "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
-    "scenario": "E-06 — an in-thread follow-up on an existing deal. In M3 this becomes a deal stage change, which is tier 2 and therefore always needs a human.",
+    "scenario": "E-06 — an in-thread follow-up on an existing deal. In DECIDE this becomes a deal stage change, which is tier 2 and therefore always needs a human.",
     "threadId": "thread-solstice-support-automation",
     "fromName": "Dana Iqbal",
     "fromEmail": "dana@solsticeretail.invalid",
@@ -801,7 +801,7 @@
   {
     "providerMessageId": "demo-e10",
     "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
-    "scenario": "E-10 — a prompt-injection attempt (D6). The canned model response is deliberately FOOLED: it reads the message as a normal sales inquiry and does NOT set possibleInjection. The deterministic detector catches it anyway and forces human review, which is the point — the safety property does not depend on the model noticing.",
+    "scenario": "E-10 — a prompt-injection attempt. The canned model response is deliberately FOOLED: it reads the message as a normal sales inquiry and does NOT set possibleInjection. The deterministic detector catches it anyway and forces human review, which is the point — the safety property does not depend on the model noticing.",
     "threadId": null,
     "fromName": "Procurement",
     "fromEmail": "buyer@quickdeal-example.invalid",

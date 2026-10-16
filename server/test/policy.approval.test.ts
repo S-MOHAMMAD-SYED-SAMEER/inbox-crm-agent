@@ -7,7 +7,7 @@ import type { ProposedAction } from '../src/domain/actions.ts';
 
 // The most important test file in the project.
 //
-// NFR-5 is "zero unapproved consequential actions", and a safety property with
+// the specification is "zero unapproved consequential actions", and a safety property with
 // a tolerance is not a safety property. So these tests do not sample: they walk
 // every tier-2 action against every autonomy level and assert that approval is
 // required in all of them. If someone later adds a `full_autonomy` level or
@@ -155,7 +155,7 @@ test('each understanding flag independently forces approval', () => {
   }
 });
 
-test('a prompt-injection flag forces approval even for the safest possible plan (D6)', () => {
+test('a prompt-injection flag forces approval even for the safest possible plan', () => {
   const result = requiresApproval({
     ...HAPPIEST_POSSIBLE_CASE,
     flags: { possibleInjection: true },

@@ -8,11 +8,11 @@ import {
   type CrmDeps,
 } from '../handlers/crm.ts';
 
-// CRM read routes (M6-C).
+// CRM read routes.
 //
 // GET only. Mounted after `requireSession`, so every one of these is behind
 // authentication without needing to say so — the app's gate is ordered such
-// that anything added below it is protected by default (M5-A).
+// that anything added below it is protected by default.
 //
 // There is deliberately no POST, PUT, PATCH or DELETE here. The executor is the
 // only thing that writes to the CRM, and it does so after an approval, through

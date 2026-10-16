@@ -1,8 +1,8 @@
 import { stableHash } from '../../lib/ids.ts';
 import type { LlmProvider, LlmRequest, LlmResponse } from './types.ts';
 
-// The mock provider — the default (D3), and the reason the whole demo runs for
-// ₹0 with no API key (NFR-1, NFR-2).
+// The mock provider — the default, and the reason the whole demo runs for
+// ₹0 with no API key.
 //
 // DETERMINISM IS THE POINT, and it is enforced by three specific choices:
 //

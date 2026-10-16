@@ -3,7 +3,7 @@ import { ApiError } from '../api/client.ts';
 import { presentSource } from '../crm/presentation.ts';
 import type { RecordSource } from '../api/types.ts';
 
-// The shared shell for every CRM list (M6-C).
+// The shared shell for every CRM list.
 //
 // Five screens with the same three states — loading, empty, error — written five
 // times would drift, and the one that drifts is always the error state nobody

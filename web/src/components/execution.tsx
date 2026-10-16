@@ -207,7 +207,7 @@ export function ExecutionCard({
 
       {outbox !== null ? (() => {
         // The wording comes from the server's own status. The screen never
-        // decides that something was sent (M4-D §16).
+        // decides that something was sent.
         const delivery = presentOutbox(outbox);
         return (
           <div

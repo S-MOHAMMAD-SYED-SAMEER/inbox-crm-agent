@@ -15,7 +15,7 @@ import { createLogger } from '../../lib/logger.ts';
 import { ProblemCollector, requireString } from '../../lib/validate.ts';
 import type { EntityResolution } from '../../domain/resolution.ts';
 
-// The M2 evaluation runner.
+// The entity-resolution evaluation runner.
 //
 // Runs the real pipeline — real seeding, real ingestion, real understanding,
 // real resolution — against an in-memory database. Only the model call is
@@ -75,7 +75,7 @@ export function loadResolveDataset(filePath: string): { version: string; cases: 
     };
   });
 
-  problems.throwIfAny('The M2 evaluation dataset is not valid.');
+  problems.throwIfAny('The entity-resolution evaluation dataset is not valid.');
   return { version, cases };
 }
 
@@ -153,7 +153,7 @@ export function evaluateSide(side: string, expected: ExpectedSide, actual: Entit
     );
   }
 
-  // Explainability is a requirement, not a nicety (NFR-4): a verdict nobody can
+  // Explainability is a requirement, not a nicety: a verdict nobody can
   // read is not an explanation, so every case checks it.
   checks.push(
     check(`${side}:reason`, actual.reason.trim().length > 20, `reason was "${actual.reason}"`),
@@ -299,7 +299,7 @@ export async function runResolveEvaluation(options: {
 }
 
 /**
- * Thresholds for M2.
+ * Thresholds for entity resolution.
  *
  * The last two are absolutes: a conflict that got linked anyway, or a CRM row
  * written by a read-only stage, is a defect rather than a lower score.

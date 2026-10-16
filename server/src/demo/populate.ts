@@ -1,4 +1,4 @@
-// Filling a freshly reset demo with the state a visitor needs to see (P19).
+// Filling a freshly reset demo with the state a visitor needs to see.
 //
 // WHY THIS EXISTS AT ALL
 //

@@ -3,7 +3,7 @@ import { buildInsert } from './helpers.ts';
 import { toText } from '../rows.ts';
 import { createSessionToken, hashSessionToken, type SessionRecord } from '../../domain/session.ts';
 
-// Session persistence (M5-A).
+// Session persistence.
 //
 // Every method that takes a token hashes it before touching the database, and
 // no method returns a token. The only place a raw token exists is the return
@@ -103,5 +103,3 @@ export function createSessionRepository({ db, clock }: RepoDeps) {
     },
   };
 }
-
-export type SessionRepository = ReturnType<typeof createSessionRepository>;

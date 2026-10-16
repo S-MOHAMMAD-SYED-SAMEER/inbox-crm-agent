@@ -28,7 +28,7 @@ import { normaliseCompanyName, domainFromEmail } from '../src/domain/crm.ts';
 
 // --- errors -----------------------------------------------------------------
 
-test('sequential ids are deterministic AND valid UUIDs (M5-E regression)', () => {
+test('sequential ids are deterministic AND valid UUIDs (regression)', () => {
   // They used to be `prefix-1`, which SQLite accepted because it maps the
   // schema's UUID columns to TEXT. PostgreSQL enforces the type, so the first
   // insert against a real server failed and every test and evaluation was
@@ -160,7 +160,7 @@ test('optionalInteger enforces bounds only when a value is present', () => {
   assert.equal(problems.count, 2);
 });
 
-// --- redaction (NFR-12) -----------------------------------------------------
+// --- redaction -----------------------------------------------------
 
 test('an email address is masked but its domain survives', () => {
   assert.equal(maskEmail('sarah@acmecommerce.invalid'), 's***h@acmecommerce.invalid');
@@ -218,7 +218,7 @@ test('deterministicId is stable and UUID-shaped', () => {
 });
 
 test('sequential ids are deterministic and ordered', () => {
-  // CONTRACT CHANGE (M5-E): these were `email-1`, `email-2` — readable, and
+  // CONTRACT CHANGE: these were `email-1`, `email-2` — readable, and
   // rejected by PostgreSQL, which enforces the schema's UUID columns where
   // SQLite maps them to TEXT. Readability was traded for the ability to run the
   // suite against the database this project deploys to. Determinism and

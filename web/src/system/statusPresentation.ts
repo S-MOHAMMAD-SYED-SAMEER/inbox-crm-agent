@@ -1,9 +1,9 @@
 import type { Health } from '../api/types.ts';
 
-// How system status is described on the Overview screen (M6-E).
+// How system status is described on the Overview screen.
 //
 // Pure, so it can be tested without a browser — the same split the revision,
-// outbox and CRM presentation modules use (NFR-9, no jsdom).
+// outbox and CRM presentation modules use (the specification, no jsdom).
 //
 // WHY THIS FILE EXISTS
 //

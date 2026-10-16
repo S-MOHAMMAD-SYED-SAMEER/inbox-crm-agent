@@ -8,8 +8,8 @@ import type { DealStage, ServiceLine } from '../../domain/crm.ts';
 
 // The local CRM writer — the ONLY code in this system that mutates CRM state.
 //
-// Planning never writes (M3 proved that with a row count). Resolution never
-// writes (M2 proved the same). Everything that changes a customer record goes
+// Planning never writes (proved that with a row count). Resolution never
+// writes (proved the same). Everything that changes a customer record goes
 // through this file, behind the executor's verification, which is what makes
 // "could the agent have done this on its own?" answerable with a flat no.
 //
@@ -42,7 +42,7 @@ function resolveRef(ref: EntityRef | null | undefined, refs: ExecutionRefs): str
   if (!ref) return null;
   if (ref.kind === 'existing') return ref.id;
   // A within-plan reference. The id was allocated before the transaction
-  // opened (spec §15 step 1), which is what lets action 3 point at the record
+  // opened, which is what lets action 3 point at the record
   // action 1 creates without the plan being applied step-by-step.
   return ref.ref === 'company' ? refs.company : refs.contact;
 }

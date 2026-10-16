@@ -2,7 +2,7 @@
   "_note": [
     "AI-written (Claude, an AI assistant), not human-reviewed. See PROVENANCE.md.",
     "",
-    "Seeded CRM for the demo (spec §22). Everything here is fictional: no real people,",
+    "Seeded CRM for the demo. Everything here is fictional: no real people,",
     "no real companies, no real addresses.",
     "",
     "Records reference each other by `key`, not by id. The seed script derives a stable",
@@ -10,12 +10,12 @@
     "exact same state including ids, while this file stays readable and cannot contain a",
     "typo'd UUID pointing at nothing.",
     "",
-    "SPEC RECONCILIATION — spec §22 said the seeded near-duplicate pair was 'Acme Commerce'",
+    "SPEC RECONCILIATION — the specification said the seeded near-duplicate pair was 'Acme Commerce'",
     "and 'ACME Consulting', but E-01 (the hero lead) requires Acme Commerce to be a NEW",
     "company with no CRM match. Those two cannot both be true. The near-duplicate pair is",
     "therefore Harborview Digital / Harborview Media, and Acme Commerce is deliberately",
     "absent so E-01 stays a genuine new-lead case. E-04's sender address must be chosen in",
-    "M1 to match neither Harborview domain exactly (e.g. @harborview-group.invalid), so that",
+    "UNDERSTAND to match neither Harborview domain exactly (e.g. @harborview-group.invalid), so that",
     "entity resolution produces a real conflict rather than a staged one."
   ],
 

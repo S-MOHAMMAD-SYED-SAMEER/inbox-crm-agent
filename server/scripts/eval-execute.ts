@@ -5,7 +5,7 @@ import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:execute`
 //
-// M4-A's focused safety measurement. Deterministic, offline, no API key.
+// The executor's focused safety measurement. Deterministic, offline, no API key.
 // Exits non-zero when any of the four properties is violated.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

@@ -5,7 +5,7 @@ import { createTestContext, rejects } from './helpers.ts';
 // Repository integration tests: real migrations, real SQL, in-memory database.
 // Nothing is mocked, so these exercise the same code paths a request does.
 
-// --- CRM CRUD (FR-34) -------------------------------------------------------
+// --- CRM CRUD -------------------------------------------------------
 
 test('a company round-trips and computes its match key', async () => {
   const { repos, close } = await createTestContext();
@@ -94,7 +94,7 @@ test('updating a record that does not exist reports NOT_FOUND', async () => {
   await close();
 });
 
-// --- soft delete (§11) ------------------------------------------------------
+// --- soft delete ------------------------------------------------------
 
 test('a soft-deleted record disappears from reads but is not destroyed', async () => {
   const { repos, close } = await createTestContext();
@@ -179,7 +179,7 @@ test('an entity timeline returns its activities newest first', async () => {
   await close();
 });
 
-// --- emails (FR-2 dedupe, §8 state) -----------------------------------------
+// --- emails (the specification dedupe, the specification state) -----------------------------------------
 
 const SAMPLE_EMAIL = {
   provider: 'demo' as const,
@@ -263,7 +263,7 @@ test('a state outside the schema is rejected by the database', async () => {
   await close();
 });
 
-// --- audit (§17) ------------------------------------------------------------
+// --- audit ------------------------------------------------------------
 
 test('audit events are numbered per run, in order', async () => {
   const { repos, close } = await createTestContext();

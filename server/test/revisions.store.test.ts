@@ -19,7 +19,7 @@ import {
 import type { Repositories } from '../src/db/repositories/index.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 
-// M4-C.1 — the revision foundation.
+// the revision foundation.
 //
 // This milestone builds no revision *logic*: no edit envelope, no endpoint, no
 // UI. What it builds is the ability for the database and the repositories to
@@ -28,7 +28,7 @@ import type { DecisionRecord } from '../src/domain/decision.ts';
 //
 //   1. A revision is a NEW row. The decision it revises is byte-identical
 //      afterwards, because the original AI proposal paired with the human's
-//      version is the whole point (FR-26).
+//      version is the whole point.
 //   2. Provenance cannot be incoherent. An edit without a parent or an editor,
 //      or an agent decision carrying either, is refused at the only place that
 //      writes decisions.
@@ -376,7 +376,7 @@ test('a superseded approval authorises nothing', async () => {
 });
 
 test('a superseded approval is never swept as expired', async () => {
-  // M4-B's sweep reads `state = 'pending'`. If a superseded approval could still
+  // The expiry sweep's sweep reads `state = 'pending'`. If a superseded approval could still
   // be found by it, the sweep would drag the email to needs_review while it was
   // legitimately awaiting approval on the revision.
   const { db, repos, close } = await createTestContext();

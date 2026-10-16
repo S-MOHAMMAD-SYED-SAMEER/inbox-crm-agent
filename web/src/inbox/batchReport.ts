@@ -1,6 +1,6 @@
-// How a batch run reports itself (M7-F).
+// How a batch run reports itself.
 //
-// Pure, so it can be tested without a browser (NFR-9).
+// Pure, so it can be tested without a browser.
 //
 // WHY THIS EXISTS
 //

@@ -11,7 +11,7 @@ import type {
   AuditStage,
 } from '../../domain/audit.ts';
 
-// Audit repository (§17, FR-38..FR-41).
+// Audit repository.
 //
 // THE INTERFACE IS THE GUARANTEE.
 //
@@ -76,7 +76,7 @@ export function createAuditRepository({ db, clock, newId }: RepoDeps) {
           actor_id: input.actorId ?? null,
           outcome: input.outcome,
           summary: input.summary,
-          // Bounded before storage (M5-F, audit F-13). Identifiers survive
+          // Bounded before storage. Identifiers survive
           // intact; anything else is capped and the truncation is marked.
           payload: fromJson(boundAuditPayload(input.payload).payload),
           entity_type: input.entityType ?? null,
@@ -147,5 +147,3 @@ export function createAuditRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type AuditRepository = ReturnType<typeof createAuditRepository>;

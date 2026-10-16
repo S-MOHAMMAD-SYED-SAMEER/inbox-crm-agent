@@ -11,7 +11,7 @@ import { isPublicDemoRead, PUBLIC_DEMO_READS } from '../src/auth/middleware.ts';
 import { classify, keyFor, rateLimit, RATE_LIMITS } from '../src/http/rateLimit.ts';
 import type { AppConfig } from '../src/config/env.ts';
 
-// P19 — the public read-only demo window.
+// public demo — the public read-only demo window.
 //
 // WHAT THIS FILE IS DEFENDING
 //
@@ -52,7 +52,7 @@ type Server = {
 };
 
 async function serve(over: Partial<AppConfig> = {}, limiter?: ReturnType<typeof rateLimit>): Promise<Server> {
-  const ctx = await createTestContext({ idPrefix: 'p19' });
+  const ctx = await createTestContext({ idPrefix: 'public-demo' });
   const config = await baseConfig(over);
   const app = createApp({
     db: ctx.db,
@@ -367,7 +367,7 @@ test('an anonymous caller is bucketed by IP, never shared with a session', () =>
 test('reads stay unlimited everywhere except the open public demo', () => {
   const reads = ['/emails', '/emails/e1', '/approvals', '/deals', '/contacts', '/companies', '/tasks', '/audit'];
 
-  // The pre-P19 answer, which every existing caller and test depends on: a bare
+  // The pre-public demo answer, which every existing caller and test depends on: a bare
   // two-argument call classes no read at all.
   for (const path of reads) {
     assert.equal(classify('GET', path), null, `GET ${path} is limited with no context`);

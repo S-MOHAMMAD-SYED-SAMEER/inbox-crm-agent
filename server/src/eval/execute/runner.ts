@@ -18,9 +18,9 @@ import { readSeedFile, seedDemoData } from '../../db/seed.ts';
 import { createLogger } from '../../lib/logger.ts';
 import type { EmailRecord } from '../../domain/email.ts';
 
-// M4-A focused evaluation.
+// The executor's focused evaluation.
 //
-// Not the M6 harness — a narrow measurement of the four properties this
+// Not the full harness — a narrow measurement of the four properties this
 // milestone exists to guarantee, run over the whole demo dataset:
 //
 //   approvalBypassRate      a tier-2 plan that ran with no approval record
@@ -28,7 +28,7 @@ import type { EmailRecord } from '../../domain/email.ts';
 //   duplicateSideEffects    CRM rows created twice by re-running the same plan
 //   blockedSendRate         a guardrail-blocked draft that reached the outbox
 //
-// M4-B adds four more, about the expiry sweep. They are measured in their own
+// The expiry sweep adds four more. They are measured in their own
 // world (see `measureExpiry`) because this one approves everything it decides,
 // which would leave nothing pending to expire:
 //
@@ -200,7 +200,7 @@ export async function runExecuteEvaluation(options: {
   const outboxSent = (await repos.outbox.listByStatus('sent')).length;
   await db.close();
 
-  // 5. Expiry (M4-B), measured on its own untouched world.
+  // 5. Expiry, measured on its own untouched world.
   const expiry = await measureExpiry(options);
   detail.push(...expiry.detail);
 
@@ -221,7 +221,7 @@ export async function runExecuteEvaluation(options: {
 }
 
 /**
- * The M4-B expiry measurement.
+ * The expiry measurement.
  *
  * Runs the pipeline as far as DECIDE and then stops, so every approval it
  * produces is genuinely pending — the state the sweep exists to act on. The
@@ -259,7 +259,7 @@ async function measureExpiry(options: {
   const detail: string[] = [];
 
   // 1. Queue ordering, through the real handler rather than a reimplementation
-  //    of its sort. Least time remaining first (spec §13.4).
+  //    of its sort. Least time remaining first.
   const live = await handleListApprovals({ repos, clock }, { state: 'pending' });
   const order = live.body.approvals.map((row) => row.msToExpiry);
   const queueOrderedBySla = order.every((value, index) => index === 0 || value >= (order[index - 1] as number));

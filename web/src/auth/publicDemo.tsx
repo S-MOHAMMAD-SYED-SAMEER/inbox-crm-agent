@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
-// Whether this browser is looking at the public read-only demo (P19).
+// Whether this browser is looking at the public read-only demo.
 //
 // WHY A CONTEXT, WHEN THE ROUTE DELIBERATELY IS NOT ONE
 //
@@ -26,7 +26,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 // ORDER IN THIS FILE
 //
 // The hook is declared before the component deliberately. The hook-order guard
-// in `m6e.polish.test.ts` reads a component's body as everything following its
+// in `polish.test.ts` reads a component's body as everything following its
 // first `return`, so a hook defined after a component in the same file reads as
 // a hook called after an early return. Putting the hook first keeps the source
 // unambiguous for the reader and for that check.

@@ -13,10 +13,10 @@ import {
 } from '../crm/presentation.ts';
 import type { AuditRow, CompanyRow, ContactRow, DealRow, TaskRow } from '../api/types.ts';
 
-// The CRM screens (M6-C).
+// The CRM screens.
 //
 // These close the loop the demo left open. The assistant has been creating
-// companies, contacts, deals and tasks since M4-A, and the only place any of it
+// companies, contacts, deals and tasks since the executor, and the only place any of it
 // was visible was the execution list on the email that made it — so a client had
 // to take the app's word for it. Now they can look.
 //

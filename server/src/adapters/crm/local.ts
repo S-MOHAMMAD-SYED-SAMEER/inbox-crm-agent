@@ -7,7 +7,7 @@ import type { CrmReader, TimelineItem } from './types.ts';
 // `supportsAtomicity: true` is not a boast, it is a claim the conformance
 // suite checks: a local plan runs inside one database transaction, so a
 // multi-action plan either lands completely or not at all. The HubSpot adapter
-// (§24) will have to answer `false` here and accept the extra approval
+// will have to answer `false` here and accept the extra approval
 // requirement that follows.
 
 export function createLocalCrmReader(repos: Repositories): CrmReader {

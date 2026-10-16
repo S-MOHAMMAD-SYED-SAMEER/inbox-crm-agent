@@ -7,7 +7,7 @@ import type { RouteName } from '../router.ts';
 // import lives in a `.ts` module. That is the same reason the revision, outbox
 // and CRM presentation rules are modules rather than logic inside components.
 //
-// It was seven screens. M6-C built Deals, Contacts, Companies, Tasks and the
+// It was seven screens. the CRM screens built Deals, Contacts, Companies, Tasks and the
 // audit log against the CRM the assistant actually writes to, so their entries
 // are gone rather than reworded — a "coming soon" panel on a screen that now
 // works is the same stale claim the milestone labels were.

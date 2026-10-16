@@ -5,7 +5,7 @@ import { createTestContext } from './helpers.ts';
 import { toJson, fromJson } from '../src/db/rows.ts';
 import { DEFAULT_SETTINGS } from '../src/db/repositories/settings.ts';
 
-// M7-F — the driver divergence that broke production and nothing else.
+// the driver divergence that broke production and nothing else.
 //
 // `node:sqlite` returns a JSON column as the text it stored. `pg` parsed JSONB
 // into a real JavaScript value. For objects and arrays that made no difference,
@@ -24,12 +24,12 @@ import { DEFAULT_SETTINGS } from '../src/db/repositories/settings.ts';
 // side, which is the only side this suite can run: `createTestDatabase()` is
 // in-memory SQLite by construction. Proving it against a live PostgreSQL server
 // is a targeted read-only check run by hand against the deployed database, and
-// the result is recorded in the M7-F report rather than asserted here.
+// the result is recorded in the demo-readiness pass report rather than asserted here.
 
 // ============================================== the contract toJson expects
 
 test('toJson parses every JSON shape from stored text', () => {
-  // What SQLite hands back, and — after the M7-F type parsers — what pg does too.
+  // What SQLite hands back, and — after the demo-readiness pass type parsers — what pg does too.
   assert.deepEqual(toJson(fromJson({ a: 1 }), null), { a: 1 });
   assert.deepEqual(toJson(fromJson([1, 2, 3]), null), [1, 2, 3]);
   assert.equal(toJson(fromJson(24), null), 24);
@@ -82,7 +82,7 @@ test('NEGATIVE CONTROL — an already-parsed scalar is what used to break', () =
 // ==================================== settings survive a real database round trip
 
 test('settings round-trip through the database with a non-empty precondition', async () => {
-  // The check my M7-C PostgreSQL verification got wrong: it called `getAll()`
+  // The check the first PostgreSQL verification got wrong: it called `getAll()`
   // against an EMPTY settings table, so the parsing loop never ran and the
   // failure could not surface. The precondition below is the whole point.
   const { repos, db, close } = await createTestContext();

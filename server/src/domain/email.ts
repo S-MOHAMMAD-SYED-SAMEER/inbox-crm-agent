@@ -62,7 +62,7 @@ export type ConfidenceBand = (typeof CONFIDENCE_BANDS)[number];
 export const EMAIL_PROVIDERS = ['demo', 'gmail'] as const;
 export type EmailProvider = (typeof EMAIL_PROVIDERS)[number];
 
-// Confidence thresholds (spec §18). Bands exist because a band is what changes
+// Confidence thresholds. Bands exist because a band is what changes
 // system behaviour; the raw number is shown alongside but never branched on
 // outside this function, so there is exactly one place where "how confident is
 // confident enough" is defined.
@@ -81,7 +81,7 @@ export function confidenceBand(
 }
 
 /**
- * The canonical shape every email source adapter must produce (FR-3). Nothing
+ * The canonical shape every email source adapter must produce. Nothing
  * downstream of ingestion knows which provider a message came from.
  */
 export type CanonicalEmail = {
@@ -93,7 +93,7 @@ export type CanonicalEmail = {
   toEmail: string;
   cc: string | null;
   subject: string;
-  /** Sanitised plain text only — never HTML (FR-4). */
+  /** Sanitised plain text only — never HTML. */
   bodyText: string;
   headers: Record<string, string>;
   receivedAt: string;
@@ -105,6 +105,6 @@ export type EmailRecord = CanonicalEmail & {
   state: EmailState;
   reviewReason: ReviewReason | null;
   correlationId: string;
-  /** True when the body was capped at ingestion (FR-4). Never silent. */
+  /** True when the body was capped at ingestion. Never silent. */
   bodyTruncated: boolean;
 };

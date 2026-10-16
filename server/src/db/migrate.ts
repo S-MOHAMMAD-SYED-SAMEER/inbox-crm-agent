@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { splitStatements, translateDdl } from './dialect.ts';
 import type { Database } from './types.ts';
 
-// Migration runner — about eighty lines, no framework (NFR-9).
+// Migration runner — about eighty lines, no framework.
 //
 // What a migration framework would add over this: generators, rollbacks, and a
 // DSL. Rollbacks are the only one worth wanting, and a rollback of a schema

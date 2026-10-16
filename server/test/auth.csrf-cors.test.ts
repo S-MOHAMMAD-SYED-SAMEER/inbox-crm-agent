@@ -10,7 +10,7 @@ import { readCookie, SESSION_COOKIE, CSRF_COOKIE } from '../src/auth/cookies.ts'
 import { isCsrfExempt, isSafeMethod, CSRF_HEADER } from '../src/auth/csrf.ts';
 import type { AppConfig } from '../src/config/env.ts';
 
-// M5-B — CSRF and CORS.
+// CSRF and CORS.
 //
 // The session cookie is `SameSite=Strict`, so a browser already refuses to
 // attach it cross-site. These tests are about what happens when that promise is
@@ -33,7 +33,7 @@ type Server = {
 };
 
 async function serve(over: Partial<AppConfig> = {}): Promise<Server> {
-  const ctx = await createTestContext({ idPrefix: 'm5b' });
+  const ctx = await createTestContext({ idPrefix: 'csrf' });
   const config: AppConfig = {
     ...loadConfig({}).config,
     operatorPasswordHash: await hashPassword(PASSWORD),
@@ -328,7 +328,7 @@ test('same-origin requests carry no Origin header and are unaffected', async () 
 // --- cookie attributes -------------------------------------------------------
 
 test('cookie attributes are correct for both cookies', async () => {
-  const ctx = await createTestContext({ idPrefix: 'm5b-cookie' });
+  const ctx = await createTestContext({ idPrefix: 'csrf-cookie' });
   const config: AppConfig = {
     ...loadConfig({}).config,
     operatorPasswordHash: await hashPassword(PASSWORD),

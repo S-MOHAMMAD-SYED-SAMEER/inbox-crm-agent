@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Database, SqlParam } from '../src/db/types.ts';
 
-// M5-E — targeted PostgreSQL verification.
+// targeted PostgreSQL verification.
 //
 // The 624-test suite cannot run here: `createTestDatabase()` is in-memory
 // SQLite, and every `createTestContext()` assumes a private database. Giving
@@ -29,7 +29,7 @@ import type { Database, SqlParam } from '../src/db/types.ts';
 //      against a row that exists, and there is a precondition check saying so.
 
 /** Every synthetic id must be a real UUID: Postgres enforces the column type. */
-const uid = (name: string) => deterministicId(`m5e:${name}`);
+const uid = (name: string) => deterministicId(`pgcheck:${name}`);
 
 let passed = 0;
 let failed = 0;
@@ -77,7 +77,7 @@ async function makeEmailAndAnalysis(): Promise<void> {
     'INSERT INTO emails (id, correlation_id, provider, provider_message_id, from_email, to_email, subject, body_text, received_at, ingested_at, state) ' +
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
-      EMAIL, CORR, 'demo', 'm5e-pm-1', 'sarah@acme.example', 'me@x.co',
+      EMAIL, CORR, 'demo', 'pgcheck-pm-1', 'sarah@acme.example', 'me@x.co',
       'Enquiry', 'Body text', '2026-06-01T00:00:00.000Z', '2026-06-01T00:00:00.000Z', 'awaiting_approval',
     ],
   );
@@ -135,7 +135,7 @@ async function clearOwnFixtures(): Promise<void> {
   await exec('DELETE FROM decisions WHERE email_id = ?', [EMAIL]);
   await exec('DELETE FROM email_analyses WHERE email_id = ?', [EMAIL]);
   await exec('DELETE FROM entity_matches WHERE email_id = ?', [EMAIL]);
-  await exec('DELETE FROM emails WHERE id = ? OR provider_message_id = ?', [EMAIL, 'm5e-pm-1']);
+  await exec('DELETE FROM emails WHERE id = ? OR provider_message_id = ?', [EMAIL, 'pgcheck-pm-1']);
   await exec('DELETE FROM sessions WHERE operator = ?', ['operator']);
 }
 
@@ -162,7 +162,7 @@ await repos.approvals.request(decision.id, 24);
       'INSERT INTO emails (id, correlation_id, provider, provider_message_id, from_email, to_email, subject, body_text, received_at, ingested_at, state) ' +
         'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
-        uid('dupe'), CORR, 'demo', 'm5e-pm-1', 'a@b.co', 'me@x.co',
+        uid('dupe'), CORR, 'demo', 'pgcheck-pm-1', 'a@b.co', 'me@x.co',
         's', 'b', '2026-06-01T00:00:00.000Z', '2026-06-01T00:00:00.000Z', 'received',
       ],
     ),
@@ -260,10 +260,10 @@ console.log('\n=== TRANSACTIONS ===');
 }
 
 // ==================================================== SEED TRANSACTION BINDING
-console.log('\n=== SEED TRANSACTION BINDING (M4-D fix, on Postgres) ===');
+console.log('\n=== SEED TRANSACTION BINDING (fix, on Postgres) ===');
 {
   // The root handle refuses CRM inserts; transactions hand out an unrestricted
-  // one. Before the M4-D fix the seed wrote through the root handle — on
+  // one. Before the outbound adapter fix the seed wrote through the root handle — on
   // Postgres that is a different pooled client, so this is exactly where it
   // would break. On SQLite the same test passes either way.
   const guarded: Database = {
@@ -349,7 +349,7 @@ console.log('\n=== OUTBOX CLAIM ===');
   await exec('DELETE FROM outbox_messages WHERE id = ?', [row.id]);
 }
 
-// ============================================ TRUE CONCURRENCY — the point of M5-E
+// ============================================ TRUE CONCURRENCY — the point of the Postgres verification
 console.log('\n=== CONCURRENCY (real parallel connections) ===');
 {
   for (const attempts of [2, 5, 10]) {

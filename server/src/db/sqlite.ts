@@ -7,11 +7,11 @@ import type { Database, QueryResult, SqlParam } from './types.ts';
 //
 // Same reasoning Project 1 used for its conversation memory: `node:sqlite`
 // ships with Node, needs no `npm install`, and has no native build step —
-// which is why the whole M0 foundation can be migrated, seeded, and tested on
+// which is why the whole foundation can be migrated, seeded, and tested on
 // a machine with no database server and no credentials.
 //
 // This is the local-development and test driver. Hosted deployments set
-// DATABASE_URL and get the Postgres driver instead (D1); the repositories
+// DATABASE_URL and get the Postgres driver instead; the repositories
 // above this line cannot tell the difference.
 
 type SqliteValue = string | number | bigint | null | Uint8Array;

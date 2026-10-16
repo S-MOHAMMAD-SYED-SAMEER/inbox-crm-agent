@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../lib/errors.ts';
 
-// CORS, written out rather than installed (M5-B).
+// CORS, written out rather than installed.
 //
 // The `cors` package is ~200 lines of option handling for a policy this
 // application states in one sentence: *the API answers its own front end and

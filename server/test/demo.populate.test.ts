@@ -21,7 +21,7 @@ import {
 } from '../src/demo/populate.ts';
 import type { AppConfig } from '../src/config/env.ts';
 
-// P19 — populating the public demo.
+// public demo — populating the public demo.
 //
 // Two halves, matching the split in the code. The refusal logic is pure and is
 // attacked directly with malformed and hostile health responses. The pipeline

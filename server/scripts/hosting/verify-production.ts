@@ -6,9 +6,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hashPassword } from '../../src/lib/password.ts';
 
-// M7-B — production build verification.
+// production build verification.
 //
-// M7-A proved the wiring with `createApp` called in-process and a synthetic
+// single-origin serving proved the wiring with `createApp` called in-process and a synthetic
 // `dist/` written by the test. That is the right shape for a unit test and it
 // leaves three things unproven, all of which are exactly what breaks on a first
 // deploy:
@@ -41,7 +41,7 @@ const SERVER_ROOT = path.resolve(HERE, '..', '..');
 const WEB_DIST = path.resolve(SERVER_ROOT, '..', 'web', 'dist');
 const ENTRY = path.join(SERVER_ROOT, 'src', 'index.ts');
 
-const OPERATOR_PASSWORD = 'm7b-production-check-9f3a';
+const OPERATOR_PASSWORD = 'prod-check-check-9f3a';
 
 let passed = 0;
 let failed = 0;
@@ -233,7 +233,7 @@ async function assertThrowawayDatabase(baseUrl: string): Promise<void> {
 
 // ============================================================================
 
-console.log('M7-B — production build verification');
+console.log('production build verification');
 console.log('='.repeat(60));
 
 // --- 1. the real build must exist -------------------------------------------
@@ -294,7 +294,7 @@ section('2. The shipped bundle carries no secret and no hardcoded host');
 // --- 3. a throwaway database -------------------------------------------------
 
 section('3. A throwaway database, migrated and seeded');
-const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'm7b-'));
+const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prod-check-'));
 const sqlitePath = path.join(workDir, 'production-check.sqlite');
 const operatorHash = await hashPassword(OPERATOR_PASSWORD);
 
@@ -501,7 +501,7 @@ section('8. NEGATIVE CONTROL — the same server with no build to serve');
   // cached response, a stray route. Point the server at an empty directory and
   // the front-end checks MUST fail while the API keeps working. If `/` still
   // returns the app here, section 4 proved nothing.
-  const emptyDist = fs.mkdtempSync(path.join(os.tmpdir(), 'm7b-empty-'));
+  const emptyDist = fs.mkdtempSync(path.join(os.tmpdir(), 'prod-check-empty-'));
   const server = await startServer({ ...PROD_ENV, WEB_DIST_DIR: emptyDist });
   await assertThrowawayDatabase(server.baseUrl);
   const browser = new Browser(server.baseUrl);
@@ -513,7 +513,7 @@ section('8. NEGATIVE CONTROL — the same server with no build to serve');
   const asset = await browser.call('/assets/index-DzjzL5ie.js');
   check('a hashed asset is not served from an empty build', asset.status !== 200);
 
-  // The M7-A contract: a missing build degrades the dashboard, never the API.
+  // The single-origin serving contract: a missing build degrades the dashboard, never the API.
   const health = await browser.call('/api/health');
   check('the API still answers with no build present', health.status === 200);
   const protectedRoute = await browser.call('/api/emails');

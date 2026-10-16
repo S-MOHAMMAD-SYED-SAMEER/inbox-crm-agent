@@ -12,19 +12,19 @@ import { AppError } from '../../lib/errors.ts';
 import { createLogger, type Logger } from '../../lib/logger.ts';
 import { systemClock, type Clock } from '../../lib/clock.ts';
 
-// STAGE 2 — DECIDE (spec §7).
+// STAGE 2 — DECIDE.
 //
 //   understanding + resolution + CRM + settings
 //     → rules            deterministic; produces the action plan and its trace
-//     → policy           requiresApproval(), the M0 function, unchanged
+//     → policy           requiresApproval(), the foundation function, unchanged
 //     → draft            model writes prose, only when a reply is warranted
 //     → guardrails       deterministic post-checks on that prose
-//     → policy again     a blocked draft forces approval (§16)
+//     → policy again     a blocked draft forces approval
 //     → persist          plan, trace, policy reasons, draft, all separately
 //     → state            awaiting_approval | deciding | needs_review
 //
-// M3 ENDS AT A PERSISTED DECISION. Nothing here writes to the CRM, queues an
-// email, or executes anything — that is M4, behind the approval gate.
+// DECIDE ENDS AT A PERSISTED DECISION. Nothing here writes to the CRM, queues an
+// email, or executes anything — that is EXECUTE, behind the approval gate.
 //
 // WHERE THE MODEL SITS: after the plan is final. It receives a finished
 // decision and writes the covering text. It has one tool, `record_draft`, which
@@ -49,7 +49,7 @@ export type DecideDeps = {
 /**
  * Guards which states may enter DECIDE.
  *
- * `deciding` is where M2 leaves a resolved email. `awaiting_approval` is
+ * `deciding` is where RESOLVE leaves a resolved email. `awaiting_approval` is
  * allowed so a decision can be re-run and superseded before anyone acts on it.
  */
 export function assertDecidable(email: EmailRecord): void {
@@ -162,7 +162,7 @@ export async function decideEmail(
     }
   }
 
-  // --- the policy gate, unchanged from M0 -----------------------------------
+  // --- the policy gate, unchanged from the foundation -----------------------------------
 
   const violations = draft?.blockedBy.map((violation) => violation.guardrail) ?? [];
   // A draft that could not be written is treated like a blocked one for the
@@ -192,7 +192,7 @@ export async function decideEmail(
 
   // --- persist ---------------------------------------------------------------
   //
-  // CLAIM THE EMAIL BEFORE WRITING ANYTHING (M7-F)
+  // CLAIM THE EMAIL BEFORE WRITING ANYTHING
   //
   // `handleDecidePending` selects every email in `deciding`, and nothing used
   // to stop two overlapping batches selecting the same rows. Each then created
@@ -299,7 +299,7 @@ export async function decideEmail(
 
   if (state === 'awaiting_approval') {
     // Open the approval request now, so the SLA clock starts when the plan was
-    // made rather than when someone happens to look at it (§16). Idempotent by
+    // made rather than when someone happens to look at it. Idempotent by
     // the schema's UNIQUE(decision_id).
     await repos.approvals.request(decision.id, settings.approval_sla_hours);
 
@@ -355,9 +355,9 @@ export async function decideEmail(
  * Where the email rests after a decision.
  *
  * Three outcomes, and note the third: a plan that needs no approval stays in
- * `deciding`. The §8 state machine sends it to `executing`, but M3 does not
+ * `deciding`. The specification state machine sends it to `executing`, but DECIDE does not
  * execute — moving it there would leave the email claiming something is
- * happening when nothing is. M4 makes that transition when it can honour it.
+ * happening when nothing is. EXECUTE makes that transition when it can honour it.
  */
 export function nextState(plan: ActionPlan): { state: EmailRecord['state']; reviewReason: ReviewReason | null } {
   if (plan.actions.length === 0) {

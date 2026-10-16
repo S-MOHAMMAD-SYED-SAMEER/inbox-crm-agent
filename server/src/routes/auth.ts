@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { handleLogin, handleLogout, handleSession, type AuthDeps } from '../handlers/auth.ts';
 import { buildCookie, clearCookie, readCookie, CSRF_COOKIE, SESSION_COOKIE } from '../auth/cookies.ts';
 
-// Authentication routes (M5-A).
+// Authentication routes.
 //
 // These three are the only endpoints reachable without a session, which is why
 // they live in their own router mounted before the gate.
@@ -11,7 +11,7 @@ import { buildCookie, clearCookie, readCookie, CSRF_COOKIE, SESSION_COOKIE } fro
 //
 //   inbox_session  HttpOnly — the bearer credential. JavaScript must never be
 //                  able to read it, so an XSS bug cannot exfiltrate a session.
-//   inbox_csrf     readable — the CSRF token (M5-B). Deliberately NOT HttpOnly,
+//   inbox_csrf     readable — the CSRF token. Deliberately NOT HttpOnly,
 //                  because the front end has to echo it back in a header. It is
 //                  worthless on its own: a cross-site page can cause the session
 //                  cookie to be sent but cannot read this one to copy it.

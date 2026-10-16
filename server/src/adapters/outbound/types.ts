@@ -1,7 +1,7 @@
 import type { OutboundEmail } from '../email/types.ts';
 import type { OutboundContext, OutboundProviderName, OutboundResult } from '../../domain/outbound.ts';
 
-// THE OUTBOUND BOUNDARY (spec §23, FR-32).
+// THE OUTBOUND BOUNDARY.
 //
 // This is the narrowest interface in the codebase, and that is the point.
 // Everything it does is *deliver a message someone else already decided to

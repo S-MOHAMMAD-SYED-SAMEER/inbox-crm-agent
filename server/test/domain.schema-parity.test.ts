@@ -134,7 +134,7 @@ test('every CRM table constrains `source` to the same three values', () => {
 });
 
 test('approval and decision enums match their CHECK constraints', () => {
-  // M4-C: `approvals.state` gained a fifth value through a table rebuild, and
+  // `approvals.state` gained a fifth value through a table rebuild, and
   // this is the pair most able to drift — the TypeScript union is read by the
   // queue, the expiry sweep and the executor, while the CHECK is what the
   // database will actually accept.
@@ -159,7 +159,7 @@ test('the risk tiers accepted by the schema match the domain', () => {
 });
 
 test('every CRM table carries deleted_at, since reads filter on it', () => {
-  // Spec §11 requires soft delete; §10 omitted the column. If a table gains a
+  // the specification requires soft delete; the specification omitted the column. If a table gains a
   // repository read that filters `deleted_at IS NULL` while the migration never
   // added the column, every read against it fails at runtime.
   for (const table of ['companies', 'contacts', 'deals', 'tasks', 'activities', 'notes']) {

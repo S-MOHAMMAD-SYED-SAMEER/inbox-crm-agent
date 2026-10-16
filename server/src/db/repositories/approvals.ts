@@ -5,7 +5,7 @@ import { ConflictError, NotFoundError } from '../../lib/errors.ts';
 import { APPROVAL_STATES } from '../../domain/execution.ts';
 import type { ApprovalRecord, ApprovalState } from '../../domain/execution.ts';
 
-// Approval persistence (spec §16, FR-22..FR-25).
+// Approval persistence.
 //
 // The lifecycle is `pending → approved | rejected | expired | superseded`, and
 // the terminal states are terminal: `decide()` below refuses to move an
@@ -13,7 +13,7 @@ import type { ApprovalRecord, ApprovalState } from '../../domain/execution.ts';
 // approval on the same decision would make "who authorised this, and when?"
 // ambiguous — and the whole point of the record is that it is not.
 //
-// `superseded` (M4-C) is reached when a human edits the plan: the edit creates
+// `superseded` is reached when a human edits the plan: the edit creates
 // a new decision with its own approval, so this one stops being pending without
 // anyone having rejected it and without anything having timed out.
 //
@@ -93,7 +93,7 @@ export function createApprovalRepository({ db, clock, newId }: RepoDeps) {
      *
      * All four destinations are terminal, and the guard below is what makes
      * them so: `pending` is the only state this method will move out of. That
-     * is why `superseded` (M4-C) needs no separate protection — an approval
+     * is why `superseded` needs no separate protection — an approval
      * that has been superseded can no more be approved than a rejected one can.
      */
     async decide(
@@ -123,10 +123,10 @@ export function createApprovalRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * Records what a human changed, on the approval for the revision (FR-26).
+     * Records what a human changed, on the approval for the revision.
      *
-     * These three columns have existed since M0 and were written as NULL until
-     * now. They are the eval signal §20's feedback loop is built on: the AI's
+     * These three columns have existed since the foundation and were written as NULL until
+     * now. They are the eval signal the specification's feedback loop is built on: the AI's
      * proposal, the human's final version, and the structured difference
      * between them — a labelled model error in the client's own domain.
      *
@@ -184,7 +184,7 @@ export function createApprovalRepository({ db, clock, newId }: RepoDeps) {
       return rows.map(mapApproval);
     },
 
-    /** Pending approvals whose SLA has elapsed. Expiry never executes (§16). */
+    /** Pending approvals whose SLA has elapsed. Expiry never executes. */
     async listExpired(now: string, limit = 100): Promise<ApprovalRecord[]> {
       const rows = await db.query(
         "SELECT * FROM approvals WHERE state = 'pending' AND expires_at < ? ORDER BY expires_at LIMIT ?",
@@ -194,7 +194,7 @@ export function createApprovalRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * How many approvals sit in each state (M5-F, audit F-11).
+     * How many approvals sit in each state.
      *
      * One aggregate query. The previous implementation called
      * `listByState(state, 500).length` once per state — up to 2,500 full rows
@@ -224,5 +224,3 @@ export function createApprovalRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type ApprovalRepository = ReturnType<typeof createApprovalRepository>;

@@ -12,9 +12,9 @@ import { createMemoryLogger } from '../src/lib/logger.ts';
 import { appliedMigrations } from '../src/db/migrate.ts';
 import type { AppConfig } from '../src/config/env.ts';
 
-// M5-A — session authentication.
+// session authentication.
 //
-// The finding this closes (F-01) was not "there is no login screen". It was that
+// The finding this closes was not "there is no login screen". It was that
 // operator identity came from an `x-operator` header anyone could set, so every
 // approval, revision and audit event recorded a *claim* rather than an actor —
 // while the product's central promise is that a human authorised the thing and
@@ -48,7 +48,7 @@ type Server = {
 };
 
 async function serve(over: Partial<AppConfig> = {}): Promise<Server & { ctx: Awaited<ReturnType<typeof createTestContext>> }> {
-  const ctx = await createTestContext({ idPrefix: 'm5a' });
+  const ctx = await createTestContext({ idPrefix: 'auth' });
   const config = await authConfig(over);
   const app = createApp({ db: ctx.db, config, logger: quiet });
 
@@ -436,7 +436,7 @@ test('a forged or stale session cookie is refused', async () => {
     }
 
     // And a real session stops working once it is signed out. Logout is a state
-    // change, so it carries a CSRF token like any other mutation (M5-B).
+    // change, so it carries a CSRF token like any other mutation.
     const live = await signIn(s.url);
     assert.equal((await fetch(`${s.url}/api/emails`, { headers: { cookie: live.cookie } })).status, 200);
 

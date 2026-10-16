@@ -5,7 +5,7 @@ import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:revise`
 //
-// M4-C's focused safety measurement: the human revision lifecycle.
+// The focused safety measurement for approve-with-edits: the human revision lifecycle.
 // Deterministic, offline, no API key. Exits non-zero when any property is
 // violated — or when one of them was never exercised.
 

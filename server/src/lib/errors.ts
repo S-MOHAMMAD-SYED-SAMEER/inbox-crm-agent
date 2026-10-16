@@ -1,4 +1,4 @@
-// Shared error conventions (spec §11).
+// Shared error conventions.
 //
 // One envelope shape for every non-2xx response:
 //   { "error": { "code": "...", "message": "...", "details": {} } }
@@ -28,7 +28,7 @@ export type ErrorCode = (typeof ERROR_CODES)[number];
 
 const STATUS_BY_CODE: Readonly<Record<ErrorCode, number>> = Object.freeze({
   VALIDATION_ERROR: 400,
-  // M5-A/B. 401 means "not signed in"; 403 means "signed in, but this request
+  // 401 means "not signed in"; 403 means "signed in, but this request
   // is not one you may make" — which is where a failed CSRF check lands.
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,

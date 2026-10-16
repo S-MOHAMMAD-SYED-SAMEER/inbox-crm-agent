@@ -85,7 +85,7 @@ export type ActionPlan = {
 };
 
 /**
- * `superseded` (M4-C) is what a pending approval becomes when a human edits the
+ * `superseded` is what a pending approval becomes when a human edits the
  * plan: the edit creates a new decision with its own approval, so this one
  * stops being pending without anyone rejecting it and without anything timing
  * out. Terminal, and never actionable.
@@ -127,7 +127,7 @@ export type Outbox = {
   /**
    * `sent` is the only value that means a customer has the message, and it is
    * reachable only when the operator turned outbound sending on server-side, a
-   * human approved the plan, and a provider accepted it (M4-D).
+   * human approved the plan, and a provider accepted it.
    */
   status: 'queued' | 'sent' | 'suppressed' | 'failed';
   /** Why it was held or refused. Also carries the failure kind on `failed`. */
@@ -148,7 +148,7 @@ export type Decision = {
   promptVersion: string | null;
   latencyMs: number | null;
   supersededBy: string | null;
-  /** The decision this one was edited from (M4-C). Null for anything the agent decided. */
+  /** The decision this one was edited from. Null for anything the agent decided. */
   parentDecisionId: string | null;
   /** 1-based position in this email's decision history. */
   revision: number;
@@ -176,7 +176,7 @@ export type DecisionRevision = {
   isCurrent: boolean;
 };
 
-/** One field of one action, changed by a human (FR-26). */
+/** One field of one action, changed by a human. */
 export type EditDiffEntry = {
   path: string;
   actionIndex: number | null;
@@ -203,7 +203,7 @@ export type RevisionResult = {
   detail: EmailDetail;
 };
 
-/** One field of a plan a human may change (M4-C). Anything absent is immutable. */
+/** One field of a plan a human may change. Anything absent is immutable. */
 export type ActionFieldEdit = {
   index: number;
   field: string;
@@ -217,7 +217,7 @@ export type EditEnvelope = {
   actions?: ActionFieldEdit[];
 };
 
-/** One row of the approval queue (spec §13.4). */
+/** One row of the approval queue. */
 export type ApprovalQueueRow = {
   approval: Approval;
   decision: Decision;
@@ -369,7 +369,7 @@ export type EmailDetail = {
   decision: Decision | null;
   /** Null until a plan needed approval. */
   approval: Approval | null;
-  /** Every decision made for this email, oldest first (M4-C.3). */
+  /** Every decision made for this email, oldest first. */
   revisions: DecisionRevision[];
   /** Empty until something has actually been applied. */
   executions: Execution[];
@@ -385,7 +385,7 @@ export type EmailDetail = {
   };
 };
 
-// --- CRM read models (M6-C) --------------------------------------------------
+// --- CRM read models --------------------------------------------------
 //
 // Mirrors of the server's projections. The relationship names (`companyName`,
 // `contactName`) are resolved server-side: a join belongs in a query, not in a

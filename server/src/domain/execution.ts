@@ -2,7 +2,7 @@ import { stableHash } from '../lib/ids.ts';
 import type { ActionPlan } from './decision.ts';
 import type { ActionType } from './actions.ts';
 
-// Approval and execution vocabulary (spec §16, §15, FR-22..FR-33).
+// Approval and execution vocabulary.
 //
 // THE SECURITY MODEL IN ONE LINE
 //
@@ -15,7 +15,7 @@ import type { ActionType } from './actions.ts';
 // anything disagrees.
 
 /**
- * `superseded` (M4-C) is the state an approval reaches when a human edits the
+ * `superseded` is the state an approval reaches when a human edits the
  * plan: the edit creates a new decision, so the approval on the old one is no
  * longer pending — but nobody rejected it and nothing timed out. It is terminal
  * like the other three.
@@ -33,12 +33,12 @@ export const EXECUTION_STATUSES = ['pending', 'succeeded', 'failed', 'skipped'] 
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 
 /**
- * `sending` (M5-D) is a claim, not a status report.
+ * `sending` is a claim, not a status report.
  *
  * A row in `sending` belongs to one delivery attempt. Only `queued` or `failed`
  * can become it, and the transition is a conditional UPDATE the database
  * arbitrates — so of two concurrent executors exactly one proceeds and the
- * other stops before the provider is ever called (F-05).
+ * other stops before the provider is ever called.
  */
 export const OUTBOX_STATUSES = ['queued', 'sending', 'sent', 'suppressed', 'failed'] as const;
 export type OutboxStatus = (typeof OUTBOX_STATUSES)[number];
@@ -129,7 +129,7 @@ export type OutboxRecord = {
 };
 
 /**
- * The idempotency key for one action of one decision (FR-29, spec §15 step 2).
+ * The idempotency key for one action of one decision.
  *
  * Derived from content, not from a counter: the same action of the same
  * decision always produces the same key, so a retry collides with the UNIQUE

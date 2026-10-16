@@ -2,9 +2,9 @@
   "version": "resolve-1.0.0",
   "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
   "note": [
-    "M2 evaluation cases. Scoped to entity resolution — the full harness (§20) is M6.",
+    "Entity-resolution evaluation cases. Scoped to entity resolution.",
     "",
-    "Expectations are written from the specification's own account of the demo dataset (§22) and the",
+    "Expectations are written from the specification's own account of the demo dataset and the",
     "seeded CRM, not from what the resolver happens to produce. Several cases assert the SHAPE of a",
     "decision rather than a link:",
     "",
@@ -15,7 +15,7 @@
     "         the case that fails if a close call is ever silently promoted to a match.",
     "  E-09 — spam. Must not acquire a CRM identity just because it was processed.",
     "",
-    "E-08 and E-10 are absent on purpose: M1 routes them to needs_review, so resolution never runs",
+    "E-08 and E-10 are absent on purpose: UNDERSTAND routes them to needs_review, so resolution never runs",
     "on them. An entry here would be asserting behaviour that cannot occur."
   ],
   "cases": [

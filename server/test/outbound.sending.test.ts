@@ -33,7 +33,7 @@ import type { Database } from '../src/db/types.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M4-D — the outbound email adapter.
+// the outbound email adapter.
 //
 // This is the first capability in the system that can put text in front of a
 // customer, so the tests below are mostly about the circumstances in which it
@@ -77,7 +77,7 @@ type Fixture = {
 
 /** demo-e01: the hero lead — tier 2, a drafted reply, and a send_email action. */
 async function pending(): Promise<Fixture> {
-  const ctx = await createTestContext({ idPrefix: 'm4d' });
+  const ctx = await createTestContext({ idPrefix: 'outbound' });
   await seedDemoData(ctx.repos, readSeedFile(DEMO_DATA_DIR));
   await ctx.repos.settings.set('autonomy_level', 'manual', 'test');
 
@@ -222,7 +222,7 @@ test('an expired approval sends nothing, even with outbound enabled', async () =
 
 test('a plan whose draft was blocked sends nothing, even with outbound enabled', async () => {
   const f = await pending();
-  // Mark the stored draft as having failed a content check, as M3 would.
+  // Mark the stored draft as having failed a content check, as DECIDE would.
   await f.db.execute('UPDATE decisions SET draft_blocked_by = ? WHERE id = ?', [
     JSON.stringify([{ guardrail: 'no_price_commitment', evidence: 'redacted', why: 'test' }]),
     f.decision.id,
@@ -532,13 +532,13 @@ test('a suppressed reply is audited as suppressed and never as attempted', async
   await f.close();
 });
 
-// --- §20  the seed transaction, now bound to its transaction ----------------
+// --- the seed transaction, now bound to its transaction ----------------
 
 test('seeding rolls back as one transaction across every repository', async () => {
   // Previously `repos.db.transaction(...)` with root-bound repositories: atomic
   // on SQLite by coincidence of a shared connection, and not atomic at all on
   // Postgres. This is the same regression test shape the executor got in
-  // M4-C.2.1 — a root handle that refuses CRM inserts, which is the Postgres
+  // a root handle that refuses CRM inserts, which is the Postgres
   // pooling behaviour expressed on SQLite.
   const ctx = await createTestContext({ idPrefix: 'seed' });
 

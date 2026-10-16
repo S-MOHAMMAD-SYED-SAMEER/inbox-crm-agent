@@ -43,7 +43,7 @@ export function App(): ReactNode {
   // Three states, and the application is only one of them. Nothing below can be
   // reached by a browser the server has not confirmed a session for — and the
   // server refuses every protected endpoint anyway, so this gate is the honest
-  // presentation of that boundary rather than the boundary itself (M5-A).
+  // presentation of that boundary rather than the boundary itself.
   if (session.state.status === 'loading') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-canvas">
@@ -56,7 +56,7 @@ export function App(): ReactNode {
     return <Login onSignedIn={() => void session.refresh()} />;
   }
 
-  // The public read-only demo (P19). The same shell and the same screens, drawn
+  // The public read-only demo. The same shell and the same screens, drawn
   // from the same endpoints — what differs is that there is no operator, no
   // sign-out, and no control that would attempt a change. This branch is not a
   // permission: the server has already decided, and it refuses every mutation
@@ -81,7 +81,7 @@ export function App(): ReactNode {
       ) : null}
       {route.name === 'approvals' ? <Approvals /> : null}
 
-      {/* The CRM the assistant actually writes to (M6-C). Read-only. */}
+      {/* The CRM the assistant actually writes to. Read-only. */}
       {route.name === 'deals' ? <Deals /> : null}
       {route.name === 'contacts' ? <Contacts /> : null}
       {route.name === 'companies' ? <Companies /> : null}
