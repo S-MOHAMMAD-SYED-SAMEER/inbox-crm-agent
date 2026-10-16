@@ -15,7 +15,7 @@ The remaining known gap is a real outbound email provider: only a deterministic 
 implemented, and `ALLOW_OUTBOUND_SEND`/`OUTBOUND_PROVIDER` refuse to deliver anything until one
 exists.
 
-Full specification: [`docs/PROJECT2_INBOX_CRM_SPEC.md`](../docs/PROJECT2_INBOX_CRM_SPEC.md).
+Full specification: [`docs/PROJECT2_INBOX_CRM_SPEC.md`](./docs/PROJECT2_INBOX_CRM_SPEC.md).
 
 ## Run it locally
 
@@ -76,9 +76,15 @@ Port 3100, not 3000, so this runs alongside Project 1 during a demo.
 ## Verify it
 
 ```bash
-cd server && npm test && npm run typecheck && npm run lint && npm run eval:understand && npm run eval:resolve && npm run eval:decide && npm run eval:execute
-cd ../web   && npm test && npm run typecheck && npm run build
+cd server && npm test && npm run typecheck && npm run lint
+cd server && npm run eval:understand && npm run eval:resolve && npm run eval:decide
+cd server && npm run eval:execute && npm run eval:revise && npm run eval:outbound
+cd web    && npm test && npm run typecheck && npm run lint && npm run build
+cd server && npm run verify:browser    # signs in to the real app in headless Chrome (needs Chrome installed)
 ```
+
+The same checks, plus `npm audit --audit-level=high`, run in CI on every push and pull request. The six
+evaluations use the mock provider, so they say nothing about a real model; see **Evaluation** below.
 
 ## The architecture rule
 
@@ -112,7 +118,7 @@ Three parts of that rule are already implemented and tested in M0:
 
 ```
 server/
-  migrations/          7 SQL files — the schema from spec §10, plus M1–M4 columns
+  migrations/          10 SQL files — the schema from spec §10, plus the columns added since
   src/domain/          closed vocabularies: states, categories, actions, risk tiers, audit events
   src/db/              two drivers behind one interface, repositories, migration runner, seeding
   src/adapters/        llm (mock + anthropic) · email (demo source) · crm (local reader)
@@ -231,9 +237,9 @@ there is nothing for it to permit yet.
 
 ### Why two database drivers when D1 chose PostgreSQL
 
-PostgreSQL is the target, and the migrations are written as PostgreSQL DDL. But there is no Postgres
-server, no Docker, and no Neon account on this machine — and M0's definition of done is that
-`npm run migrate && npm run seed` works and the repository tests pass **with zero credentials**.
+PostgreSQL is the target, and the migrations are written as PostgreSQL DDL. But a first run should need
+no database server, no Docker and no account, so `npm run migrate && npm run seed` works and the tests pass
+**with zero credentials**.
 
 So there are two drivers behind one `Database` interface: Node's built-in `node:sqlite` (the same
 zero-dependency choice Project 1 made for its conversation memory) for local development and tests,
@@ -248,10 +254,19 @@ keeps D1 reversible rather than theoretical.
 and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Handled in one place —
 [`src/db/rows.ts`](server/src/db/rows.ts) — rather than in thirty repository methods.
 
-**Honest limitation:** the Postgres driver is implemented and typechecked but **has never been run
-against a live server**. The first task of whichever milestone provisions a database is to run the
-existing suites against it; they are driver-agnostic by construction, so that is a configuration
-change, not new tests.
+**Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
+(a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
+**55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
+sessions, and real parallel connections racing for one claim). **The 754-test unit suite itself still runs
+only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
+network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
+
+```bash
+docker run -d --name icrm-pg -p 5433:5432 -e POSTGRES_USER=u -e POSTGRES_PASSWORD=p -e POSTGRES_DB=icrm postgres:16-alpine
+cd server
+export DATABASE_URL="postgres://u:p@localhost:5433/icrm?sslmode=disable"   # sslmode=disable: the driver demands TLS unless told otherwise
+npm run migrate && npm run seed && npm run verify:postgres                 # seed first: the script's first two checks expect the demo data
+```
 
 ### Why the migrations are translated rather than duplicated
 
@@ -389,3 +404,7 @@ itself.
 
 Next: a real outbound provider — a Gmail (or equivalent) implementation of `OutboundSender` behind
 `OUTBOUND_PROVIDER`, so `ALLOW_OUTBOUND_SEND` has something beyond the mock to turn on.
+
+## License
+
+[MIT](./LICENSE) © 2026 S Mohammad Syed Sameer.
