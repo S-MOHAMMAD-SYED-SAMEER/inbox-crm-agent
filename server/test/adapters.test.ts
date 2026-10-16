@@ -91,16 +91,23 @@ test('the mock records every call it was asked to make', async () => {
   assert.equal(provider.calls[0]?.toolName, 'record_understanding');
 });
 
-// CONTRACT CHANGE (M1): the Anthropic provider is now implemented, so this no
-// longer asserts "not built". The property it was really protecting — that a
-// provider which cannot run refuses instead of quietly becoming the mock — is
-// unchanged and is what is asserted here now.
+// The property protected here: a provider that cannot run refuses instead of
+// quietly becoming the mock. (It once also asserted that Gemini was "not
+// implemented"; the Gemini provider now exists, so the same property is asserted
+// for a Gemini provider with no key.)
 test('a provider that cannot run refuses rather than falling back to the mock', () => {
   const unconfigured = loadConfig({ LLM_PROVIDER: 'anthropic' });
   assert.throws(() => createLlmProvider(unconfigured.config), /no API key is configured/);
 
-  const gemini = loadConfig({ LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'x' });
-  assert.throws(() => createLlmProvider(gemini.config), /not implemented for this project/);
+  const noGeminiKey = loadConfig({ LLM_PROVIDER: 'gemini' });
+  assert.throws(() => createLlmProvider(noGeminiKey.config), /no API key is configured/);
+});
+
+test('a configured Gemini provider is selected, and is not the mock', () => {
+  const { config } = loadConfig({ LLM_PROVIDER: 'gemini', GEMINI_API_KEY: 'placeholder-not-a-key' });
+  const provider = createLlmProvider(config);
+  assert.equal(provider.name, 'gemini');
+  assert.equal(provider.configured, true);
 });
 
 test('a configured Anthropic provider is selected, and is not the mock', () => {

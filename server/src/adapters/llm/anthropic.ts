@@ -10,6 +10,7 @@ import { config, type AppConfig } from '../../config/env.ts';
 import { classifyFailure, isRetryable, requestedDelayMs, statusOf, withRetry, type RetryOptions } from './resilience.ts';
 import { formatUsage } from './usage.ts';
 import { createLogger, type Logger } from '../../lib/logger.ts';
+import { DEFAULT_ANTHROPIC_TEMPERATURE } from './defaults.ts';
 
 // The Anthropic provider.
 //
@@ -46,8 +47,7 @@ export type AnthropicLike = {
   };
 };
 
-/** Low, because this is classification and extraction, where run-to-run variation is not wanted. */
-export const DEFAULT_ANTHROPIC_TEMPERATURE = 0.2;
+export { DEFAULT_ANTHROPIC_TEMPERATURE };
 export const DEFAULT_MAX_TOKENS = 2048;
 
 export function toAnthropicRequest(
