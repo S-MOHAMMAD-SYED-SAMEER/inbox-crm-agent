@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runReviseEvaluation, reviseThresholdFailures } from '../src/eval/revise/runner.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:revise`
 //
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
 
   const m = report.metrics;
   console.log('\nREVISION evaluation — human-in-the-loop safety (deterministic, no API calls)\n');
+  for (const line of goldBanner()) console.log(line);
 
   console.log(`    revisionAttempts             ${m.revisionAttempts}       (min 3)`);
   console.log(`    revisionSuccess              ${m.revisionSuccess}/${m.revisionAttempts}`);

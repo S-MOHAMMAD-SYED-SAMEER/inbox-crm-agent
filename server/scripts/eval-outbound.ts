@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runOutboundEvaluation, outboundThresholdFailures } from '../src/eval/outbound/runner.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:outbound`
 //
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
 
   const m = report.metrics;
   console.log('\nOUTBOUND evaluation — delivery safety (deterministic, no network)\n');
+  for (const line of goldBanner()) console.log(line);
   console.log(`    outboundAttempts             ${m.outboundAttempts}       (min 5)`);
   console.log(`    outboundSuccesses            ${m.outboundSuccesses}       (min 2)`);
   console.log(`    outboundFailures             ${m.outboundFailures}       (all four modes)`);

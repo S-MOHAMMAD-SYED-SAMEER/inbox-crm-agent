@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runResolveEvaluation, resolveThresholdFailures } from '../src/eval/resolve/runner.ts';
+import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:resolve`
 //
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`\nENTITY RESOLUTION evaluation — dataset ${report.version} (deterministic, no model call)\n`);
+  for (const line of goldBanner()) console.log(line);
 
   for (const result of report.results) {
     console.log(`  ${result.passed ? 'PASS' : 'FAIL'}  ${result.id.padEnd(5)} ${result.description}`);

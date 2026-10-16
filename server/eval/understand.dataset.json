@@ -1,5 +1,6 @@
 {
   "version": "understand-1.0.0",
+  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
   "note": [
     "M1 evaluation cases. Scoped to UNDERSTAND only — the full harness (§20) is M6.",
     "",

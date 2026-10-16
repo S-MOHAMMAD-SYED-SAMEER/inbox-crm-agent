@@ -361,17 +361,33 @@ forty lines here.
 
 ## Evaluation
 
-`npm run eval:understand` runs the ten demo cases through the **real** pipeline with the mock
-provider — real sanitisation, real validation, real provenance checking, real injection detection,
-real persistence. No API key, no spend, and byte-identical on every run.
+**Read this first: every score here is "scored against AI-written gold (Claude-written, not yet human-reviewed)".**
+The ten demo emails, the scripted model answers stored beside them, the CRM seed, the evaluation datasets
+and the specification they follow were written by Claude (an AI assistant) under the project owner's
+direction, and no person has reviewed them yet ([`server/data/demo/PROVENANCE.md`](./server/data/demo/PROVENANCE.md)).
+A passing evaluation means the code does what its author expected, not that the expectation was right. Every
+evaluation prints that label, and a real-model report records it.
 
-The expectations are written against the specification rather than copied from the canned responses,
-so several cases only pass if the deterministic layers actually did their job. Current result: 10/10,
-with `hallucinatedFieldRate 0`, `provenanceCompleteness 1` and `injectionContainment 1` — the three
-that are absolutes rather than targets.
+**Six mock evaluations** (`npm run eval:understand`, `eval:resolve`, `eval:decide`, `eval:execute`,
+`eval:revise`, `eval:outbound`) run the real pipeline (real sanitisation, validation, provenance checking,
+injection detection, matching, rules, approval policy, executor, persistence) with the **mock provider**,
+which replays the scripted answers. No key, no spend, byte-identical on every run. They test the code around
+the model; **they say nothing about a model**, because the "model" is a fixture. Current results: UNDERSTAND
+10/10 (with `hallucinatedFieldRate 0`, `provenanceCompleteness 1`, `injectionContainment 1`, the three that are
+absolutes rather than targets), RESOLVE 8/8, DECIDE 7/7, and the three safety suites meet all their thresholds.
 
-The full harness in spec §20 (action plans, approval-gate recall, unsafe-autonomy rate, draft
-guardrails, a real-provider mode) belongs to M6, when the stages those metrics describe exist.
+**One real-model runner, built and not yet run.** `npm run eval:real` is a **dry run**: it prints the model,
+the temperature, the retry limit and how many requests it would make (about 13, up to 23), and calls nothing.
+`npm run eval:real -- --go` runs the ten emails through the same pipeline against the real model (Gemini by
+default, `--provider anthropic` for Claude), scores them with the same checks, **saves every raw model reply**
+with its tokens, latency, finish reason and temperature, and writes a report to `docs/results/`. It stops at once
+on a rate-limit or quota error, or when two different emails fail in a row, and retries nothing itself. Its
+tests use a scripted stand-in for the model. Until it is run, **no real-model number exists**, and the README,
+the case study and the 3D page say so.
+
+**What is measured here and what is not.** The ten emails are both the demo and the evaluation set, so there is no
+held-out set, and exactly one of them (E-10) carries a prompt injection. `injectionContainment 1` therefore means
+that one email was detected and sent to a person by the deterministic detector, not a rate over many attacks.
 
 ## Not built yet
 

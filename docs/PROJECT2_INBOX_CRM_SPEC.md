@@ -1,5 +1,7 @@
 # Project 2 — Inbox-to-CRM Agent — Technical Specification
 
+> **Provenance:** written by Claude (an AI assistant) under the project owner's direction. Not human-reviewed. See [`server/data/demo/PROVENANCE.md`](../server/data/demo/PROVENANCE.md).
+
 **Status:** specification only. No implementation code, no dependencies installed, no deployment,
 no credentials. Project 1 (`sales-recovery-agent/`) is untouched and must stay that way.
 
