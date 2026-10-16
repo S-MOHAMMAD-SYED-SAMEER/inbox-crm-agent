@@ -11,15 +11,15 @@ import { DEFAULT_SETTINGS } from '../src/db/repositories/index.ts';
 test('a bare environment produces a working, key-free configuration', () => {
   const { config, ok, problems } = loadConfig({});
 
-  // CONTRACT CHANGE (M5-A): a bare environment is no longer "ok", and should not
+  // CONTRACT CHANGE: a bare environment is no longer "ok", and should not
   // be. Without OPERATOR_PASSWORD_HASH nobody can sign in, so the application is
   // genuinely misconfigured — and the problem names the command that fixes it.
-  // Everything else still needs no key, no account and no service (D3).
+  // Everything else still needs no key, no account and no service.
   assert.equal(ok, false);
   assert.deepEqual(problems, [
     'OPERATOR_PASSWORD_HASH is not set, so nobody can sign in. Generate one with `npm run hash-password`.',
   ]);
-  assert.equal(config.llmProvider, 'mock', 'D3: the demo runs for free by default');
+  assert.equal(config.llmProvider, 'mock', 'the demo runs for free by default');
   assert.equal(config.dbDriver, 'sqlite');
   assert.equal(config.databaseUrl, null);
   assert.equal(config.allowOutboundSend, false);
@@ -60,13 +60,13 @@ test('an unknown enum value falls back to the default rather than crashing', () 
   assert.equal(config.llmProvider, 'mock');
   assert.equal(config.autonomyLevel, 'manual');
 
-  // CONTRACT CHANGE (M5-A): the unset operator password is a third problem.
+  // CONTRACT CHANGE: the unset operator password is a third problem.
   assert.equal(problems.filter((problem) => /gpt-9|yolo/.test(problem)).length, 2);
   assert.equal(problems.length, 3);
 });
 
 test('outbound sending needs both locks turned, and neither alone is enough', () => {
-  // CONTRACT CHANGE (M4-D): outbound delivery exists now, so the flag no longer
+  // CONTRACT CHANGE: outbound delivery exists now, so the flag no longer
   // reports "not implemented" — it reports which of the two locks is still shut.
   // Both are server-side environment values; nothing a browser sends is read.
 
@@ -98,7 +98,7 @@ test('outbound sending needs both locks turned, and neither alone is enough', ()
   assert.ok(on.problems.some((problem) => /OUTBOUND SENDING IS ENABLED/.test(problem)));
 });
 
-test('the config summary never exposes a secret (FR-46)', () => {
+test('the config summary never exposes a secret', () => {
   const { config } = loadConfig({
     LLM_PROVIDER: 'anthropic',
     ANTHROPIC_API_KEY: 'sk-ant-super-secret-value',
@@ -126,8 +126,8 @@ test('health reports ok with a reachable database and its migration count', asyn
   assert.equal(body.status, 'ok');
   assert.equal(body.database.reachable, true);
   assert.equal(body.database.migrationsApplied, MIGRATION_COUNT);
-  // CONTRACT CHANGE (M6-E): the version is a product version, not a milestone
-  // label. It is rendered on an operator surface, where "M4-B" read as a
+  // CONTRACT CHANGE: the version is a product version, not a milestone
+  // label. It is rendered on an operator surface, where "the expiry sweep" read as a
   // pre-release build marker. The rule is the assertion, not the number:
   assert.equal(body.version, '1.0.0');
   assert.doesNotMatch(body.version, /^M\d/, 'the version reads as a milestone label');

@@ -17,10 +17,10 @@ import {
 import { isPlaceholderRoute } from '../src/screens/placeholderRoutes.ts';
 import { ROUTES } from '../src/router.ts';
 
-// M6-C — the CRM screens.
+// the CRM screens.
 //
 // The presentation rules are tested; the tables are thin renderers over them,
-// which is the same split the revision and outbox screens use (NFR-9, no jsdom).
+// which is the same split the revision and outbox screens use (the specification, no jsdom).
 //
 // The rule that matters most here is the source badge. It is the moment a client
 // sees which rows the assistant produced — so it must be visible, must not

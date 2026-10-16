@@ -21,7 +21,7 @@ import { newId as defaultNewId, type IdGenerator } from '../../lib/ids.ts';
 import { createLogger, type Logger } from '../../lib/logger.ts';
 import { AppError } from '../../lib/errors.ts';
 
-// STAGE 3 — EXECUTE, part one: the verification boundary (FR-25, FR-27..FR-33).
+// STAGE 3 — EXECUTE, part one: the verification boundary.
 //
 // THE UI IS NOT THE SECURITY BOUNDARY. THIS FILE IS.
 //
@@ -31,7 +31,7 @@ import { AppError } from '../../lib/errors.ts';
 //   * the request body — no caller may assert "this was approved" or "tier 0"
 //   * the stored plan's own `requiresApproval` — that is a cached answer, so the
 //     policy is re-run from the analysis, the resolution and current settings
-//   * model output — it never reached the plan in the first place (M3), and it
+//   * model output — it never reached the plan in the first place, and it
 //     certainly does not reach here
 //
 // A refusal names the specific check that said no. "Something went wrong" would
@@ -44,7 +44,7 @@ export type ExecuteDeps = {
   newId?: IdGenerator;
   logger?: Logger;
   /**
-   * How an approved reply is delivered (M4-D).
+   * How an approved reply is delivered.
    *
    * Defaults to whatever the server configuration allows, which by default is
    * a sender that refuses everything. Injectable so a test can supply a mock —
@@ -128,9 +128,9 @@ export async function verifyExecutable(
     adapterSupportsAtomicity: true,
   });
 
-  // The stored flag is a FLOOR, never a permission (M4-C).
+  // The stored flag is a FLOOR, never a permission.
   //
-  // M4-A's rule stands unchanged: a plan claiming `requires_approval = false`
+  // The executor's rule stands unchanged: a plan claiming `requires_approval = false`
   // gets no say, because `policy.required` is recomputed above and is consulted
   // first. What this adds is the other direction — a plan that needed a human
   // when it was made still needs one now, even if the recomputation has since
@@ -277,7 +277,7 @@ export async function executePlan(
     // database handle they were built with, so writes made through the outer
     // `repos` inside a `repos.db.transaction` block go out on a *different*
     // pooled client and commit independently of it. A mid-plan failure would
-    // then roll back nothing, and FR-28's "all actions or none" would hold on
+    // then roll back nothing, and the specification's "all actions or none" would hold on
     // the driver we test against and quietly not hold on the one we deploy to.
     //
     // Binding the repositories to `tx` removes the difference between the two
@@ -385,7 +385,7 @@ export async function executePlan(
 
   // --- the outbox boundary, and delivery -------------------------------------
   //
-  // The outbox is the durable boundary (§15, FR-32). A reply is written here,
+  // The outbox is the durable boundary. A reply is written here,
   // in full and inspectable, BEFORE anything tries to deliver it — so "what
   // would have gone out?" is answerable even when nothing did, and the outbox
   // status is the single answer to "did this actually go?".
@@ -462,7 +462,7 @@ export async function executePlan(
             });
             outbox = await repos.outbox.findForDecision(decision.id);
           } else {
-            // THE CLAIM (M5-D, audit F-05).
+            // THE CLAIM.
             //
             // One conditional UPDATE decides who delivers. Only `queued` or
             // `failed` can become `sending`, so of two concurrent executors
@@ -488,7 +488,7 @@ export async function executePlan(
               eventType: 'outbound_send_attempted',
               actor: 'system',
               outcome: 'ok',
-              // Recipient and provider, never the subject or the body: §19 keeps
+              // Recipient and provider, never the subject or the body: the specification keeps
               // message content out of the audit log, and a reply quotes the
               // customer's own email.
               summary: `Claimed the approved reply and is delivering it via the ${sender.name} provider.`,
@@ -547,7 +547,7 @@ export async function executePlan(
               // A failed send never becomes `sent`, and it does not fail the
               // execution: the CRM work is done and correct, and a reply that did
               // not go out is a thing for a person to look at rather than a reason
-              // to roll back five records. There is no automatic retry — §18's
+              // to roll back five records. There is no automatic retry — the specification's
               // rule is to fail toward the human, and a silent retry loop is the
               // opposite of that.
               outbox = (await repos.outbox.markFailed(outbox.id, result.kind)) ?? outbox;

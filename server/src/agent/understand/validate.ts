@@ -14,7 +14,7 @@ import {
 } from '../../domain/understanding.ts';
 import type { EmailCategory, Priority } from '../../domain/email.ts';
 
-// Deterministic validation of model output (FR-8, FR-10, FR-11).
+// Deterministic validation of model output.
 //
 // **A model is not trusted because it returned valid JSON.** Provider-side
 // schema enforcement guarantees a shape; it guarantees nothing about meaning. A

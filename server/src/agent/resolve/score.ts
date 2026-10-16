@@ -9,7 +9,7 @@ import {
   emailDomain,
 } from './normalise.ts';
 
-// Deterministic candidate scoring (spec §7).
+// Deterministic candidate scoring.
 //
 // Pure functions over data already in memory. No database, no clock, no model —
 // so every rule can be tested in isolation and the same inputs always produce
@@ -36,7 +36,7 @@ import {
 // `distinctive_token` (0.65) is not in the spec's table. It was added because
 // the spec's own worked example cannot happen without it.
 //
-// Spec §22 requires E-04 — a message from `mark@harborview-group.invalid` against
+// the specification requires E-04 — a message from `mark@harborview-group.invalid` against
 // seeded companies *Harborview Digital* and *Harborview Media* — to produce a
 // match conflict. Under the table above it produces nothing at all: the domain
 // matches neither, and trigram similarity between "harborview group" and
@@ -69,13 +69,13 @@ export const SCORES = {
 } as const;
 
 export const SIMILARITY_THRESHOLDS = {
-  /** Spec §7: contact name fuzzy match requires >= 0.85. */
+  /** the specification: contact name fuzzy match requires >= 0.85. */
   contactName: 0.85,
-  /** Spec §7: company name fuzzy match requires >= 0.88. */
+  /** the specification: company name fuzzy match requires >= 0.88. */
   companyName: 0.88,
 } as const;
 
-/** What resolution knows about the incoming email, after M1. */
+/** What resolution knows about the incoming email, after UNDERSTAND. */
 export type ResolutionInput = {
   senderEmail: string;
   senderName: string | null;
@@ -242,7 +242,7 @@ export function scoreCompany(input: ResolutionInput, company: Company): Candidat
 }
 
 /**
- * Applies the thread bonus (spec §7: +0.20 to an entity already linked in this
+ * Applies the thread bonus (the specification: +0.20 to an entity already linked in this
  * thread).
  *
  * Capped at 1.00 so a bonus cannot push a score past what an exact match earns

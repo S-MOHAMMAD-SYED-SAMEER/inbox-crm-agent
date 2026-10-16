@@ -3,7 +3,7 @@ import type { ApprovalRecord } from '../../domain/execution.ts';
 import { systemClock, type Clock } from '../../lib/clock.ts';
 import { createLogger, type Logger } from '../../lib/logger.ts';
 
-// The approval expiry sweep (spec §16).
+// The approval expiry sweep.
 //
 // THE RULE, VERBATIM: "Expiry does not execute and does not discard — it moves
 // the email to `needs_review` with reason `approval_expired`. Timeouts must
@@ -21,7 +21,7 @@ import { createLogger, type Logger } from '../../lib/logger.ts';
 //
 // NOT A BACKGROUND WORKER. It is a function, called explicitly by
 // `POST /api/approvals/expire` — the same "triggering is explicit" rule the
-// rest of the pipeline follows (§14). A scheduler can call it later without
+// rest of the pipeline follows. A scheduler can call it later without
 // this code changing.
 
 export type ExpirySweepResult = {
@@ -126,8 +126,7 @@ export async function sweepExpiredApprovals({
  * run yet.
  *
  * The queue uses this so a pending row that is already overdue is never shown
- * as actionable work. The executor makes the same comparison for itself
- * (M4-A), so an unswept overdue approval cannot execute either way — this is
+ * as actionable work. The executor makes the same comparison for itself, so an unswept overdue approval cannot execute either way — this is
  * about telling the truth on screen, not about safety.
  */
 export function isOverdue(approval: Pick<ApprovalRecord, 'state' | 'expiresAt'>, now: string): boolean {

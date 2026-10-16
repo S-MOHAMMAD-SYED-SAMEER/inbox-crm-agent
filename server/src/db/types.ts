@@ -28,7 +28,7 @@ export type Database = {
    * Runs `fn` inside a transaction, committing on return and rolling back on
    * throw. Nesting is supported through savepoints, so a repository method
    * that opens a transaction stays correct when a caller has already opened
-   * one — the case that makes "atomic plan application" (§15) composable.
+   * one — the case that makes "atomic plan application" composable.
    */
   transaction<T>(fn: (tx: Database) => Promise<T>): Promise<T>;
 

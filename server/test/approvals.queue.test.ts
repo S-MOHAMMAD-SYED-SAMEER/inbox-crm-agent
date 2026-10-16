@@ -23,9 +23,9 @@ import {
 import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M4-B tests: the approval queue and the expiry sweep.
+// the expiry sweep tests: the approval queue and the expiry sweep.
 //
-// The governing rule throughout is spec §16's: **timeouts must never resolve in
+// The governing rule throughout is the specification's: **timeouts must never resolve in
 // the direction of acting.** An unanswered approval becomes a question for a
 // person, never a tacit yes and never a silent discard.
 

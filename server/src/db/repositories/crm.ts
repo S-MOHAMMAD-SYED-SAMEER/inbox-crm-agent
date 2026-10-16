@@ -21,7 +21,7 @@ import {
   type ActivityDirection,
 } from '../../domain/crm.ts';
 
-// CRM repositories (FR-34, FR-35).
+// CRM repositories.
 //
 // Every repository is a factory taking its dependencies — database, clock, id
 // generator — rather than importing a singleton. That is Project 1's pattern
@@ -35,7 +35,7 @@ import {
 //     record that keeps appearing in a list is a data-integrity bug the user
 //     experiences as the product being broken.
 //   * `source` is required on every write. Whether a human or the agent created
-//     a record is not metadata here — it is shown on the record (§13.6) and it
+//     a record is not metadata here — it is shown on the record and it
 //     is what makes the audit trail meaningful.
 
 export type RepoDeps = {
@@ -141,7 +141,7 @@ export function createCompanyRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * Exact match on the normalised name. Fuzzy matching belongs to the M2
+     * Exact match on the normalised name. Fuzzy matching belongs to the RESOLVE
      * resolver — this repository returns facts, not scores.
      */
     async findByNameNorm(name: string): Promise<Company[]> {
@@ -155,7 +155,7 @@ export function createCompanyRepository({ db, clock, newId }: RepoDeps) {
     /**
      * Companies whose normalised name contains any of the given tokens.
      *
-     * Candidate generation for the fuzzy and distinctive-token rules (M2).
+     * Candidate generation for the fuzzy and distinctive-token rules.
      * Scoring happens in `agent/resolve/score.ts`, never here — a repository
      * that decided which company matched would hide the matching logic inside a
      * query, where it could not be unit-tested or explained to a client.
@@ -206,7 +206,7 @@ export function createCompanyRepository({ db, clock, newId }: RepoDeps) {
       return (await this.getById(id)) as Company;
     },
 
-    /** Soft delete (§11): human-initiated, reversible, and never available to the agent. */
+    /** Soft delete: human-initiated, reversible, and never available to the agent. */
     async softDelete(id: string): Promise<void> {
       const result = await db.execute('UPDATE companies SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL', [
         clock.nowIso(),
@@ -292,7 +292,7 @@ export function createContactRepository({ db, clock, newId }: RepoDeps) {
       return rows[0] ? mapContact(rows[0]) : null;
     },
 
-    /** The highest-confidence entity-resolution signal there is (FR-12). */
+    /** The highest-confidence entity-resolution signal there is. */
     async findByEmail(email: string): Promise<Contact | null> {
       const rows = await db.query('SELECT * FROM contacts WHERE lower(email) = ? AND deleted_at IS NULL', [
         email.trim().toLowerCase(),
@@ -303,7 +303,7 @@ export function createContactRepository({ db, clock, newId }: RepoDeps) {
     /**
      * Contacts whose email address sits on a given domain.
      *
-     * Candidate generation for entity resolution (M2): everyone at the sender's
+     * Candidate generation for entity resolution: everyone at the sender's
      * company is a plausible match for a message from that company. The LIKE is
      * anchored to `@domain` so `acme.com` cannot also pull in `notacme.com`.
      */
@@ -702,7 +702,7 @@ export function createActivityRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * The unified record timeline (FR-37). One query per entity type rather
+     * The unified record timeline. One query per entity type rather
      * than a polymorphic join, because the three columns are genuinely
      * different foreign keys and pretending otherwise buys nothing.
      */
@@ -823,10 +823,3 @@ export function createNoteRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type CompanyRepository = ReturnType<typeof createCompanyRepository>;
-export type ContactRepository = ReturnType<typeof createContactRepository>;
-export type DealRepository = ReturnType<typeof createDealRepository>;
-export type TaskRepository = ReturnType<typeof createTaskRepository>;
-export type ActivityRepository = ReturnType<typeof createActivityRepository>;
-export type NoteRepository = ReturnType<typeof createNoteRepository>;

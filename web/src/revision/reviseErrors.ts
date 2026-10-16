@@ -32,7 +32,7 @@ export type ReviseErrorView = {
   stale: boolean;
 };
 
-/** `guardrail_name: why it exists` — the shape M4-C.2 sends for a blocked draft. */
+/** `guardrail_name: why it exists` — the shape approve-with-edits sends for a blocked draft. */
 const GUARDRAIL_PROBLEM = /^([a-z_]+):\s*(.*)$/;
 
 function readProblems(details: Record<string, unknown>): string[] {

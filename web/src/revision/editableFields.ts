@@ -2,7 +2,7 @@ import type { ProposedAction } from '../api/types.ts';
 
 // What the edit form is allowed to render.
 //
-// This mirrors the server's whitelist (M4-C.2 `editEnvelope.ts`) for one narrow
+// This mirrors the server's whitelist (`editEnvelope.ts`) for one narrow
 // purpose: knowing which typed control to draw. It is NOT a second copy of the
 // validation rules, and it must never become one — the server decides what is
 // acceptable, and a revision it refuses is refused no matter what this file

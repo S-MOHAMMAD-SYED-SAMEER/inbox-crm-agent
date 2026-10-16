@@ -8,7 +8,7 @@ import type { Repositories } from '../db/repositories/index.ts';
 import type { AppConfig } from '../config/env.ts';
 import type { HandlerResult } from './emails.ts';
 
-// Sign in, sign out, and "who am I?" (M5-A).
+// Sign in, sign out, and "who am I?".
 //
 // THE ONE THING THIS FILE MUST NOT DO IS BE HELPFUL ABOUT FAILURE.
 //
@@ -95,7 +95,7 @@ export async function handleLogout(
  *
  * Returns the operator, the expiry and the CSRF token — never the session token,
  * and never anything about the password. The CSRF token is safe to return: it
- * is worthless without the session cookie that accompanies it (M5-B).
+ * is worthless without the session cookie that accompanies it.
  */
 export function handleSession(session: SessionRecord | null): HandlerResult<{
   authenticated: boolean;

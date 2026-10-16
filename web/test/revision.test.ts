@@ -34,10 +34,10 @@ import { describeExecution } from '../src/revision/executionSummary.ts';
 import { ApiError } from '../src/api/client.ts';
 import type { ActionPlan, DecisionRevision } from '../src/api/types.ts';
 
-// M4-C.3 — the human revision experience.
+// the human revision experience.
 //
 // Tested the way this project tests frontend logic: plain modules under Node's
-// own runner, no jsdom and no Testing Library (NFR-9). That constraint shaped
+// own runner, no jsdom and no Testing Library. That constraint shaped
 // the code as much as the tests — everything that decides *what the screen may
 // do* lives in `src/revision/`, and the components are thin renderers over it.
 // A rule that only exists inside JSX is a rule nobody can check.
@@ -414,7 +414,7 @@ test('the client posts a revision to the decision revise endpoint', async () => 
 // --- 15, 16, 17  what a successful revision shows ---------------------------
 
 test('after a revision the history shows the old approval replaced and the new one waiting', () => {
-  // The shape the server actually returns (M4-C.2 + the revisions list).
+  // The shape the server actually returns (+ the revisions list).
   const rows = buildRevisionHistory([
     revision({ id: 'd1', revision: 1, approvalState: 'superseded', isCurrent: false }),
     revision({
@@ -608,7 +608,7 @@ test('the revision surfaces speak product language, not implementation vocabular
   }
 });
 
-// --- M4-D  delivery status is never overstated ------------------------------
+// --- the outbound adapter  delivery status is never overstated ------------------------------
 
 test('only a server-confirmed send is described as sent', () => {
   const base = {
@@ -705,7 +705,7 @@ test('the approval screen never promises delivery for a plan that is only approv
   assert.match(source, /outbound sending has been turned on in the server configuration/i);
 });
 
-// --- M6-B  the demo must show what actually changed -------------------------
+// --- the demo seed  the demo must show what actually changed -------------------------
 
 test('an executed action names the record it created', () => {
   // The weakest moment in the demo was an execution list that said
@@ -751,8 +751,8 @@ test('an action with nothing nameable describes nothing rather than guessing', (
 });
 
 test('unbuilt screens do not claim a milestone that already shipped', () => {
-  // They said "Arrives in M5". M5 shipped as authentication and outbound
-  // safety, and these screens did not come with it — so every one of them was
+  // They promised that a named milestone would deliver them. It shipped as
+  // authentication and outbound safety, and these screens did not come with it — so every one of them was
   // making a claim that had quietly become false.
   const placeholder = read('components/MilestonePlaceholder.tsx');
   const screens = read('screens/placeholders.tsx');

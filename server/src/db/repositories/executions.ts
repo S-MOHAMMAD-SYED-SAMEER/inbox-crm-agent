@@ -9,7 +9,7 @@ import type {
   OutboxStatus,
 } from '../../domain/execution.ts';
 
-// Execution and outbox persistence (FR-29, FR-32, FR-33).
+// Execution and outbox persistence.
 //
 // Append-only: an execution row is written once, when the attempt finishes.
 // There is no update method, so "it succeeded, then later it says it failed"
@@ -147,7 +147,7 @@ export function createOutboxRepository({ db, clock, newId }: RepoDeps) {
     /**
      * Places a reply in the outbox.
      *
-     * The outbox is the durable delivery boundary (§15): a reply exists here,
+     * The outbox is the durable delivery boundary: a reply exists here,
      * inspectable, before anything tries to deliver it, and its status is the
      * single answer to "did this actually go out?". `suppressed` means the
      * system was not permitted to send; `sent` means a provider accepted it;
@@ -177,7 +177,7 @@ export function createOutboxRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * Claims a message for one delivery attempt (M5-D, audit F-05).
+     * Claims a message for one delivery attempt.
      *
      * THE CONCURRENCY GUARANTEE LIVES IN THIS ONE STATEMENT.
      *
@@ -241,7 +241,7 @@ export function createOutboxRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * Records a successful delivery (M4-D).
+     * Records a successful delivery.
      *
      * Write-once, guarded in the WHERE clause: only a message that is not
      * already `sent` can become `sent`. A double execution therefore cannot
@@ -303,6 +303,3 @@ export function createOutboxRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type ExecutionRepository = ReturnType<typeof createExecutionRepository>;
-export type OutboxRepository = ReturnType<typeof createOutboxRepository>;

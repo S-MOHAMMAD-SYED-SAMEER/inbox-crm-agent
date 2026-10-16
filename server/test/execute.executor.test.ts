@@ -27,7 +27,7 @@ import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 
-// M4-A tests: the approval record and the executor's independent verification.
+// the executor tests: the approval record and the executor's independent verification.
 //
 // The property under test throughout is the same one: **the UI is not the
 // security boundary**. Every test that grants or withholds permission does so
@@ -374,7 +374,7 @@ test('12. every execution records a before and after snapshot', async () => {
 });
 
 test('a tier-0 plan runs without any approval record', async () => {
-  // CONTRACT CHANGE (M6-E): the pipeline now runs an unattended plan itself, so
+  // CONTRACT CHANGE: the pipeline now runs an unattended plan itself, so
   // this no longer calls `executePlan` a second time — by the time the helper
   // returns, the plan has already run and a second attempt is correctly refused
   // as `already_executed`.
@@ -678,7 +678,7 @@ test('the approval queue lists pending decisions', async () => {
   assert.ok(queue.body.approvals.length >= 1);
   const row = queue.body.approvals[0];
   assert.equal(row?.approval.state, 'pending');
-  // CONTRACT CHANGE (M4-B): a queue row now carries the whole email context
+  // CONTRACT CHANGE: a queue row now carries the whole email context
   // rather than a bare subject string.
   assert.ok(row?.email.subject.length);
   assert.ok(row?.decision.plan.rationale.length);
@@ -713,11 +713,11 @@ test('approving a decision that does not exist is a 404', async () => {
 });
 
 test('approval states are exactly the lifecycle the specification names', () => {
-  // CONTRACT CHANGE (M4-C.1): `superseded` joins the four from §16. It is the
+  // CONTRACT CHANGE: `superseded` joins the four from the specification. It is the
   // state a pending approval reaches when a human edits the plan — the edit
   // creates a new decision with its own approval, so this one stops being
   // pending without anyone rejecting it and without anything timing out.
-  // Terminal like the other three; §16's rule that a timeout never resolves in
+  // Terminal like the other three; the specification's rule that a timeout never resolves in
   // the direction of acting is untouched, and so is the list of states that can
   // authorise an execution, which remains `approved` alone.
   assert.deepEqual([...APPROVAL_STATES], ['pending', 'approved', 'rejected', 'expired', 'superseded']);

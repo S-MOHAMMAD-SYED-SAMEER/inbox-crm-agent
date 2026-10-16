@@ -1,6 +1,6 @@
 import type { Outbox } from '../api/types.ts';
 
-// How a reply's delivery status is described (M4-D §16).
+// How a reply's delivery status is described.
 //
 // One rule governs every line below: **never say "sent" unless the server said
 // it was sent**. Drafted, approved, queued, suppressed and failed are five

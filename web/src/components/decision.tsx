@@ -15,9 +15,9 @@ import type { Decision } from '../api/types.ts';
 // screen, not here: this component renders what was proposed, and it renders it
 // identically whether or not the plan has since run.
 //
-// M6-E: the closing line used to read "Approving and running a plan arrives in
-// M4. Nothing has been written to the CRM and nothing has been sent." Execution
-// shipped in M4-A, which made the first sentence stale and the second one
+// the closing line used to read "Approving and running a plan arrives in
+// EXECUTE. Nothing has been written to the CRM and nothing has been sent." Execution
+// shipped in the executor, which made the first sentence stale and the second one
 // FALSE — an executed plan has written to the CRM, and this card sat directly
 // above the execution results saying otherwise. It now states the rule, which
 // is true in every state, rather than a claim about what has happened.

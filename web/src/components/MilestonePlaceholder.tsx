@@ -7,11 +7,12 @@ import type { ReactNode } from 'react';
 // omitting them hides the shape of the product, and fake data in a screenshot
 // is the kind of thing that ends up in a client conversation as if it were real.
 //
-// WHY THIS NO LONGER NAMES A MILESTONE (M6-B)
+// WHY THIS NO LONGER NAMES A MILESTONE
 //
-// It used to say "Arrives in M5". M5 shipped — as authentication, rate limiting
-// and outbound safety — and these screens did not come with it, so every one of
-// them was making a claim that had quietly become false. A stale roadmap on
+// It used to promise that a named milestone would deliver them. That milestone
+// shipped — as authentication, rate limiting and outbound safety — and these
+// screens did not come with it, so every one of them was making a claim that had
+// quietly become false. A stale roadmap on
 // screen is worse than no roadmap: a client reads it as a slipped promise, or
 // worse, does not notice and believes it.
 //

@@ -36,14 +36,14 @@ import type { AnalysisRecord } from '../domain/understanding.ts';
 import type { EmailRecord } from '../domain/email.ts';
 import type { AuditEvent } from '../domain/audit.ts';
 
-// M1 handlers.
+// UNDERSTAND handlers.
 //
-// Same shape as M0's health handler and Project 1's `handleChat`: a plain
+// Same shape as the health handler and Project 1's `handleChat`: a plain
 // function returning `{ status, body }`, with every dependency injected. The
 // Express routes are three-line wrappers, so all of this is testable with an
 // in-memory database and a mock provider — no HTTP server, no port, no key.
 //
-// Only the endpoints M1 actually needs exist. There is no `/process`, no
+// Only the endpoints UNDERSTAND actually needs exist. There is no `/process`, no
 // `/approve`, and no CRM route, because the stages behind them are not built:
 // an endpoint that returns "not implemented" is a promise the UI will start
 // depending on.
@@ -185,7 +185,7 @@ export async function handleListEmails(
     ...(offset === null ? {} : { offset }),
   });
 
-  // Four queries, whatever the inbox length (M7-F).
+  // Four queries, whatever the inbox length.
   //
   // This used to look up the analysis, both resolution runs and the decision
   // once per email: 57 round trips for ten emails. Against a hosted database
@@ -229,7 +229,7 @@ function numeric(value: unknown): number | undefined {
 // ------------------------------------------------------------------ detail
 
 /**
- * One entry in an email's decision history (M4-C.3).
+ * One entry in an email's decision history.
  *
  * The plan itself is deliberately absent: this is the spine of the history —
  * who produced each version and where it ended up — not a second copy of every
@@ -260,10 +260,10 @@ export type EmailDetail = {
   /** Null until a plan needed approval. */
   approval: ApprovalRecord | null;
   /**
-   * Every decision made for this email, oldest first (M4-C.3).
+   * Every decision made for this email, oldest first.
    *
    * Always at least one entry once DECIDE has run. A human edit appends a new
-   * one rather than replacing the previous — that pairing is the point (FR-26),
+   * one rather than replacing the previous — that pairing is the point,
    * so the history is a first-class part of the detail rather than something
    * the UI reconstructs from the audit log.
    */
@@ -419,7 +419,7 @@ export async function handleResolvePending(
   return { status: 200, body: { resolved, conflicts, failed, results } };
 }
 
-/** Records a human's decision on a conflicted match (spec §11 `/resolve-match`). */
+/** Records a human's decision on a conflicted match (the specification `/resolve-match`). */
 export async function handleResolveMatch(
   deps: EmailHandlerDeps,
   id: string,
@@ -452,19 +452,19 @@ export async function handleResolveMatch(
 // ------------------------------------------------------------------ decide
 
 /**
- * Runs a plan that needs no approval (M6-E).
+ * Runs a plan that needs no approval.
  *
  * WHY THIS IS HERE AND NOT IN `decideEmail`
  *
- * `nextState` leaves an unattended plan in `deciding` and says why: the §8 state
- * machine sends it to `executing`, but M3 could not execute, and moving an email
+ * `nextState` leaves an unattended plan in `deciding` and says why: the specification's state
+ * machine sends it to `executing`, but DECIDE could not execute, and moving an email
  * to `executing` when nothing would happen would have been a lie. The comment
- * ends "M4 makes that transition when it can honour it." M4 shipped the
+ * ends "EXECUTE makes that transition when it can honour it." EXECUTE shipped the
  * executor and nothing came back for this, so tier-0 plans have been sitting in
  * `deciding` ever since — decided, never run, and invisible in the approval
  * queue because they need no approval.
  *
- * The pipeline is the right place for it. §14 puts the branch at the policy
+ * The pipeline is the right place for it. The specification puts the branch at the policy
  * gate, after the plan is persisted, and handlers are what orchestrate stages —
  * `decideEmail` calling the executor directly would invert the layering and
  * make DECIDE depend on EXECUTE.
@@ -532,7 +532,7 @@ export async function handleDecidePending(
   HandlerResult<{
     decided: number;
     awaitingApproval: number;
-    /** Plans that needed no approval and were run immediately (M6-E). */
+    /** Plans that needed no approval and were run immediately. */
     autoExecuted: number;
     noPlan: number;
     failed: number;
@@ -604,7 +604,7 @@ async function loadDecision(deps: EmailHandlerDeps, decisionId: string) {
   return { decision, email };
 }
 
-/** What a successful revision returns (M4-C). */
+/** What a successful revision returns. */
 export type ReviseResponse = {
   decision: DecisionRecord;
   revision: number;
@@ -627,7 +627,7 @@ export type ExecutionResponse = {
 };
 
 /**
- * Approves a plan and runs it (spec §11: approve "→ executes").
+ * Approves a plan and runs it (the specification: approve "→ executes").
  *
  * The body carries no authority: there is no field a caller can set to say the
  * plan was approved, what its risk is, or whether approval was needed. The
@@ -748,8 +748,8 @@ export async function handleExecute(
   };
 }
 
-/** The approval queue (spec §11). */
-/** One row of the approval queue — everything §13.4 asks a reviewer to see. */
+/** The approval queue. */
+/** One row of the approval queue — everything the specification asks a reviewer to see. */
 export type ApprovalQueueRow = {
   approval: ApprovalRecord;
   decision: DecisionRecord;
@@ -775,7 +775,7 @@ export type ApprovalQueueRow = {
   overdue: boolean;
   /**
    * Whether a person can still act on this row. An overdue approval is never
-   * actionable — the executor would refuse it anyway (M4-A), and showing it as
+   * actionable — the executor would refuse it anyway, and showing it as
    * pending work would be a lie.
    */
   actionable: boolean;
@@ -784,7 +784,7 @@ export type ApprovalQueueRow = {
 };
 
 /**
- * The approval queue (spec §11, §13.4).
+ * The approval queue.
  *
  * Sorted by SLA remaining, soonest first — the spec's ordering, not a score of
  * my invention. Settled rows (approved/rejected/expired) have no SLA left to
@@ -849,17 +849,17 @@ export async function handleListApprovals(
     return a.approval.id.localeCompare(b.approval.id);
   });
 
-  // One aggregate query rather than five paged fetches (M5-F, audit F-11).
+  // One aggregate query rather than five paged fetches.
   const counts: Record<string, number> = await deps.repos.approvals.countByState();
 
   return { status: 200, body: { approvals: rows, counts } };
 }
 
 /**
- * Runs the expiry sweep (spec §16).
+ * Runs the expiry sweep.
  *
  * A callable command rather than a background worker, matching the rest of the
- * pipeline's explicit triggering (§14). Safe to call repeatedly: it only ever
+ * pipeline's explicit triggering. Safe to call repeatedly: it only ever
  * touches `pending` rows that are past due.
  */
 export async function handleExpireApprovals(
@@ -884,7 +884,7 @@ export async function handleUnderstandEmail(
   if (!email) throw new NotFoundError('Email');
 
   // Re-running is allowed and appends a new analysis rather than replacing the
-  // old one — history is never rewritten (spec §14). What is not allowed is
+  // old one — history is never rewritten. What is not allowed is
   // analysing an email mid-flight through another stage.
   assertUnderstandable(email);
 
@@ -894,7 +894,7 @@ export async function handleUnderstandEmail(
 
 /**
  * Runs UNDERSTAND over every email waiting for it. The "Process all" action
- * from the seeded inbox (§14) — still explicit, still no background worker.
+ * from the seeded inbox — still explicit, still no background worker.
  */
 export async function handleUnderstandPending(
   deps: EmailHandlerDeps,
@@ -933,7 +933,7 @@ export async function handleUnderstandPending(
 export { AppError, ValidationError };
 
 /**
- * Creates a revision of a plan from a human's edits (M4-C).
+ * Creates a revision of a plan from a human's edits.
  *
  * Deliberately NOT an approve-with-edits endpoint. It ends with a pending
  * approval on a new decision, which is then approved through the same endpoint

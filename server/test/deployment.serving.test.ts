@@ -13,7 +13,7 @@ import { hashPassword } from '../src/lib/password.ts';
 import { readCookie, SESSION_COOKIE } from '../src/auth/cookies.ts';
 import type { AppConfig } from '../src/config/env.ts';
 
-// M7-A — deployment enablement.
+// deployment enablement.
 //
 // Two changes, both of them plumbing rather than product: the API serves the
 // built front end from its own origin, and the app is told how many proxies
@@ -28,7 +28,7 @@ import type { AppConfig } from '../src/config/env.ts';
 // unrelated to what it is checking.
 
 function makeDist(): { dir: string; cleanup(): void } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'm7a-dist-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'serving-dist-'));
   fs.mkdirSync(path.join(dir, 'assets'));
   fs.writeFileSync(
     path.join(dir, 'index.html'),
@@ -55,7 +55,7 @@ async function withServer(
   const config: AppConfig = {
     ...base,
     trustProxy: options.trustProxy ?? 0,
-    webDistDir: options.webDistDir ?? path.join(os.tmpdir(), 'm7a-absent-dist'),
+    webDistDir: options.webDistDir ?? path.join(os.tmpdir(), 'serving-absent-dist'),
     cookieSecure: false,
     ...(options.operatorPassword ? { operatorPasswordHash: await hashPassword(options.operatorPassword) } : {}),
   };
@@ -134,7 +134,7 @@ test('hashed assets are served beside it', async () => {
 
 test('the API still answers, and the front end cannot shadow it', async () => {
   const dist = makeDist();
-  const password = 'm7a-operator-password-1234';
+  const password = 'serving-operator-password-1234';
   try {
     await withServer({ webDistDir: dist.dir, operatorPassword: password, loginLimit: 50 }, async (baseUrl) => {
       // Health is public and must stay JSON even with static serving mounted.
@@ -321,7 +321,7 @@ test('the front-end directory is configurable and defaults beside the server', (
   assert.equal(loadConfig({ WEB_DIST_DIR: '/srv/app' }).config.webDistDir, '/srv/app');
 });
 
-// ================================================ nothing else moved (M7-A)
+// ================================================ nothing else moved
 
 test('the deployment change did not loosen any cookie or CORS default', () => {
   const { config } = loadConfig({});

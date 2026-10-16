@@ -80,11 +80,3 @@ export function buildTouchUpdate(
   if (!changed) return null;
   return buildUpdate(table, id, { ...values, updated_at: now });
 }
-
-/** Guard used by list queries that accept a caller-supplied sort column. */
-export function safeColumn(name: string, allowed: readonly string[]): string {
-  if (!allowed.includes(name)) {
-    throw new Error(`Unsupported sort column: ${JSON.stringify(name)}`);
-  }
-  return assertIdentifier(name);
-}

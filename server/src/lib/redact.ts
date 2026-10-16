@@ -1,4 +1,4 @@
-// PII redaction for logs (NFR-12).
+// PII redaction for logs.
 //
 // This system's inputs are other people's emails. That makes the log the most
 // likely place for customer data to end up somewhere nobody intended — and a

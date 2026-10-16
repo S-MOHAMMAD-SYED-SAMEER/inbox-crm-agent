@@ -42,7 +42,7 @@ export function createDisabledOutboundSender(reason = 'outbound_send_disabled'):
  *
  * `gmail` is a declared provider name with no implementation, exactly as
  * `EMAIL_SOURCE=gmail` is: it falls back to disabled with a loud problem at
- * startup. That is the seam §23 asks for — a Gmail adapter arrives as a new
+ * startup. That is the seam the specification asks for — a Gmail adapter arrives as a new
  * file implementing `OutboundSender`, and nothing else changes.
  */
 export function createOutboundSender(cfg: AppConfig = config): OutboundSender {

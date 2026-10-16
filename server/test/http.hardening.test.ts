@@ -17,9 +17,9 @@ import {
 } from '../src/domain/auditPayload.ts';
 import { APPROVAL_STATES } from '../src/domain/execution.ts';
 
-// M5-F — the cheap hardening from the audit: F-11, F-13, F-08.
+// The cheap hardening from the audit.
 
-// --- F-11: counts by aggregation ---------------------------------------------
+// --- counts by aggregation ---------------------------------------------
 
 test('approval counts come from one aggregate and stay correct past the old page limit', async () => {
   // The previous implementation fetched up to 500 rows per state to produce a
@@ -75,7 +75,7 @@ test('every state appears in the counts, including the empty ones', async () => 
   await close();
 });
 
-// --- F-13: bounded audit payloads --------------------------------------------
+// --- bounded audit payloads --------------------------------------------
 
 test('a small payload is stored exactly as given', () => {
   const payload = { decisionId: 'abc', riskTier: 2, reasons: ['a', 'b'] };
@@ -173,7 +173,7 @@ test('the bound is applied on the way into the database', async () => {
   await close();
 });
 
-// --- F-08: the declared state machine ----------------------------------------
+// --- the declared state machine ----------------------------------------
 
 test('every state has a declared transition list', () => {
   for (const state of EMAIL_STATES) {
@@ -200,9 +200,9 @@ test('the transitions the pipeline actually performs are all legal', () => {
     ['resolving', 'needs_review'],
     ['deciding', 'awaiting_approval'],
     ['deciding', 'needs_review'],
-    // M6-E: a plan needing no approval now runs straight from DECIDE, which is
-    // what §8 always described ("deciding --> executing: zero-risk plan only")
-    // and what the table already permitted. Until M6-E nothing performed it.
+    // a plan needing no approval now runs straight from DECIDE, which is
+    // what the specification always described ("deciding --> executing: zero-risk plan only")
+    // and what the table already permitted. Until the demo polish pass nothing performed it.
     ['deciding', 'executing'],
     ['awaiting_approval', 'executing'],
     ['awaiting_approval', 'rejected'],

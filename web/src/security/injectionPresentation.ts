@@ -1,6 +1,6 @@
-// How a blocked prompt-injection attempt is explained (M6-E).
+// How a blocked prompt-injection attempt is explained.
 //
-// Pure, so it can be tested without a browser (NFR-9).
+// Pure, so it can be tested without a browser.
 //
 // THIS IS THE STRONGEST MOMENT IN THE DEMO AND IT WAS BEING UNDERSOLD
 //

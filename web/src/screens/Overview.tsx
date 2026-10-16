@@ -9,22 +9,22 @@ import type { Health } from '../api/types.ts';
 // end-to-end proof that everything is wired together: browser → Express →
 // handler → repository → migrated schema, with a real answer coming back.
 //
-// WHAT CHANGED IN M6-E, AND WHY
+// WHAT CHANGED IN the demo polish pass, AND WHY
 //
 // This screen used to be a diagnostics panel. It printed the health `adapters`
-// object as raw key/value pairs and carried a dashed panel headed "Arrives in
-// M5" — a milestone that had shipped, as authentication and outbound safety,
-// without bringing this screen with it. So the first thing anyone saw after
+// object as raw key/value pairs and carried a dashed panel promising that a
+// milestone would deliver it — a milestone that had shipped, as authentication and
+// outbound safety, without bringing this screen with it. So the first thing anyone saw after
 // signing in was a build number and a promise that had quietly become false.
 //
-// The dashed panel it carried is gone entirely — see the M7-F note below.
+// The dashed panel it carried is gone entirely — see the demo-readiness pass note below.
 //
 // The status facts themselves are unchanged — same endpoint, same values. They
 // are rendered through `system/statusPresentation.ts`, which states them in
 // sentences rather than key/value pairs. Nothing was hidden to make the system
 // look more finished than it is: demo mode still says demo mode.
 //
-// M7-F: the "not built yet" panel that used to sit below the status card is
+// the "not built yet" panel that used to sit below the status card is
 // gone. Being honest about an unbuilt screen is right where someone might
 // navigate to it — which is why Automation and Settings keep theirs — but this
 // is the first thing a client sees, and opening on a list of what is missing
@@ -108,7 +108,7 @@ export function Overview(): ReactNode {
 
 function Fact({ fact, prominent = false }: { fact: StatusFact; prominent?: boolean }): ReactNode {
   // Tone is carried by the text as well as the colour: status is never
-  // communicated by colour alone (NFR-11). Every fact states its value in
+  // communicated by colour alone. Every fact states its value in
   // words, and the detail line says what that value means.
   const toneClass = fact.tone === 'good' ? 'text-success' : fact.tone === 'bad' ? 'text-danger' : 'text-ink';
 

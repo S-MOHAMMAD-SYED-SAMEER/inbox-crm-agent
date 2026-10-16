@@ -2,7 +2,7 @@ import { planRiskTier, type ProposedAction, type RiskTier } from '../../domain/a
 import { MAX_AUTO_TIER, type AutonomyLevel } from '../../domain/policy.ts';
 import type { ConfidenceBand } from '../../domain/email.ts';
 
-// THE APPROVAL GATE (spec §16, FR-18, NFR-5).
+// THE APPROVAL GATE.
 //
 // This is the single function that decides whether a human must look at
 // something before it happens. Three properties define it:
@@ -39,7 +39,7 @@ export type ApprovalInput = {
   confidenceBand?: ConfidenceBand;
   flags?: UnderstandingFlags;
   hasMatchConflict?: boolean;
-  /** Names of any draft guardrail that blocked the reply (M3). */
+  /** Names of any draft guardrail that blocked the reply. */
   draftGuardrailViolations?: readonly string[];
   /** From the CRM adapter. False forces approval for multi-action plans. */
   adapterSupportsAtomicity?: boolean;
@@ -57,7 +57,7 @@ export const APPROVAL_REASON_CODES = [
   'autonomy_level',
   'adapter_not_atomic',
   /**
-   * M4-C. Never produced by this function — it is emitted by the revision
+   * approve-with-edits. Never produced by this function — it is emitted by the revision
    * engine when a human edit recomputes to "no approval needed" but the plan it
    * revises did need one. The requirement is floored at the original's, so
    * editing can raise the bar and never lower it, and this code is how the UI
@@ -69,7 +69,7 @@ export type ApprovalReasonCode = (typeof APPROVAL_REASON_CODES)[number];
 
 export type ApprovalReason = {
   code: ApprovalReasonCode;
-  /** Shown to the operator verbatim (§13.3): states the specific trigger, never "this is risky". */
+  /** Shown to the operator verbatim: states the specific trigger, never "this is risky". */
   message: string;
 };
 

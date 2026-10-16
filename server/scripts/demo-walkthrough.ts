@@ -107,7 +107,7 @@ class Browser {
 
     const cookies = this.cookieHeader();
     if (cookies) headers.cookie = cookies;
-    // Exactly what the web client does (M6-A).
+    // Exactly what the web client does.
     if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && this.csrf) headers['x-csrf-token'] = this.csrf;
 
     const response = await fetch(`${this.baseUrl}${pathname}`, {
@@ -234,10 +234,10 @@ step('3. Understand → Resolve → Decide');
   check('the decision is revision 1, produced by the assistant', d.decision?.revision === 1 && d.decision?.origin === 'agent');
 }
 
-// ============================================ 3b. THE UNATTENDED PATH (M6-E)
+// ============================================ 3b. THE UNATTENDED PATH
 step('3b. What the assistant handled without anyone');
 {
-  // The other half of the story, and the half that was missing until M6-E.
+  // The other half of the story, and the half that was missing until the demo polish pass.
   // Not everything needs a person: a tier-0 plan requires no approval under
   // `assisted` autonomy and now runs the moment it is decided, rather than
   // resting in `deciding` where it appeared in no queue and never finished.
@@ -378,7 +378,7 @@ step('7. The CRM actually changed');
   };
 
   // Seed is 6/9/4/5/20. The hero plan a person approved adds one of each except
-  // notes — and since M6-E the support email adds a task and an activity of its
+  // notes — and since the demo polish pass the support email adds a task and an activity of its
   // own, because its plan is tier 0, needs no approval, and now runs as soon as
   // it is decided instead of resting in `deciding`.
   check('a company was created', counts.companies === 7, `companies=${counts.companies}`);
@@ -394,7 +394,7 @@ step('7. The CRM actually changed');
   check('the deal is marked as agent-created', deal?.source === 'agent');
 }
 
-// ============================================ 7b. THE CRM SCREENS (M6-C)
+// ============================================ 7b. THE CRM SCREENS
 step('7b. Browsing the CRM the assistant just wrote to');
 {
   // The screens a client clicks after the plan runs. Same endpoints the browser

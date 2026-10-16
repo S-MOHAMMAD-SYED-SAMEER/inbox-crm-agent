@@ -10,11 +10,11 @@ import type {
   ReviewReason,
 } from '../../domain/email.ts';
 
-// Email repository — ingestion storage and workflow state (FR-1..FR-3, §8).
+// Email repository — ingestion storage and workflow state.
 //
 // Two behaviours here carry real weight later:
 //
-//   * `insertIfNew` implements dedupe (FR-2) by *asking the database*, through
+//   * `insertIfNew` implements dedupe by *asking the database*, through
 //     the UNIQUE (provider, provider_message_id) constraint, rather than by
 //     checking first and inserting after. A check-then-insert has a race in it;
 //     the constraint does not. Re-ingesting a message returns the existing row
@@ -23,8 +23,8 @@ import type {
 //
 //   * `setState` is the only way an email's state changes, and it takes the
 //     state it expects to be leaving. That makes an illegal transition a
-//     failed update rather than a silent overwrite — the foundation the §8
-//     state-machine invariants are asserted against.
+//     failed update rather than a silent overwrite — the foundation the state-machine
+//     invariants in the specification are asserted against.
 
 function mapEmail(row: Record<string, unknown>): EmailRecord {
   return {
@@ -169,5 +169,3 @@ export function createEmailRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type EmailRepository = ReturnType<typeof createEmailRepository>;

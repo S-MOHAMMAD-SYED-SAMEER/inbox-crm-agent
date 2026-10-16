@@ -3,7 +3,7 @@ import { ROUTES, routeToHash, type Route, type RouteName } from '../router.ts';
 
 // The application shell: sidebar navigation, header, content slot.
 //
-// The navigation is the information architecture from spec §12, including its
+// The navigation is the information architecture from the specification, including its
 // two deliberate departures from the brief's list — Approvals is top-level
 // because human-in-the-loop is the product's core claim and a differentiator
 // hidden inside a filter is invisible; Leads is a saved view on Deals rather
@@ -45,13 +45,13 @@ type AppShellProps = {
    *
    * Displayed only because it came from `GET /api/auth/session`. It is never
    * typed in, never taken from a header, and never stored in this browser —
-   * the header that used to carry an operator name was removed in M5-A
+   * the header that used to carry an operator name was removed in authentication
    * precisely because anyone could set it.
    */
   operator: string;
   onSignOut(): void;
   /**
-   * Renders the product for a visitor with no session (P19).
+   * Renders the product for a visitor with no session.
    *
    * Presentation only. It hides the controls that would fail anyway and states
    * plainly what the visitor is looking at — the server is what actually

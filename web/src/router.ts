@@ -1,4 +1,4 @@
-// A hash router in sixty lines (D4).
+// A hash router in sixty lines.
 //
 // The portfolio ships two pages with no router at all; a dashboard with ten
 // screens needs one, but not a dependency's worth. What react-router adds over

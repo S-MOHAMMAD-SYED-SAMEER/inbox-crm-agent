@@ -24,7 +24,7 @@ import type { LlmMessage } from '../../adapters/llm/types.ts';
 //
 // The prompt is versioned. Every analysis records which version produced it,
 // so a change in behaviour after a prompt edit is attributable rather than
-// mysterious (§17).
+// mysterious.
 
 export const UNDERSTAND_PROMPT_VERSION = 'understand.v1';
 
@@ -122,7 +122,7 @@ export function provenanceCorpus(email: PromptEmail): string {
 }
 
 /**
- * A repair instruction for the single retry after malformed output (§7).
+ * A repair instruction for the single retry after malformed output.
  *
  * It states the problems and repeats the constraint. It deliberately does not
  * include the model's previous answer verbatim — re-feeding a bad answer tends

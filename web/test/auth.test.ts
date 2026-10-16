@@ -14,11 +14,11 @@ import {
 } from '../src/auth/session.ts';
 import { api, ApiError, setCsrfFailureHandler, setUnauthorizedHandler } from '../src/api/client.ts';
 
-// M6-A — the frontend authentication layer.
+// the frontend authentication layer.
 //
 // Tested the way this project tests frontend logic: plain modules under Node's
 // own runner, with `fetch` stubbed. No jsdom, no Testing Library, no browser
-// framework (NFR-9) — which is why the logic that decides *what the browser
+// framework — which is why the logic that decides *what the browser
 // sends* lives in `src/auth/` and in the client, not inside JSX.
 //
 // The properties worth attacking here are not "does the login form render". They
@@ -196,7 +196,7 @@ test('login posts the password to the login endpoint and nowhere else', async ()
 test('login succeeds without a usable CSRF token, as the server exemption allows', async () => {
   // There is no session before signing in, so there can be no valid token. The
   // client still sets the header — login is a POST like any other — and the
-  // server ignores it for this path (M5-B). What matters is that sign-in works
+  // server ignores it for this path. What matters is that sign-in works
   // when the token is absent or stale, so a first visit is not a deadlock.
   setCookies('');
   stubFetch(() => ({ status: 200, body: { operator: 'operator', expiresAt: null } }));
@@ -443,7 +443,7 @@ test('the frontend never sends an operator identity', async () => {
 });
 
 test('x-operator appears nowhere in the web source', () => {
-  // The header carried identity until M5-A removed its meaning. This asserts it
+  // The header carried identity until authentication removed its meaning. This asserts it
   // cannot creep back in through the client.
   const files = [
     'api/client.ts',
@@ -467,7 +467,7 @@ test('the operator shown in the shell comes from the session, not from input', (
   // The shell takes it as a prop and renders it; App passes the value the
   // server returned.
   assert.match(shell, /operator: string;/);
-  // Narrowed for the read-only demo (P19), which has no operator at all — but
+  // Narrowed for the read-only demo, which has no operator at all — but
   // still read from `session.state` and from nowhere else, which is the
   // property this test exists to defend.
   assert.match(

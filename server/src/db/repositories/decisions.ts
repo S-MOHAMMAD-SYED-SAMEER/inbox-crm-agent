@@ -13,7 +13,7 @@ import type {
   RuleTraceEntry,
 } from '../../domain/decision.ts';
 
-// Decision persistence (M3).
+// Decision persistence.
 //
 // Append-only in practice, like analyses and resolutions. Re-deciding writes a
 // NEW decision and marks the previous one `superseded_by` — it never edits it.
@@ -21,7 +21,7 @@ import type {
 // category, and what changed?" answerable, and it is the same rule the audit
 // log follows for the same reason.
 //
-// M4-C adds a second reason for a new row: a human editing the plan. That takes
+// approve-with-edits adds a second reason for a new row: a human editing the plan. That takes
 // the same path — new decision, old one superseded, nothing edited in place —
 // and records `origin`, `parent_decision_id`, `revision` and `edited_by` so the
 // history says who changed what, and from what.
@@ -84,7 +84,7 @@ export type CreateDecisionInput = {
   promptVersion: string | null;
   latencyMs: number | null;
   /**
-   * Revision provenance (M4-C). Omitted entirely for an agent decision, which
+   * Revision provenance. Omitted entirely for an agent decision, which
    * is why the defaults live here rather than at every call site.
    */
   origin?: DecisionOrigin;
@@ -103,7 +103,7 @@ export function createDecisionRepository({ db, clock, newId }: RepoDeps) {
      * that same transaction for the same reason — read outside it, two
      * concurrent decisions would both call themselves v2.
      *
-     * A human edit (M4-C) comes through here too, as a *new* row. There is no
+     * A human edit comes through here too, as a *new* row. There is no
      * update path on this repository and there must not be one: the original
      * proposal is evidence, and the whole point of a revision is that the thing
      * it revises still says what it said.
@@ -228,7 +228,7 @@ export function createDecisionRepository({ db, clock, newId }: RepoDeps) {
       return rows[0] ? mapDecision(rows[0]) : null;
     },
 
-    /** The current decision for many emails, in one query (M7-F). */
+    /** The current decision for many emails, in one query. */
     async getCurrentForEmails(emailIds: readonly string[]): Promise<Map<string, DecisionRecord>> {
       const current = new Map<string, DecisionRecord>();
       if (emailIds.length === 0) return current;
@@ -270,5 +270,3 @@ export function createDecisionRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type DecisionRepository = ReturnType<typeof createDecisionRepository>;

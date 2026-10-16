@@ -1,7 +1,7 @@
 import type { DraftGuardrailViolation } from '../../domain/decision.ts';
 import type { Understanding } from '../../domain/understanding.ts';
 
-// Draft guardrails (spec §7's table).
+// Draft guardrails (the specification's table).
 //
 // Deterministic post-checks on the model's prose, in the shape Project 1's
 // `validateReply` established: a list of named policies, each returning either
@@ -16,7 +16,7 @@ import type { Understanding } from '../../domain/understanding.ts';
 // exactly what it tried to say. Project 1 made the same split for the same
 // reason, and it is the difference between hoping and knowing.
 //
-// A violation never deletes the draft. Spec §16: the plan is forced to require
+// A violation never deletes the draft. The specification: the plan is forced to require
 // approval and the blocked text is shown, so the human can rewrite it.
 
 export type GuardrailContext = {

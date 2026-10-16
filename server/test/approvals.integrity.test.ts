@@ -50,7 +50,7 @@ import type { Repositories } from '../src/db/repositories/index.ts';
 // it would need a new claim state (a migration) or an executor that accepts
 // `executing` (a change to the safety model), and both were out of scope.
 
-const quiet = createLogger('m7g', { level: 'error' });
+const quiet = createLogger('integrity', { level: 'error' });
 
 // `createTestContext` pins the repositories to a fixed clock. The approval
 // handlers default to `systemClock`, so a test that does not match it finds

@@ -1,20 +1,20 @@
-// SQL dialect handling — the mechanism that makes spec §9's portability rules
+// SQL dialect handling — the mechanism that makes the specification's portability rules
 // real rather than aspirational.
 //
 // WHY THIS EXISTS
 //
-// D1 selected PostgreSQL, and the migrations in `migrations/` are written as
+// The project selected PostgreSQL, and the migrations in `migrations/` are written as
 // PostgreSQL DDL exactly as specified. But a foundation whose schema and
 // repositories can only be *run* against a hosted database is a foundation
 // nobody can test: there is no Postgres server, no Docker, and no Neon account
-// on this machine, and M0's own definition of done is that `npm run migrate &&
+// on this machine, and the first milestone's definition of done was that `npm run migrate &&
 // npm run seed` works and the repository tests pass with zero credentials.
 //
 // So there are two drivers behind one `Database` interface: Node's built-in
 // `node:sqlite` (zero dependencies — the same choice Project 1 made for its
 // conversation memory) for local development and tests, and `pg` for a hosted
 // Postgres. The spec's portability rules were written to permit exactly this,
-// and honouring them is what keeps D1 reversible.
+// and honouring them is what keeps that choice reversible.
 //
 // WHAT THIS FILE IS NOT
 //

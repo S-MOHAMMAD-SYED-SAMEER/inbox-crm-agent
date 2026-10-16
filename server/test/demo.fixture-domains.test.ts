@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// P19 — the demo data becomes public, so it must not name anybody real.
+// public demo — the demo data becomes public, so it must not name anybody real.
 //
 // WHY THIS IS A TEST AND NOT A ONE-OFF CLEANUP
 //

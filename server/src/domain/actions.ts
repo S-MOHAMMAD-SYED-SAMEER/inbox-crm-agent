@@ -1,4 +1,4 @@
-// The closed action registry (spec §15, FR-21) — the foundation of the
+// The closed action registry — the foundation of the
 // architecture rule: *the model proposes, deterministic code disposes.*
 //
 // Two properties of this file carry the entire safety argument:
@@ -43,7 +43,7 @@ export type ActionType = (typeof ACTION_TYPES)[number];
 export type ActionDefinition = {
   readonly type: ActionType;
   readonly tier: RiskTier;
-  /** Shown verbatim in the Automation screen (§13.7) and in approval reasons. */
+  /** Shown verbatim in the Automation screen and in approval reasons. */
   readonly description: string;
   /** Why this tier — the sentence an operator gets when they ask. */
   readonly rationale: string;
@@ -148,18 +148,14 @@ export const ACTION_REGISTRY: Readonly<Record<ActionType, ActionDefinition>> = O
 
 /**
  * A proposed action. `payload` stays `unknown` at this layer on purpose: per-
- * action payload validation belongs with the DECIDE stage (M3) that builds it
- * and the EXECUTE stage (M4) that applies it. The foundation's job is only to
+ * action payload validation belongs with the DECIDE stage that builds it
+ * and the EXECUTE stage that applies it. The foundation's job is only to
  * guarantee the *type* is one this system recognises.
  */
 export type ProposedAction = {
   type: ActionType;
   payload: unknown;
 };
-
-export function isActionType(value: unknown): value is ActionType {
-  return typeof value === 'string' && (ACTION_TYPES as readonly string[]).includes(value);
-}
 
 export function actionDefinition(type: ActionType): ActionDefinition {
   const definition = ACTION_REGISTRY[type];

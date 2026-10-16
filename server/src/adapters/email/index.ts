@@ -12,7 +12,7 @@ export { createDemoEmailSource, parseDemoFixtures, type DemoEmailFixture } from 
  * `gmail` is not implemented and is not reachable: config/env.ts already falls
  * `EMAIL_SOURCE=gmail` back to `demo` with a startup warning, so this switch
  * has one live branch. Gmail arrives as a new file implementing the same
- * interface (§23) — no caller changes.
+ * interface — no caller changes.
  */
 export function createEmailSource(cfg: AppConfig = config): EmailSource {
   return createDemoEmailSource({ filePath: path.join(cfg.demoDataDir, 'emails.json') });

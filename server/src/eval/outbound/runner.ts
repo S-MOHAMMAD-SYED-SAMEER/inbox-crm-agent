@@ -23,7 +23,7 @@ import type { Database } from '../../db/types.ts';
 import type { EmailRecord } from '../../domain/email.ts';
 import type { DecisionRecord } from '../../domain/decision.ts';
 
-// M4-D focused evaluation — outbound delivery safety.
+// The outbound adapter's focused evaluation — outbound delivery safety.
 //
 // This is the only capability in the system that can put words in front of a
 // customer, so the metrics are almost entirely about the circumstances in which
@@ -31,7 +31,7 @@ import type { DecisionRecord } from '../../domain/decision.ts';
 //
 // EVERY METRIC IS PAIRED WITH AN ATTEMPT COUNT. A zero-attempt "no
 // unauthorized sends" result is not a pass, it is a measurement that never
-// happened — the exact failure M4-B's expiry check had. The thresholds below
+// happened — the exact failure the expiry sweep's expiry check had. The thresholds below
 // fail on it explicitly.
 //
 // NOTHING HERE TOUCHES A NETWORK. The mock provider is a local object, and one

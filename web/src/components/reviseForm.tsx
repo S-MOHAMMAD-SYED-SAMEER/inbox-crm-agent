@@ -20,7 +20,7 @@ import { describeReviseError, problemPath, type ReviseErrorView } from '../revis
 import { api, ApiError } from '../api/client.ts';
 import type { ActionPlan, RevisionResult } from '../api/types.ts';
 
-// The edit form (M4-C.3 §4–§10).
+// The edit form.
 //
 // A reviewer changes the words. They never change what the plan *does*.
 //

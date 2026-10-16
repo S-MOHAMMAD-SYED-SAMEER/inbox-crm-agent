@@ -1,6 +1,6 @@
 import type { Execution } from '../api/types.ts';
 
-// What an executed action actually did (M6-B).
+// What an executed action actually did.
 //
 // The execution list used to read "done · Add the company — company": the action
 // and the *type* of thing it touched, but never the thing itself. On a demo that

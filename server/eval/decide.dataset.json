@@ -3,16 +3,16 @@
   "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
   "autonomyLevel": "assisted",
   "note": [
-    "M3 evaluation cases. Scoped to DECIDE — the full harness (§20) is M6.",
+    "DECIDE evaluation cases. Scoped to DECIDE.",
     "",
-    "Expectations come from spec §22's stated outcomes, not from what the rules happen to produce.",
+    "Expectations come from the specification's stated outcomes, not from what the rules happen to produce.",
     "",
-    "AUTONOMY: these cases run at `assisted`, because §22 describes E-05 and E-09 as auto-executing",
-    "at tier 0 — which is what `assisted` means. The shipped default is `manual` (§16: 'the default",
+    "AUTONOMY: these cases run at `assisted`, because the specification describes E-05 and E-09 as auto-executing",
+    "at tier 0 — which is what `assisted` means. The shipped default is `manual` (the specification: 'the default",
     "for a new client'), under which every one of these would require approval. Both behaviours are",
-    "correct; this dataset measures the one §22 documents.",
+    "correct; this dataset measures the one the specification documents.",
     "",
-    "E-04, E-08 and E-10 are absent on purpose: M1 and M2 hold them at needs_review, so DECIDE never",
+    "E-04, E-08 and E-10 are absent on purpose: UNDERSTAND and RESOLVE hold them at needs_review, so DECIDE never",
     "runs on them. An entry here would assert behaviour that cannot occur."
   ],
   "cases": [

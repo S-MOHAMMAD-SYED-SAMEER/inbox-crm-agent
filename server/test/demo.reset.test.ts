@@ -5,7 +5,7 @@ import { assessDemoReset, computeIdentity, verifyPristine } from '../src/demo/re
 import { clearAllData, readSeedFile, seedDemoData } from '../src/db/seed.ts';
 import type { Database } from '../src/db/types.ts';
 
-// M7-F — the guards on the demo reset.
+// the guards on the demo reset.
 //
 // This is the only mechanism in the project permitted to delete rows from a
 // hosted database, so every refusal it can make is asserted here. A guard with
@@ -157,23 +157,23 @@ test('a hosted reset against the wrong database is refused', async () => {
   await close();
 });
 
-test('THE ONE THAT MATTERS — the M5-E verification branch cannot be reset', async () => {
-  // M5-E and the demo are two branches of the same Neon project: same database
+test('THE ONE THAT MATTERS — the Postgres verification branch cannot be reset', async () => {
+  // the Postgres verification and the demo are two branches of the same Neon project: same database
   // name, same region, different endpoint. Only the endpoint distinguishes
   // them, so this asserts that the endpoint alone is enough.
   const demo = 'postgresql://someone:placeholder@ep-demo-aaaa.region.example.test/appdb';
-  const m5e = 'postgresql://someone:placeholder@ep-verify-bbbb.region.example.test/appdb';
+  const verificationBranch = 'postgresql://someone:placeholder@ep-verify-bbbb.region.example.test/appdb';
 
   const { db, close } = await createTestContext();
   const result = await assessDemoReset(db, {
     ...base,
     driver: 'postgres',
     declaredKind: 'production',
-    identity: computeIdentity(m5e), // DATABASE_URL is pointing at M5-E
+    identity: computeIdentity(verificationBranch), // DATABASE_URL is pointing at the Postgres verification
     expectedIdentity: computeIdentity(demo), // but the demo is what was pinned
   });
 
-  assert.equal(result.ok, false, 'the M5-E branch was accepted as a reset target');
+  assert.equal(result.ok, false, 'the Postgres verification branch was accepted as a reset target');
   assert.equal(result.ok === false && result.code, 'identity_mismatch');
   await close();
 });

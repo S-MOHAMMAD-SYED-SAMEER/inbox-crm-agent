@@ -14,7 +14,7 @@ import type { EmailRecord } from '../src/domain/email.ts';
 import type { EntityResolution } from '../src/domain/resolution.ts';
 import type { Deal } from '../src/domain/crm.ts';
 
-// M3 unit tests: the rules, the draft guardrails and the state mapping.
+// DECIDE unit tests: the rules, the draft guardrails and the state mapping.
 //
 // Pure functions — no database, no model, no clock. These are the tests that
 // pin the architecture rule in place: the plan is a function of the
@@ -377,7 +377,7 @@ test('an empty plan goes to human review with a machine-readable reason', () => 
 });
 
 test('an unattended plan rests in deciding rather than claiming to be executing', () => {
-  // M3 does not execute. Moving it to `executing` would make the email claim
+  // DECIDE does not execute. Moving it to `executing` would make the email claim
   // something is happening when nothing is.
   assert.deepEqual(nextState(plan()), { state: 'deciding', reviewReason: null });
 });

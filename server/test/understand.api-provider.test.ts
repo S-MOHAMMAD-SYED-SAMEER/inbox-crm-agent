@@ -171,7 +171,7 @@ test('gemini with a key is a real provider, never the mock; without one it is re
 });
 
 test('the demo fixtures register a canned response per email, plus the drafts', () => {
-  // CONTRACT CHANGE (M3): DECIDE asks for `<id>:draft`, so the four draftable
+  // CONTRACT CHANGE: DECIDE asks for `<id>:draft`, so the four draftable
   // fixtures each register a second response alongside their understanding.
   const provider = createMockLlmProvider();
   assert.equal(registerDemoFixtures(provider, DEMO_DATA_DIR), 14);
@@ -227,11 +227,11 @@ test('the detail payload states that later stages are not implemented', async ()
 
   const detail = await handleGetEmail(d, (first as { id: string }).id);
   assert.equal(detail.body.stages.understand, 'pending');
-  // CONTRACT CHANGE (M3): `decide` became a real stage status. `execute` is
+  // CONTRACT CHANGE: `decide` became a real stage status. `execute` is
   // still the unbuilt one, and the property under test — that an unrun stage
   // reports itself honestly rather than showing invented output — is unchanged.
   assert.equal(detail.body.stages.decide, 'pending');
-  // CONTRACT CHANGE (M4-A): `execute` became a real stage status too. The
+  // CONTRACT CHANGE: `execute` became a real stage status too. The
   // property under test is unchanged — an unrun stage reports itself honestly.
   assert.equal(detail.body.stages.execute, 'pending');
   assert.equal(detail.body.analysis, null, 'an unanalysed email has no analysis, not a fabricated one');

@@ -19,7 +19,7 @@ import {
 //
 // One dependency dropped versus Project 1: no `dotenv`. Node 24 ships
 // `process.loadEnvFile()`, which does the same job for a file this simple, so
-// the runtime dependency count stays at two (NFR-9).
+// the runtime dependency count stays at two.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_ROOT = path.resolve(__dirname, '../..');
@@ -28,8 +28,8 @@ try {
   process.loadEnvFile(path.join(SERVER_ROOT, '.env'));
 } catch {
   // No .env file is the normal case for tests and for a fresh clone: every
-  // value below has a working default, and the demo runs with no keys at all
-  // (NFR-1). A missing file is therefore not worth a warning.
+  // value below has a working default, and the demo runs with no keys at all.
+  // A missing file is therefore not worth a warning.
 }
 
 export const LLM_PROVIDERS = ['mock', 'anthropic', 'gemini'] as const;
@@ -130,7 +130,7 @@ export type AppConfig = {
   /** Mock-provider behaviour, for demonstrating failure handling without a real provider. */
   outboundMockBehaviour: MockBehaviour;
   /**
-   * scrypt-derived operator password (M5-A). Null means authentication cannot
+   * scrypt-derived operator password. Null means authentication cannot
    * succeed — the safe default for a machine that was never configured.
    */
   operatorPasswordHash: string | null;
@@ -138,7 +138,7 @@ export type AppConfig = {
   /** Exact origins allowed to make credentialed cross-origin requests. */
   corsAllowedOrigins: string[];
   /**
-   * How many reverse proxies sit in front of this server (M7-A).
+   * How many reverse proxies sit in front of this server.
    *
    * 0 — the default — means "none": `X-Forwarded-For` is ignored entirely and
    * `req.ip` is the socket address. 1 means exactly one trusted hop, which is
@@ -153,7 +153,7 @@ export type AppConfig = {
   autonomyLevel: AutonomyLevel;
   demoDataDir: string;
   /**
-   * Opens an unauthenticated, read-only window onto the demo data (P19).
+   * Opens an unauthenticated, read-only window onto the demo data.
    *
    * WHAT IT DOES, AND THE THREE THINGS IT DOES NOT
    *
@@ -195,7 +195,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
     // Driver selection is derived, not configured. A Postgres URL means
     // Postgres; no URL means the local SQLite file. That is what lets
     // `npm run migrate && npm run seed` work on a fresh clone with no
-    // database server, no Docker, and no account (D1), while deploying to
+    // database server, no Docker, and no account, while deploying to
     // Neon is nothing but setting DATABASE_URL.
     let dbDriver: DbDriverName = 'sqlite';
     if (databaseUrl !== null) {
@@ -257,7 +257,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
       );
     }
 
-    // --- authentication (M5-A) ---------------------------------------------
+    // --- authentication ---------------------------------------------
     //
     // No default and no fallback: an unset hash means nobody can log in, which
     // is the only safe answer for a machine nobody has configured. The
@@ -277,7 +277,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
     // localhost development impossible — so it is derived from how the app is
     // reached rather than being a flag someone can leave off in production.
     // Default true; explicitly false only for local HTTP.
-    // --- CORS (M5-B) --------------------------------------------------------
+    // --- CORS --------------------------------------------------------
     //
     // Empty by default, which means same-origin only — the correct posture for
     // an API that serves its own front end. A wildcard is refused outright
@@ -353,11 +353,10 @@ const loaded = loadConfig();
 
 export const config: AppConfig = loaded.config;
 export const configProblems: readonly string[] = loaded.problems;
-export const isConfigured = loaded.ok;
 
 /**
  * What `/api/health` and the Settings screen are allowed to know: whether each
- * dependency is configured, never *how* (FR-46). No key, no fragment of a key,
+ * dependency is configured, never *how*. No key, no fragment of a key,
  * no connection string, not even a length.
  */
 export function configSummary(cfg: AppConfig = config): Record<string, string | boolean | number> {

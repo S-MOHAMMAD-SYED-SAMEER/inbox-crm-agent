@@ -18,7 +18,7 @@ import { planRiskTier } from '../../domain/actions.ts';
 import type { AutonomyLevel } from '../../domain/policy.ts';
 import type { ActionPlan } from '../../domain/decision.ts';
 
-// The M3 evaluation runner.
+// The DECIDE evaluation runner.
 //
 // Runs the real pipeline end to end — seed, ingest, understand, resolve, decide
 // — against an in-memory database. The only substitution is the model call, and
@@ -80,7 +80,7 @@ export function loadDecideDataset(filePath: string): {
     expected: (entry.expected ?? {}) as ExpectedDecision,
   }));
 
-  problems.throwIfAny('The M3 evaluation dataset is not valid.');
+  problems.throwIfAny('The DECIDE evaluation dataset is not valid.');
   return { version, autonomyLevel, cases };
 }
 
@@ -97,7 +97,7 @@ export function evaluateDecision(
     check('requiresApproval', plan.requiresApproval === expected.requiresApproval, `expected ${expected.requiresApproval}, got ${plan.requiresApproval}`),
     check('state', state === expected.state, `expected ${expected.state}, got ${state}`),
     check('hasDraft', (plan.draft !== null) === expected.hasDraft, `expected ${expected.hasDraft}, got ${plan.draft !== null}`),
-    // Explainability is a requirement (NFR-4), so every case checks it.
+    // Explainability is a requirement, so every case checks it.
     check('rationale', plan.rationale.trim().length > 40, `rationale was "${plan.rationale}"`),
   ];
 
@@ -313,7 +313,7 @@ export async function runDecideEvaluation(options: {
 }
 
 /**
- * Thresholds for M3.
+ * Thresholds for DECIDE.
  *
  * The last four are absolutes. A safety measure with a tolerance is not a
  * safety measure: one tier-2 action escaping approval, one invented claim in a

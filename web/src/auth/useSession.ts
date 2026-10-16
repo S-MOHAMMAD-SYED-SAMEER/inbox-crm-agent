@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, setCsrfFailureHandler, setUnauthorizedHandler } from '../api/client.ts';
 import { publicDemoFromHealth, sessionFromResponse, type SessionState } from './session.ts';
 
-// The session gate (M6-A).
+// The session gate.
 //
 // One hook owns the answer to "is anyone signed in?", and it gets that answer
 // from the server every time — at startup, after a sign-in, after a sign-out,
@@ -53,7 +53,7 @@ export function useSession(): Session {
     }
 
     // Nobody is signed in. Ask the server — not this browser — whether it is
-    // serving a public demo (P19). Only the server knows, and only the server
+    // serving a public demo. Only the server knows, and only the server
     // enforces it: if this check were ever wrong in the permissive direction,
     // the app would render and every request behind it would still 401.
     try {

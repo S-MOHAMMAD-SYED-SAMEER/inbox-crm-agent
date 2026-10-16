@@ -24,7 +24,7 @@ import type { Database } from '../src/db/types.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M5-D — the outbound sending claim. Audit finding F-05.
+// The outbound sending claim (an audit finding).
 //
 // The audit found that concurrent delivery produced exactly one email — but for
 // the wrong reason. The second attempt collided on the audit sequence constraint
@@ -40,7 +40,7 @@ import type { EmailRecord } from '../src/domain/email.ts';
 // condition was removed and the suite re-run. The repository-level claim tests
 // failed, as they must. The end-to-end executor test below did NOT — because the
 // audit sequence constraint still serialises the second attempt before it
-// reaches the provider, which is the very incidental protection F-05 was raised
+// reaches the provider, which is the very incidental protection that finding was raised
 // about.
 //
 // So the honest reading is recorded here rather than glossed: *the
@@ -75,7 +75,7 @@ type Fixture = {
 
 /** demo-e01 approved and ready to deliver. */
 async function approved(): Promise<Fixture> {
-  const ctx = await createTestContext({ idPrefix: 'm5d' });
+  const ctx = await createTestContext({ idPrefix: 'claim' });
   await seedDemoData(ctx.repos, readSeedFile(DEMO_DATA_DIR));
   await ctx.repos.settings.set('autonomy_level', 'manual', 'test');
 

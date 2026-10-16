@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { secretsMatch } from '../domain/session.ts';
 import { AppError } from '../lib/errors.ts';
 
-// CSRF protection (M5-B).
+// CSRF protection.
 //
 // WHY THIS IS NEEDED AT ALL, GIVEN SameSite=Strict
 //

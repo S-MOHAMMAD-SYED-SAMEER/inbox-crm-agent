@@ -1,4 +1,4 @@
-// Autonomy vocabulary (spec §16).
+// Autonomy vocabulary.
 //
 // An autonomy level says how much the system may do without asking. It has a
 // hard floor that no level reaches past: **no level permits a tier-2 action to
@@ -10,18 +10,6 @@
 
 export const AUTONOMY_LEVELS = ['manual', 'assisted', 'autonomous_low_risk'] as const;
 export type AutonomyLevel = (typeof AUTONOMY_LEVELS)[number];
-
-export const AUTONOMY_DESCRIPTIONS: Readonly<Record<AutonomyLevel, string>> = Object.freeze({
-  manual:
-    'Everything requires approval, including safe actions. The default for a new client — ' +
-    'trust is earned with evidence from their own inbox.',
-  assisted:
-    'Safe append-only actions run automatically at high confidence. Anything that creates or ' +
-    'changes a record requires approval.',
-  autonomous_low_risk:
-    'Safe actions and new-record creation run automatically at high confidence. Consequential ' +
-    'actions — sending email, and anything touching a deal — always require approval.',
-});
 
 /**
  * The highest risk tier each level may execute without a human, when every

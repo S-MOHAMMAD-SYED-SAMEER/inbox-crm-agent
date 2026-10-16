@@ -5,7 +5,7 @@ import { goldBanner } from '../src/eval/provenance.ts';
 
 // `npm run eval:outbound`
 //
-// M4-D's focused safety measurement: outbound delivery. Deterministic, offline,
+// The outbound adapter's focused safety measurement: outbound delivery. Deterministic, offline,
 // no API key, no network. Exits non-zero when a protection is violated — or
 // when one of them was never exercised.
 

@@ -15,7 +15,7 @@ import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 import type { LlmProvider, LlmResponse } from '../src/adapters/llm/types.ts';
 
-// M3 integration tests: the real DECIDE stage over the real pipeline.
+// DECIDE integration tests: the real DECIDE stage over the real pipeline.
 // Only the model call is substituted, and it only ever produces draft prose.
 
 const quiet = createLogger('test', { level: 'error' });
@@ -159,7 +159,7 @@ test('an ambiguous email never reaches DECIDE, and produces no plan if forced', 
   await pipelineToDecide(repos);
 
   const ambiguous = await emailFor(repos, 'demo-e08');
-  assert.equal(ambiguous.state, 'needs_review', 'M1 holds it');
+  assert.equal(ambiguous.state, 'needs_review', 'UNDERSTAND holds it');
   assert.throws(() => assertDecidable(ambiguous), /cannot be decided/);
 
   // Forced through anyway: still no plan, and no CRM record proposed.
@@ -279,7 +279,7 @@ test('16. a draft that invents a price is blocked, kept visible, and forces appr
   assert.ok(blocked.includes('no_price_commitment'));
   assert.ok(blocked.includes('no_legal_or_contractual_language'));
 
-  // Spec §16: the blocked text is still shown, so the operator sees what it tried to say.
+  // the specification: the blocked text is still shown, so the operator sees what it tried to say.
   assert.match(draft.body, /\$2,500/);
   assert.equal(outcome.plan?.requiresApproval, true);
   assert.ok(outcome.plan?.approvalReasons.some((r) => r.code === 'draft_blocked'));
@@ -322,14 +322,14 @@ test('the model cannot add an action, change a tier, or clear approval', async (
 });
 
 test('DECIDE writes nothing to the CRM and sends nothing', async () => {
-  // CONTRACT CHANGE (M6-E): this used to drive `handleDecidePending`, which now
+  // CONTRACT CHANGE: this used to drive `handleDecidePending`, which now
   // runs any plan needing no approval — so the handler DOES act, deliberately.
   //
   // The invariant being protected was never about the handler. It is that the
   // DECIDE *stage* only plans: it must not be able to touch the CRM, queue a
   // reply or record an execution, whatever the caller does afterwards. So the
   // test now drives `decideEmail` directly, which is the thing the claim is
-  // about, and the handler's new behaviour is asserted in `m6e.polish.test.ts`.
+  // about, and the handler's new behaviour is asserted in `polish.handlers.test.ts`.
   const { repos, close } = await createTestContext();
   await pipelineToDecide(repos, 'assisted');
 
@@ -475,7 +475,7 @@ test('21. the decide endpoints run the stage and expose the plan', async () => {
   const detail = await handleGetEmail(d, email.id);
 
   assert.equal(detail.body.stages.decide, 'complete');
-  // CONTRACT CHANGE (M4-A): EXECUTE exists now. A plan needing approval waits.
+  // CONTRACT CHANGE: EXECUTE exists now. A plan needing approval waits.
   assert.equal(detail.body.stages.execute, 'awaiting_approval');
   assert.ok(detail.body.decision);
   assert.equal(detail.body.decision.plan.requiresApproval, true);
@@ -515,7 +515,7 @@ test('deciding an email in the wrong state, or one that does not exist, is refus
 
 // ========================================================== evaluation
 
-test('the M3 evaluation passes every threshold, deterministically', async () => {
+test('the DECIDE evaluation passes every threshold, deterministically', async () => {
   const options = {
     datasetPath: path.join(MIGRATIONS_DIR, '..', 'eval', 'decide.dataset.json'),
     demoDataDir: DEMO_DATA_DIR,

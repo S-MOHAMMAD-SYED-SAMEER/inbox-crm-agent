@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { api, ApiError } from '../api/client.ts';
 
-// The sign-in screen (M6-A).
+// The sign-in screen.
 //
 // THERE IS NO USERNAME FIELD, AND THAT IS THE DESIGN.
 //
-// This build authenticates one operator against one password (M5-A decision 2).
+// This build authenticates one operator against one password (decision 2).
 // A username box would be a field the browser fills in and the server ignores —
 // worse, it would look like the thing that establishes identity, when identity
 // comes from the session the server issues. The operator name shown once signed
@@ -21,7 +21,7 @@ import { api, ApiError } from '../api/client.ts';
 //     app re-asks the server.
 //
 // A failed sign-in says one thing regardless of why, because the server answers
-// the same way regardless of why (M5-A): distinguishing "wrong password" from
+// the same way regardless of why: distinguishing "wrong password" from
 // "server has no password configured" would tell someone guessing which half of
 // the problem to work on.
 

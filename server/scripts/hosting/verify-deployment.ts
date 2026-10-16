@@ -1,13 +1,13 @@
 import { createInterface } from 'node:readline/promises';
 
-// M7-E — verification of a running deployment, for anyone hosting their own.
+// verification of a running deployment, for anyone hosting their own.
 //
 //   npm run verify:deployment -- https://<your-host>
 //   npm run verify:deployment -- https://<your-host> --auth   (adds the signed-in checks)
 //
 // WHY THIS EXISTS SEPARATELY FROM verify-production.ts
 //
-// M7-B's harness spawns the server locally and proves the code is right. It
+// The production-build verification's harness spawns the server locally and proves the code is right. It
 // cannot say anything about the deployment: whether the built assets actually
 // shipped, whether the platform terminates TLS, whether the environment the
 // process booted with is the one intended, or whether the database it reached
@@ -74,7 +74,7 @@ async function get(path: string, init: RequestInit = {}): Promise<Response> {
 
 // ============================================================== warm-up
 
-console.log('M7-E — live deployment verification');
+console.log('live deployment verification');
 console.log('='.repeat(60));
 console.log(`  target: ${baseUrl}`);
 
@@ -134,7 +134,7 @@ section('2. Security configuration as deployed');
   check('the model provider is the deterministic mock', a.llmProvider === 'mock', String(a.llmProvider));
 
   // Reported, not enforced: the single-origin design wants an empty allow-list,
-  // but the deployed value is an operator decision and M7-E does not change it.
+  // but the deployed value is an operator decision and the deployment verification does not change it.
   const origins = Number(a.corsAllowedOrigins ?? 0);
   if (origins === 0) {
     check('the CORS allow-list is empty (single-origin)', true);

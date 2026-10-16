@@ -1,13 +1,13 @@
 import type { CrmTargetName } from '../../config/env.ts';
-import type { Activity, Company, Contact, Deal, Note, Task } from '../../domain/crm.ts';
+import type { Company, Contact } from '../../domain/crm.ts';
 import type { ProposedAction } from '../../domain/actions.ts';
 
-// The CRM boundary (spec §15, §24).
+// The CRM boundary.
 //
 // SPEC REFINEMENT — the interface is split in two.
 //
-// §15 describes one `CrmAdapter` with reads and `applyPlan` together. It is
-// split here into `CrmReader` (implemented now) and `CrmWriter` (M4, with the
+// the specification describes one `CrmAdapter` with reads and `applyPlan` together. It is
+// split here into `CrmReader` (implemented now) and `CrmWriter` (EXECUTE, with the
 // EXECUTE stage), with `CrmAdapter = CrmReader & CrmWriter` preserving the
 // original shape. The alternative was shipping an `applyPlan` that throws
 // "not implemented" — a runtime landmine in the one code path where a mistake
@@ -20,11 +20,9 @@ import type { ProposedAction } from '../../domain/actions.ts';
 // The local adapter satisfies it with a database transaction. HubSpot cannot:
 // its API has no cross-object transaction, so that adapter will declare
 // `supportsAtomicity: false` and implement compensating rollback — and the
-// policy layer will require approval for multi-action plans on it (§16 rule 7).
+// policy layer will require approval for multi-action plans on it (the specification rule 7).
 // Discovering that in the design is the entire payoff of drawing the boundary
 // before writing the integration.
-
-export type CrmEntitySnapshot = Company | Contact | Deal | Task | Activity | Note;
 
 export type TimelineItem = {
   kind: 'activity' | 'note' | 'task' | 'email';
@@ -67,7 +65,7 @@ export type ActionResult = {
   errorMessage?: string;
 };
 
-/** Implemented in M4 with the EXECUTE stage. */
+/** Implemented with the EXECUTE stage. */
 export type CrmWriter = {
   applyPlan(actions: readonly ProposedAction[], context: ExecutionContext): Promise<ActionResult[]>;
 };

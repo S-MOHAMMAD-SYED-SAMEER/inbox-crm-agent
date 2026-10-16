@@ -1,15 +1,14 @@
-// CRM vocabulary and record shapes (FR-34, FR-36).
+// CRM vocabulary and record shapes.
 //
 // These types describe the *local* CRM. They are deliberately provider-neutral:
-// nothing here mentions HubSpot, and the future HubSpot adapter (§24) maps onto
-// these shapes rather than leaking its own. That is what makes §24 an adapter
+// nothing here mentions HubSpot, and the future HubSpot adapter maps onto
+// these shapes rather than leaking its own. That is what makes the specification an adapter
 // rather than a rewrite.
 
 export const CRM_ENTITY_TYPES = ['contact', 'company', 'deal', 'task', 'activity', 'note'] as const;
-export type CrmEntityType = (typeof CRM_ENTITY_TYPES)[number];
 
 // Which layer wrote a record. Shown as a badge on every record in the UI
-// (§13.6) — an operator should never have to guess whether a human or the
+// — an operator should never have to guess whether a human or the
 // agent created something.
 export const RECORD_SOURCES = ['agent', 'human', 'seed'] as const;
 export type RecordSource = (typeof RECORD_SOURCES)[number];
@@ -64,7 +63,7 @@ export type ActivityDirection = (typeof ACTIVITY_DIRECTIONS)[number];
 export type Company = {
   id: string;
   name: string;
-  /** Lowercased, legal suffixes stripped. The company match key (FR-13). */
+  /** Lowercased, legal suffixes stripped. The company match key. */
   nameNorm: string;
   domain: string | null;
   website: string | null;
@@ -160,10 +159,10 @@ export type Note = {
 /**
  * Normalises a company name into its match key: lowercase, legal suffixes and
  * punctuation removed, whitespace collapsed. Deterministic and pure, because
- * entity resolution (M2) must give the same answer on every run — a demo whose
+ * entity resolution must give the same answer on every run — a demo whose
  * matching wobbles between runs is worse than no matching at all.
  *
- * Kept here rather than in the M2 resolver because the *seed* data needs it
+ * Kept here rather than in the RESOLVE resolver because the *seed* data needs it
  * too: `name_norm` is a stored column, so it must be computed identically at
  * write time and at match time. One function, one definition.
  */

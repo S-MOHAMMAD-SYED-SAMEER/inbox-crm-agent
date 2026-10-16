@@ -28,7 +28,7 @@ import type { AutonomyLevel } from '../src/domain/policy.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M4-C.2 — the revision engine.
+// the revision engine.
 //
 // One property sits underneath most of these tests: **a human edit produces a
 // new plan and never mutates the old one**, and the authority to act does not
@@ -204,7 +204,7 @@ test('the revision is recorded in the audit log, without any email content', asy
   assert.ok(superseded, 'no approval_superseded event');
   assert.equal(superseded.actor, 'system');
 
-  // §19: message content never reaches the audit log. The edited body quotes
+  // the specification: message content never reaches the audit log. The edited body quotes
   // the customer's own email, so a diff of *values* would leak it.
   const serialised = JSON.stringify([revised, superseded]);
   assert.ok(!serialised.includes('Happy to help'), 'the audit log captured the edited reply text');
@@ -382,7 +382,7 @@ test('v2 executes only through the existing approval path, and its actions get f
   const executions = await f.repos.executions.listForDecision(result.decision.id);
   assert.ok(executions.length > 0);
 
-  // Keys are derived from the decision id (§15), so a revision's keys can never
+  // Keys are derived from the decision id, so a revision's keys can never
   // collide with v1's. That is precisely why a plan which has already executed
   // may not be revised — the writes would not deduplicate, they would double.
   const keys = executions.map((execution) => execution.idempotencyKey);
@@ -702,7 +702,7 @@ test('every problem in a bad envelope is reported at once', async () => {
 
 test('a revision cannot be pointed at another email through the repository', async () => {
   // The envelope has no field for it, so the only route is the repository —
-  // where M4-C.1's provenance check refuses it.
+  // where approve-with-edits's provenance check refuses it.
   const a = await pending('demo-e01');
   const b = await pending('demo-e02');
 
@@ -940,7 +940,7 @@ test('a failure part-way through leaves no v2, no v2 approval and no partial aud
 
 test('a revision works through the HTTP endpoint and records the caller as the editor', async () => {
   const f = await pending();
-  // M5-A: the API requires a session, so the test signs in exactly as a browser
+  // the API requires a session, so the test signs in exactly as a browser
   // would. The editor recorded is the authenticated operator, not a header.
   const server = await startAuthenticatedServer(f.db);
 
@@ -1035,7 +1035,7 @@ test('the envelope validator is pure: it never touches the plan it was given', a
 });
 
 test('the email detail carries the whole revision history, oldest first', async () => {
-  // M4-C.3 reads this to render the history. It comes from the API precisely so
+  // approve-with-edits reads this to render the history. It comes from the API precisely so
   // the UI never has to reconstruct it from the audit log, whose payloads are
   // paths and digests by design and could not answer "what state is v1 in?".
   const f = await pending();

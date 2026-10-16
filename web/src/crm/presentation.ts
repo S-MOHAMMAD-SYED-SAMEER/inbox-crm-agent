@@ -1,6 +1,6 @@
 import type { RecordSource } from '../api/types.ts';
 
-// How CRM records are described (M6-C).
+// How CRM records are described.
 //
 // Pure, so it can be tested without a browser — the same reason the revision and
 // outbox presentation live in modules rather than in JSX.

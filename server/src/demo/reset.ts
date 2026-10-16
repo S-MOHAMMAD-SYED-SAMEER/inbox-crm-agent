@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Database } from '../db/types.ts';
 
-// Returning the deployed demo to its pristine state (M7-F).
+// Returning the deployed demo to its pristine state.
 //
 // WHY THIS IS NOT `scripts/reset.ts`
 //
@@ -26,7 +26,7 @@ import type { Database } from '../db/types.ts';
 //   3. A hosted database must match a pinned identity fingerprint. The
 //      fingerprint is a one-way hash of the connection target, so it is safe to
 //      store in an environment variable and reveals nothing about the
-//      connection string. If DATABASE_URL is ever repointed — at the M5-E
+//      connection string. If DATABASE_URL is ever repointed — at the Postgres verification
 //      verification branch, say — the fingerprint stops matching and the reset
 //      refuses rather than following it.
 //   4. Every row present must be recognisable demo data: emails from the demo
@@ -175,7 +175,7 @@ export async function assessDemoReset(db: Database, options: AssessOptions): Pro
         code: 'identity_mismatch',
         message:
           'This connection is not the pinned demo database. Refusing. ' +
-          'DATABASE_URL may be pointing somewhere else — the M5-E verification branch, for instance.',
+          'DATABASE_URL may be pointing somewhere else — the Postgres verification branch, for instance.',
       };
     }
   }

@@ -5,14 +5,14 @@ import type { CanonicalEmail, EmailRecord } from '../../domain/email.ts';
 import type { Logger } from '../../lib/logger.ts';
 import { createLogger } from '../../lib/logger.ts';
 
-// The ingestion stage (FR-1..FR-4).
+// The ingestion stage.
 //
 // Pulls from whatever `EmailSource` is configured, sanitises, stores, and
 // records an audit event per message. Everything it depends on is injected, so
 // the whole stage can be exercised with an in-memory source and database — no
 // network, no file, no credentials.
 //
-// TRIGGERING is explicit (spec §14): a call to `POST /api/emails/ingest`. There
+// TRIGGERING is explicit: a call to `POST /api/emails/ingest`. There
 // is no worker, queue, or cron, because there is nothing to deploy them onto
 // yet and infrastructure with nothing running on it is just more surface.
 //

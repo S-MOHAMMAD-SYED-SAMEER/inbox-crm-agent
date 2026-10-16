@@ -25,7 +25,7 @@ import type { Database, SqlParam } from '../src/db/types.ts';
 import type { DecisionRecord } from '../src/domain/decision.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 
-// M4-C.4 — the whole human-in-the-loop lifecycle, end to end.
+// the whole human-in-the-loop lifecycle, end to end.
 //
 // The earlier milestones each proved their own piece. This file proves they
 // compose: an email arrives, the assistant proposes, a person rewrites the
@@ -123,7 +123,7 @@ function failingOn(inner: Database, pattern: RegExp): Database {
 }
 
 // ---------------------------------------------------------------------------
-// §1, §6  the whole lifecycle
+// The whole lifecycle
 // ---------------------------------------------------------------------------
 
 test('the full lifecycle: propose, revise, approve the revision, apply it, send nothing', async () => {
@@ -236,7 +236,7 @@ test('the full lifecycle: propose, revise, approve the revision, apply it, send 
 });
 
 // ---------------------------------------------------------------------------
-// §7  idempotency of a revised plan
+// Idempotency of a revised plan
 // ---------------------------------------------------------------------------
 
 test('re-running an approved revision changes nothing the second or third time', async () => {
@@ -279,7 +279,7 @@ test('re-running an approved revision changes nothing the second or third time',
 });
 
 // ---------------------------------------------------------------------------
-// §3  an unsafe human edit changes nothing
+// An unsafe human edit changes nothing
 // ---------------------------------------------------------------------------
 
 test('an unsafe human edit leaves the CRM, the outbox and the original plan untouched', async () => {
@@ -323,7 +323,7 @@ test('an unsafe human edit leaves the CRM, the outbox and the original plan unto
 });
 
 // ---------------------------------------------------------------------------
-// §5  atomicity, then a clean retry
+// Atomicity, then a clean retry
 // ---------------------------------------------------------------------------
 
 test('a rolled-back revision leaves no trace, and the retry produces exactly one v2', async () => {
@@ -368,7 +368,7 @@ test('a rolled-back revision leaves no trace, and the retry produces exactly one
 });
 
 // ---------------------------------------------------------------------------
-// §8  a revised approval can expire, and expiry grants nothing
+// A revised approval can expire, and expiry grants nothing
 // ---------------------------------------------------------------------------
 
 test('a pending revision can expire, and expiry never creates authority', async () => {
@@ -427,7 +427,7 @@ test('a pending revision can expire, and expiry never creates authority', async 
 });
 
 // ---------------------------------------------------------------------------
-// §4  the approval floor, proved through execution
+// The approval floor, proved through execution
 // ---------------------------------------------------------------------------
 
 test('a settings change after v1 cannot make v2 executable without approval', async () => {
@@ -472,7 +472,7 @@ test('a settings change after v1 cannot make v2 executable without approval', as
 test('a plan that needs no approval is not editable at all', async () => {
   // This is why the floor only ever has to defend one direction.
   //
-  // An edit begins from the approval queue, and the admission rule (M4-C.2) is
+  // An edit begins from the approval queue, and the admission rule is
   // "a pending approval and no executions". A plan that needs no approval has
   // no approval record, so it is never editable — which means a revision can
   // never START from an un-gated plan, and the `v1.requiresApproval ||
@@ -495,7 +495,7 @@ test('a plan that needs no approval is not editable at all', async () => {
 
   assert.equal((err as { code?: string }).code, 'INVALID_STATE');
 
-  // CONTRACT CHANGE (M6-E): the refusal reason moved from `approval_missing` to
+  // CONTRACT CHANGE: the refusal reason moved from `approval_missing` to
   // `already_executed`. An un-gated plan now runs the moment it is decided, so
   // by the time anything can try to edit it, it has already run — which is a
   // stronger reason to refuse, not a weaker one. Both are accepted here because

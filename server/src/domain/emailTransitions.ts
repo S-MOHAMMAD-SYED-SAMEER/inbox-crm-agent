@@ -1,6 +1,6 @@
 import { EMAIL_STATES, type EmailState } from './email.ts';
 
-// The email state machine, written down (M5-F, audit F-08).
+// The email state machine, written down.
 //
 // WHY THIS FILE EXISTS
 //
@@ -50,7 +50,7 @@ export const LEGAL_TRANSITIONS: Readonly<Record<EmailState, readonly EmailState[
   deciding: ['awaiting_approval', 'needs_review', 'executing', 'completed', 'archived'],
 
   // The approval queue. Expiry moves to needs_review and never to execution:
-  // a timeout must not resolve in the direction of acting (§16).
+  // a timeout must not resolve in the direction of acting.
   awaiting_approval: ['executing', 'rejected', 'needs_review', 'expired'],
 
   // A human looks at it. From here it goes back into the pipeline or stops.

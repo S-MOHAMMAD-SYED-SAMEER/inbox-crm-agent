@@ -19,7 +19,7 @@ import type { ResolutionInput } from './score.ts';
 export type CandidateSets = {
   contacts: Contact[];
   companies: Company[];
-  /** Entities already linked to an earlier email in this thread (spec §7's thread bonus). */
+  /** Entities already linked to an earlier email in this thread (the specification's thread bonus). */
   threadLinkedEntityIds: Set<string>;
 };
 

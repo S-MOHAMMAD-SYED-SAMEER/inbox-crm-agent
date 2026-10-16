@@ -22,7 +22,7 @@ export const DEMO_DATA_DIR = path.resolve(__dirname, '../data/demo');
 /**
  * How many migrations exist, read from disk rather than hard-coded.
  *
- * M1 added a fourth migration and every test that had written `3` failed. The
+ * UNDERSTAND added a fourth migration and every test that had written `3` failed. The
  * assertion those tests wanted was "all of them were applied", not "there are
  * exactly three" — so the number is derived, and adding a fifth migration will
  * not break them again.
@@ -61,7 +61,7 @@ export async function rejects(fn: () => Promise<unknown>): Promise<Error> {
   throw new Error('Expected the operation to reject, but it resolved.');
 }
 
-// --- authenticated HTTP (M5-A) ----------------------------------------------
+// --- authenticated HTTP ----------------------------------------------
 //
 // Every API endpoint except health and the auth routes now requires a session.
 // Tests that exercise HTTP therefore have to sign in first, exactly as a browser
@@ -75,7 +75,7 @@ export type AuthenticatedServer = {
   url: string;
   /** Cookie header carrying a live session. */
   cookie: string;
-  /** The session's CSRF token, for M5-B. */
+  /** The session's CSRF token, for the CSRF and CORS layer. */
   csrf: string;
   stop(): Promise<void>;
 };

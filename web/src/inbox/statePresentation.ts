@@ -1,6 +1,6 @@
-// How an email's workflow state is described (M6-E).
+// How an email's workflow state is described.
 //
-// Pure, so it can be tested without a browser (NFR-9) — the same split the
+// Pure, so it can be tested without a browser — the same split the
 // revision, outbox, CRM and status presentation modules use.
 //
 // WHY THIS EXISTS
@@ -25,14 +25,14 @@
 // looked like nothing had happened. Tone now follows one rule: green means
 // finished and fine, red means something went wrong, amber means a person is
 // needed, grey means in flight. Every chip also states its label in words, so
-// nothing is signalled by colour alone (NFR-11).
+// nothing is signalled by colour alone.
 
 export type StateTone = 'done' | 'failed' | 'attention' | 'working';
 
 export type StatePresentation = {
   label: string;
   tone: StateTone;
-  /** A non-colour cue, so tone survives without colour (NFR-11). */
+  /** A non-colour cue, so tone survives without colour. */
   marker: string;
 };
 

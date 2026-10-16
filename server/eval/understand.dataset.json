@@ -2,9 +2,9 @@
   "version": "understand-1.0.0",
   "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
   "note": [
-    "M1 evaluation cases. Scoped to UNDERSTAND only — the full harness (§20) is M6.",
+    "UNDERSTAND evaluation cases. Scoped to UNDERSTAND only.",
     "",
-    "These expectations are written against the SPECIFICATION (§22), not copied from the canned",
+    "These expectations are written against the SPECIFICATION, not copied from the canned",
     "model responses. That distinction is what makes the suite meaningful: several cases assert an",
     "outcome that differs from what the model said, so passing requires the deterministic layers to",
     "have actually done their job.",
@@ -89,7 +89,7 @@
     {
       "id": "E-04",
       "providerMessageId": "demo-e04",
-      "description": "Sender whose company resembles two seeded records. M1 reads it normally; the conflict is M2's.",
+      "description": "Sender whose company resembles two seeded records. UNDERSTAND reads it normally; the conflict is RESOLVE's.",
       "expected": {
         "category": "service_inquiry",
         "priority": "medium",

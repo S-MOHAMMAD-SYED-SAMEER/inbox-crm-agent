@@ -12,7 +12,7 @@ import type { Repositories } from '../src/db/repositories/index.ts';
 import type { EmailRecord } from '../src/domain/email.ts';
 import path from 'node:path';
 
-// M1 integration tests: the real pipeline against a real (in-memory) schema,
+// UNDERSTAND integration tests: the real pipeline against a real (in-memory) schema,
 // with only the model call substituted. No credentials, no network, no clock
 // drift — the same arrangement the eval runner uses.
 
@@ -278,7 +278,7 @@ test('an injected email causes no CRM write and no outbound message', async () =
   const email = await emailFor(repos, 'demo-e10');
   await understandEmail(email, { repos, provider: demoProvider(), logger: quiet });
 
-  // Nothing in M1 can act, and the injection asked for exactly the actions that
+  // Nothing in UNDERSTAND can act, and the injection asked for exactly the actions that
   // do not exist yet. Asserted rather than assumed.
   assert.equal(await repos.contacts.count(), 0);
   assert.equal(await repos.companies.count(), 0);

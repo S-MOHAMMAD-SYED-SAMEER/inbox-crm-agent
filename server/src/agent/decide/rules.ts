@@ -6,7 +6,7 @@ import type { EntityResolution } from '../../domain/resolution.ts';
 import type { EntityRef, RuleTraceEntry } from '../../domain/decision.ts';
 import { orderActions } from '../../domain/decision.ts';
 
-// The deterministic business rules (FR-16, FR-19, FR-21).
+// The deterministic business rules.
 //
 // THIS FILE DECIDES WHAT HAPPENS. THE MODEL DOES NOT.
 //
@@ -20,11 +20,11 @@ import { orderActions } from '../../domain/decision.ts';
 // keeps the trace honest, because every rule can report why it did *not* fire,
 // which is what makes "why didn't it create a deal?" answerable.
 //
-// SPEC PROVENANCE: the action sets come from §22's stated outcomes for E-01 to
-// E-09, not from invention. Where §22 leaves something open, the choice is
+// SPEC PROVENANCE: the action sets come from the specification's stated outcomes for E-01 to
+// E-09, not from invention. Where the specification leaves something open, the choice is
 // marked DOCUMENTED CHOICE below.
 
-/** Task due dates by priority (FR-30). 48h for high is spec §22's E-01 figure. */
+/** Task due dates by priority. 48h for high is the specification's E-01 figure. */
 export const TASK_DUE_HOURS: Record<'high' | 'medium' | 'low', number> = {
   high: 48,
   medium: 120,
@@ -34,8 +34,8 @@ export const TASK_DUE_HOURS: Record<'high' | 'medium' | 'low', number> = {
 /**
  * Which stage a follow-up advances a deal to.
  *
- * `qualifying → proposal` is spec §22's E-06. The rest follow the same one-step
- * progression through §7's stage list. `negotiation`, `won` and `lost` have no
+ * `qualifying → proposal` is the specification's E-06. The rest follow the same one-step
+ * progression through the specification's stage list. `negotiation`, `won` and `lost` have no
  * automatic next step: past negotiation, "they replied" is not evidence of
  * anything in particular, and guessing there would move money.
  */
@@ -112,10 +112,10 @@ function isNoise(ctx: DecisionContext): boolean {
 /**
  * Whether this email may create CRM records at all.
  *
- * Noise obviously may not. Neither may an *ambiguous* email: spec §22's E-08
+ * Noise obviously may not. Neither may an *ambiguous* email: the specification's E-08
  * requires "no plan produced", and creating a company and a contact from a
  * reading the system has just declared unreliable would pollute the CRM on the
- * strength of a guess. M1 normally routes these to review before DECIDE ever
+ * strength of a guess. UNDERSTAND normally routes these to review before DECIDE ever
  * sees them; this is the guard for when one arrives anyway.
  */
 function producesCrmRecords(ctx: DecisionContext): boolean {
@@ -183,7 +183,7 @@ function dealAction(ctx: DecisionContext, stage: DealStage): ProposedAction {
       stage,
       serviceLine: inferServiceLine(ctx.understanding),
       // Verbatim strings, never parsed numbers. Turning "$2-3k" into an amount
-      // is a judgement about money, and M4 makes it behind the approval gate.
+      // is a judgement about money, and EXECUTE makes it behind the approval gate.
       budgetNote: ctx.understanding.extracted.budget.value,
       timelineNote: ctx.understanding.extracted.timeline.value,
       requirementSummary: ctx.understanding.extracted.requirementSummary.value,
@@ -394,7 +394,7 @@ const categoryRules: Rule[] = [
       if (ctx.understanding.category !== 'pricing_request') {
         return { fired: false, because: `the category is ${ctx.understanding.category}` };
       }
-      // DOCUMENTED CHOICE: §22 specifies the deal's amount and timeline for
+      // DOCUMENTED CHOICE: the specification specifies the deal's amount and timeline for
       // E-03 but not its stage. `qualifying` is used because someone stating a
       // budget has, by definition, qualified themselves past a raw lead.
       return {
@@ -514,7 +514,7 @@ export function evaluateRules(ctx: DecisionContext): RuleEvaluation {
   return { actions: orderActions(actions), trace };
 }
 
-/** The operator-facing sentence for a plan (FR-19, NFR-4). */
+/** The operator-facing sentence for a plan. */
 export function buildRationale(ctx: DecisionContext, evaluation: RuleEvaluation): string {
   const fired = evaluation.trace.filter((entry) => entry.fired);
   if (evaluation.actions.length === 0) {

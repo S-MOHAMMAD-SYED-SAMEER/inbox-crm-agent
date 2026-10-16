@@ -1,6 +1,6 @@
 import type { InjectionMatch, InjectionRecord, SanitisationRecord } from '../../domain/understanding.ts';
 
-// Prompt-injection detection (spec §19, D6).
+// Prompt-injection detection.
 //
 // WHAT THIS IS FOR, AND WHAT IT IS NOT FOR
 //

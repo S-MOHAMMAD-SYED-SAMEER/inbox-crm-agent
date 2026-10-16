@@ -21,7 +21,7 @@ import {
 } from '../handlers/emails.ts';
 
 /**
- * M1 email routes.
+ * UNDERSTAND email routes.
  *
  * Thin by policy: parse, call the handler, send the result. Errors are passed
  * to the app's terminal error handler so that every failure leaves through the

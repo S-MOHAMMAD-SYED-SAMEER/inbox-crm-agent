@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ProposedAction } from '../api/types.ts';
 
-// The approval diff (spec §13.5).
+// The approval diff.
 //
 // One question, answered per action: **what is true now, and what will be true
 // if I approve this?** A reviewer deciding in ten seconds needs the change, not

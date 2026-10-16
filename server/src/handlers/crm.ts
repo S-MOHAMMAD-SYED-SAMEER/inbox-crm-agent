@@ -5,20 +5,20 @@ import type { AuditEvent } from '../domain/audit.ts';
 import type { Repositories } from '../db/repositories/index.ts';
 import type { HandlerResult } from './emails.ts';
 
-// The CRM read layer (M6-C).
+// The CRM read layer.
 //
 // READ-ONLY, AND THAT IS THE WHOLE DESIGN.
 //
 // Every handler here is a GET. There is no create, no update, no delete and no
 // endpoint that changes anything — the only thing permitted to write to the CRM
-// is the executor, after an approval, through the closed action registry (§15).
+// is the executor, after an approval, through the closed action registry.
 // A "quick edit this deal" endpoint would be a second write path into exactly
 // the state the approval workflow exists to protect, so there is not one.
 //
 // WHY THESE EXIST AT ALL
 //
-// Spec §11 describes CRM endpoints; nothing had built them. The agent has been
-// creating companies, contacts, deals and tasks since M4-A, and the only place
+// the specification describes CRM endpoints; nothing had built them. The agent has been
+// creating companies, contacts, deals and tasks since the executor, and the only place
 // any of it was visible was the execution list on the email that made it. The
 // screens could not exist without these, and these are a thin projection over
 // repositories that were already complete.
@@ -234,12 +234,12 @@ export async function handleListTasks(
  *
  * The payload is deliberately NOT included.
  *
- * It is bounded and identifier-safe (M5-F), but it is written for an operator
+ * It is bounded and identifier-safe, but it is written for an operator
  * reading one email's trail with the email in front of them — not for a
  * system-wide list where a stray field could surface out of context. The list
  * shows what happened, when, who did it and how it ended; the full payload
  * stays on the email's own page, where it already is. Message bodies are never
- * in it either way (§19), and this keeps that true by construction rather than
+ * in it either way, and this keeps that true by construction rather than
  * by review.
  */
 export type AuditRow = {

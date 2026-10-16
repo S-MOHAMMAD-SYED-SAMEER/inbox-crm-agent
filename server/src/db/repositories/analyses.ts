@@ -13,7 +13,7 @@ import type {
   ModelUnderstanding,
 } from '../../domain/understanding.ts';
 
-// Analysis persistence (M1).
+// Analysis persistence.
 //
 // Append-only in practice: an analysis is never updated. Re-running UNDERSTAND
 // on an email inserts a *new* row, and `getLatestForEmail` returns the newest.
@@ -135,7 +135,7 @@ export function createAnalysisRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * The latest analysis for many emails, in one query (M7-F).
+     * The latest analysis for many emails, in one query.
      *
      * The inbox used to call `getLatestForEmail` once per row. At ten emails
      * that was ten round trips, and a round trip to a hosted database is the
@@ -173,5 +173,3 @@ export function createAnalysisRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type AnalysisRepository = ReturnType<typeof createAnalysisRepository>;

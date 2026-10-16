@@ -22,7 +22,7 @@ import type { Database } from './db/types.ts';
 
 export type AppDeps = {
   db: Database;
-  /** Injectable so a test can drive the limiter with a fixed clock (M5-C). */
+  /** Injectable so a test can drive the limiter with a fixed clock. */
   rateLimiter?: ReturnType<typeof rateLimit>;
   logger?: Logger;
   config?: AppConfig;
@@ -31,9 +31,9 @@ export type AppDeps = {
   source?: EmailSource;
 };
 
-// 256 KB (spec §11). Large enough for any plausible email payload, small enough
+// 256 KB. Large enough for any plausible email payload, small enough
 // that a request cannot be used to exhaust memory. The email body gets its own,
-// tighter cap at ingestion in M1.
+// tighter cap at ingestion in UNDERSTAND.
 const MAX_BODY_BYTES = 256 * 1024;
 
 export function createApp({
@@ -43,7 +43,7 @@ export function createApp({
   provider,
   source,
   // Built from `config` so the limiter knows whether the public demo window is
-  // open (P19). A caller that injects its own limiter owns that decision, which
+  // open. A caller that injects its own limiter owns that decision, which
   // is what the deployment tests rely on.
   rateLimiter = rateLimit({ publicReadsEnabled: config.demoPublicReadonly }),
 }: AppDeps): Express {
@@ -70,7 +70,7 @@ export function createApp({
 
   app.disable('x-powered-by');
 
-  // --- how many proxies are in front of us (M7-A) ----------------------------
+  // --- how many proxies are in front of us ----------------------------
   //
   // This has to be set before anything reads `req.ip`, because everything that
   // does — the rate limiter, above all — inherits the answer.
@@ -120,7 +120,7 @@ export function createApp({
     next(err);
   });
 
-  // --- authentication (M5-A) -------------------------------------------------
+  // --- authentication -------------------------------------------------
   //
   // The order below is the security boundary, so it is worth reading as one:
   //
@@ -164,7 +164,7 @@ export function createApp({
   app.use('/api', requireSessionOrPublicRead({ publicReadsEnabled: config.demoPublicReadonly }));
   app.use('/api', createEmailRouter({ repos, source: emailSource, provider: llmProvider, logger }));
 
-  // Read-only CRM projections (M6-C). Below the gate, so authenticated by
+  // Read-only CRM projections. Below the gate, so authenticated by
   // default; GET only, so they add no way to write.
   app.use('/api', createCrmRouter(repos));
 
@@ -172,7 +172,7 @@ export function createApp({
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'That endpoint does not exist.' } });
   });
 
-  // --- the front end, on the same origin as the API (M7-A) -------------------
+  // --- the front end, on the same origin as the API -------------------
   //
   // Mounted last, so it can never shadow a route: every API path is under
   // `/api`, and the catch-all directly above answers anything there that did

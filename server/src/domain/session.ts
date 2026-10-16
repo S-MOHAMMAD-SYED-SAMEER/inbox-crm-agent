@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
-// Session vocabulary (M5-A).
+// Session vocabulary.
 //
 // THE TOKEN IS NEVER STORED.
 //
@@ -27,7 +27,7 @@ export function hashSessionToken(token: string): string {
 }
 
 /**
- * Constant-time comparison for session-adjacent secrets (CSRF tokens in M5-B).
+ * Constant-time comparison for session-adjacent secrets (CSRF tokens in the CSRF and CORS layer).
  *
  * Length is compared first because `timingSafeEqual` throws on a mismatch —
  * and that length check leaks only the length, which is fixed anyway.
@@ -44,7 +44,7 @@ export type SessionRecord = {
   tokenHash: string;
   /** The authenticated operator this session speaks for. */
   operator: string;
-  /** CSRF token for this session (M5-B). Not a bearer credential on its own. */
+  /** CSRF token for this session. Not a bearer credential on its own. */
   csrfToken: string;
   createdAt: string;
   expiresAt: string;
@@ -53,7 +53,3 @@ export type SessionRecord = {
 
 /** The single operator identity this build authenticates. */
 export const OPERATOR_IDENTITY = 'operator';
-
-export function isExpired(session: Pick<SessionRecord, 'expiresAt'>, now: string): boolean {
-  return session.expiresAt <= now;
-}

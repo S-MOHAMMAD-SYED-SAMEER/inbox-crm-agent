@@ -14,7 +14,7 @@ import {
 } from '../revision/approvalPresentation.ts';
 import { TIER_LABELS } from '../components/decision.tsx';
 
-// The approval queue (spec §13.4, extended by M4-C.3).
+// The approval queue (the specification, extended by approve-with-edits).
 //
 // The operator's highest-frequency task, so the collapsed row carries exactly
 // what a ten-second decision needs — who it is from, what is recommended, the
@@ -26,7 +26,7 @@ import { TIER_LABELS } from '../components/decision.tsx';
 // waiting for a person, and every label on this screen is written so nobody
 // could read it otherwise.
 //
-// ONE DELIBERATE ABSENCE: no bulk approve. §13.4 rules it out for tier 2, and
+// ONE DELIBERATE ABSENCE: no bulk approve. The specification rules it out for tier 2, and
 // the whole value proposition is that a person looked at the email that gets
 // sent.
 

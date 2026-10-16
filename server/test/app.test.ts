@@ -12,7 +12,7 @@ import { MIGRATION_COUNT, createTestContext, startAuthenticatedServer } from './
 // the wiring itself: the JSON parse error handler, the 404 shape, and the fact
 // that the terminal error handler emits an envelope rather than Express's
 // default HTML page. Node's built-in fetch and an ephemeral port cover it with
-// no HTTP-testing dependency (NFR-9).
+// no HTTP-testing dependency.
 
 async function withServer(
   fn: (baseUrl: string) => Promise<void>,
@@ -45,7 +45,7 @@ test('GET /api/health answers with the health payload', async () => {
 });
 
 test('an unknown API route returns the standard error envelope', async () => {
-  // CONTRACT CHANGE (M5-A): the authentication gate sits above the catch-all, so
+  // CONTRACT CHANGE: the authentication gate sits above the catch-all, so
   // an unauthenticated caller gets 401 for every path — including paths that do
   // not exist. That is the desired order: which routes exist is not something an
   // unauthenticated stranger should be able to enumerate.

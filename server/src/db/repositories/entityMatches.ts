@@ -10,7 +10,7 @@ import type {
   ResolvableEntityType,
 } from '../../domain/resolution.ts';
 
-// Resolution persistence (M2).
+// Resolution persistence.
 //
 // Append-only in practice, like analyses: a re-resolution writes a new run
 // rather than editing the old one, and `getLatestForEmail` returns the newest.
@@ -122,7 +122,7 @@ export function createEntityMatchRepository({ db, clock, newId }: RepoDeps) {
     },
 
     /**
-     * The latest run per entity type for many emails, in ONE query (M7-F).
+     * The latest run per entity type for many emails, in ONE query.
      *
      * This was the inbox's most expensive lookup by far: `getLatestRun` costs
      * two round trips (find the newest run, then read it) and the inbox called
@@ -205,5 +205,3 @@ export function createEntityMatchRepository({ db, clock, newId }: RepoDeps) {
     },
   };
 }
-
-export type EntityMatchRepository = ReturnType<typeof createEntityMatchRepository>;

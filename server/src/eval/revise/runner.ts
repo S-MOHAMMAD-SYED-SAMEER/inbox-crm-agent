@@ -20,7 +20,7 @@ import type { Database } from '../../db/types.ts';
 import type { EmailRecord } from '../../domain/email.ts';
 import type { DecisionRecord } from '../../domain/decision.ts';
 
-// M4-C focused evaluation — the human revision lifecycle.
+// approve-with-edits focused evaluation — the human revision lifecycle.
 //
 // Deterministic, offline, no API key. It measures the properties that make
 // "a person may change the plan" safe rather than merely possible:
@@ -38,7 +38,7 @@ import type { DecisionRecord } from '../../domain/decision.ts';
 //
 // NO METRIC MAY PASS VACUOUSLY.
 //
-// M4-B taught this the hard way: an expiry check ran in a world where nothing
+// the expiry sweep taught this the hard way: an expiry check ran in a world where nothing
 // was left to expire, reported a perfect score, and proved nothing. So every
 // rate below is paired with the count of attempts that produced it, and the
 // thresholds fail when an attempt count is zero. A safety measure that was

@@ -21,10 +21,10 @@ import { normaliseCompanyName } from '../src/domain/crm.ts';
 import { RESOLUTION_THRESHOLDS, resolutionVerdict, type Candidate } from '../src/domain/resolution.ts';
 import type { Company, Contact } from '../src/domain/crm.ts';
 
-// M2 unit tests: normalisation, scoring, and the verdict rules.
+// RESOLVE unit tests: normalisation, scoring, and the verdict rules.
 //
 // All pure functions — no database, no clock, no model. Written against the
-// spec's scoring table (§7) so a change to a score or threshold fails here
+// spec's scoring table so a change to a score or threshold fails here
 // rather than silently changing which records get linked.
 
 // ---------------------------------------------------------------- fixtures
@@ -145,7 +145,7 @@ test('trigram similarity behaves like pg_trgm', () => {
   assert.ok(trigramSimilarity('harborview group', 'harborview digital') < 0.5);
 });
 
-// ============================================ contact scoring (spec §7)
+// ============================================ contact scoring
 
 test('1. exact contact email match scores 1.00', () => {
   const scored = scoreContact(input(), contact());
@@ -210,7 +210,7 @@ test('an extracted address can never redirect resolution away from the sender', 
   assert.equal(scored, null, 'only the envelope sender may drive an email match');
 });
 
-// ============================================ company scoring (spec §7)
+// ============================================ company scoring
 
 test('2. exact company domain match scores 1.00', () => {
   const scored = scoreCompany(input(), company());
@@ -268,7 +268,7 @@ test('sharing only a generic word is not evidence', () => {
   assert.equal(scored, null, '"digital" is shared by half the industry');
 });
 
-// ================================================== thread bonus (spec §7)
+// ================================================== thread bonus
 
 test('the thread bonus adds 0.20 to an entity already linked in the thread', () => {
   const boosted = applyThreadBonus(candidate({ score: 0.65 }), new Set(['c1']));
@@ -287,7 +287,7 @@ test('the thread bonus never invents a candidate', () => {
   assert.equal(untouched.signals.length, 0);
 });
 
-// ====================================== verdict rules (FR-15, thresholds)
+// ====================================== verdict rules (the specification, thresholds)
 
 test('6. no candidates is NO_MATCH with a readable reason', () => {
   const result = decideOutcome('company', []);

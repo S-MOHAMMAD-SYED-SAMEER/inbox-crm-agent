@@ -1,4 +1,4 @@
-// Outbound delivery vocabulary (FR-32, spec §23).
+// Outbound delivery vocabulary.
 //
 // Pure domain, no imports: the configuration layer reads these to validate the
 // environment, and the adapter layer reads them to implement it. Putting them

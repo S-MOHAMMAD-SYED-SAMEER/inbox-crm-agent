@@ -15,7 +15,7 @@ import { EXTRACTED_FIELDS, emptyExtraction } from '../src/domain/understanding.t
 import { EMAIL_CATEGORIES } from '../src/domain/email.ts';
 import type { PromptEmail } from '../src/agent/understand/prompt.ts';
 
-// M1 unit tests: sanitisation, injection detection, prompt construction, and
+// UNDERSTAND unit tests: sanitisation, injection detection, prompt construction, and
 // the validator. All pure functions — no database, no provider, no clock.
 
 // ============================================================ sanitisation

@@ -1,4 +1,4 @@
-// Bounding an audit payload (M5-F, audit F-13).
+// Bounding an audit payload.
 //
 // THE POLICY, STATED ONCE
 //
@@ -22,7 +22,7 @@
 //
 // This is NOT where message content is kept out of the audit log. That rule
 // lives at every call site, which passes guardrail names, path lists and digests
-// rather than text (§19). This is a size bound, not a privacy bound — and the
+// rather than text. This is a size bound, not a privacy bound — and the
 // difference matters, because a cap that silently truncated an email body would
 // still have stored an email body.
 

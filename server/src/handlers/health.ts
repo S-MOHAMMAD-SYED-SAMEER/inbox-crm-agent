@@ -10,7 +10,7 @@ import type { Database } from '../db/types.ts';
 // can be exercised with an in-memory database and no HTTP server, no port, and
 // no supertest dependency.
 //
-// What it may report is constrained by FR-46: whether each dependency is
+// What it may report is constrained by the specification: whether each dependency is
 // configured, never *how*. No key, no fragment of a key, no connection string,
 // and no host name. A health endpoint is usually the least-protected route in a
 // system, so it is the wrong place to be generous with detail.
@@ -50,7 +50,7 @@ export async function handleHealth(deps: HealthDeps = {}): Promise<{ status: num
     status: reachable ? 'ok' : 'degraded',
     database: { driver: cfg.dbDriver, reachable, migrationsApplied },
     adapters: configSummary(cfg),
-    // A product version, not a milestone label. Build names like "M4-B" are
+    // A product version, not a milestone label. Build names like "the expiry sweep" are
     // internal vocabulary; this value is rendered by an operator surface and
     // must never read as a pre-release marker to whoever is looking at it.
     version: '1.0.0',

@@ -4,7 +4,7 @@ import { reviewReasonLabel, stateLabel, type StateTone } from '../inbox/statePre
 // Small presentational pieces shared by the Inbox and the email detail screen.
 //
 // One rule runs through all of them: **status is never carried by colour
-// alone** (NFR-11). Every chip states its meaning in words; the colour is a
+// alone**. Every chip states its meaning in words; the colour is a
 // second channel, not the only one.
 
 export function ConfidenceBadge({
@@ -15,7 +15,7 @@ export function ConfidenceBadge({
   confidence: number;
 }): ReactNode {
   // The band is what changes system behaviour; the number alone invites false
-  // precision, so both are always shown together (§13.3).
+  // precision, so both are always shown together.
   const tone =
     band === 'high'
       ? 'bg-success-tint text-success'

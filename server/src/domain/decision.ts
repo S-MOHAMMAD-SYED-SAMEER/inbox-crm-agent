@@ -1,8 +1,7 @@
 import type { ActionType, ProposedAction, RiskTier } from './actions.ts';
 import type { ApprovalReason } from '../agent/policy/approval.ts';
-import type { DealStage, ServiceLine } from './crm.ts';
 
-// The DECIDE stage's output shape (spec §7 Stage 2, FR-16..FR-21).
+// The DECIDE stage's output shape (Stage 2 of the specification).
 //
 // THE SPLIT THIS FILE ENCODES
 //
@@ -18,84 +17,14 @@ import type { DealStage, ServiceLine } from './crm.ts';
  *
  * A plan is built before anything exists, so `create_contact` may need to point
  * at the company `create_company` will make two steps later. `new` carries a
- * within-plan reference that EXECUTE (M4) resolves to a real id when it applies
- * the plan (spec §15 step 1). Nothing here touches the database.
+ * within-plan reference that EXECUTE resolves to a real id when it applies
+ * the plan. Nothing here touches the database.
  */
 export type EntityRef =
   | { kind: 'existing'; id: string }
   | { kind: 'new'; ref: 'company' | 'contact' };
 
-export type CreateCompanyPayload = {
-  name: string;
-  domain: string | null;
-};
-
-export type CreateContactPayload = {
-  fullName: string;
-  email: string;
-  jobTitle: string | null;
-  phone: string | null;
-  company: EntityRef | null;
-};
-
-export type LinkContactPayload = {
-  contact: EntityRef;
-  company: EntityRef;
-};
-
-export type CreateDealPayload = {
-  title: string;
-  stage: DealStage;
-  serviceLine: ServiceLine | null;
-  /** Verbatim from the email, never a parsed number — M4 decides what to store. */
-  budgetNote: string | null;
-  timelineNote: string | null;
-  requirementSummary: string | null;
-  company: EntityRef | null;
-  contact: EntityRef | null;
-};
-
-export type UpdateDealStagePayload = {
-  dealId: string;
-  fromStage: DealStage;
-  toStage: DealStage;
-};
-
-export type CreateTaskPayload = {
-  title: string;
-  description: string | null;
-  dueAt: string;
-  priority: 'high' | 'medium' | 'low';
-  contact: EntityRef | null;
-  company: EntityRef | null;
-  deal: EntityRef | null;
-};
-
-export type LogActivityPayload = {
-  type: 'email_in';
-  subject: string;
-  body: string;
-  contact: EntityRef | null;
-  company: EntityRef | null;
-};
-
-export type AddNotePayload = {
-  body: string;
-  contact: EntityRef | null;
-  company: EntityRef | null;
-};
-
-export type SendEmailPayload = {
-  toEmail: string;
-  /** The text lives on the plan's `draft`; this action only names the recipient. */
-  inReplyToProviderMessageId: string | null;
-};
-
-export type ArchiveEmailPayload = {
-  reason: string;
-};
-
-/** One entry of the machine-readable rule trace (FR-19). */
+/** One entry of the machine-readable rule trace. */
 export type RuleTraceEntry = {
   rule: string;
   fired: boolean;
@@ -115,15 +44,15 @@ export type Draft = {
   body: string;
   /** Names of the guardrails this text satisfied. */
   guardrailsPassed: string[];
-  /** Non-empty when the text was blocked. The draft is still shown (§16). */
+  /** Non-empty when the text was blocked. The draft is still shown. */
   blockedBy: DraftGuardrailViolation[];
 };
 
 /**
- * The plan (spec §7).
+ * The plan.
  *
  * `requiresApproval` is a *computed* field, never an input. It is filled from
- * `agent/policy/approval.ts` — the same function M0 built and tested — and
+ * `agent/policy/approval.ts` — the same function the foundation built and tested — and
  * nothing in this stage may set it any other way.
  */
 export type ActionPlan = {
@@ -139,12 +68,12 @@ export type ActionPlan = {
 };
 
 /**
- * Who produced a decision (M4-C).
+ * Who produced a decision.
  *
  * `agent` is the DECIDE stage. `human_edit` is a revision created by a person
  * editing an earlier plan — a *new* decision, never a modification of the one
  * they were shown, because the original proposal paired with the human's
- * version is the labelled signal §20's feedback loop is built on. Editing in
+ * version is the labelled signal the specification's feedback loop is built on. Editing in
  * place would destroy the more valuable half of it.
  */
 export const DECISION_ORIGINS = ['agent', 'human_edit'] as const;
@@ -197,7 +126,7 @@ export function orderActions(actions: readonly ProposedAction[]): ProposedAction
 /**
  * Categories a reply is drafted for.
  *
- * Deliberately short, and taken from spec §22's expected outcomes rather than
+ * Deliberately short, and taken from the specification's expected outcomes rather than
  * from intuition: support (E-05) and follow-up (E-06) get no drafted reply, and
  * partnership (E-07) explicitly gets "no auto-reply". Drafting a reply nobody
  * asked for is how an automation starts sounding like a bot.

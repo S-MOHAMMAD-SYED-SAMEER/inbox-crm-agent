@@ -1,4 +1,4 @@
-// Audit vocabulary (spec §17, FR-38..FR-41).
+// Audit vocabulary.
 //
 // The audit trail is the answer to the first question a serious buyer asks
 // about an AI touching their CRM: "what happens when it gets it wrong?" That
@@ -28,7 +28,7 @@ export type AuditActor = (typeof AUDIT_ACTORS)[number];
 export const AUDIT_OUTCOMES = ['ok', 'blocked', 'failed', 'skipped'] as const;
 export type AuditOutcome = (typeof AUDIT_OUTCOMES)[number];
 
-// Canonical event types (§17). Kept as a closed list so the Audit Log screen
+// Canonical event types. Kept as a closed list so the Audit Log screen
 // can render a known label per event and so a typo cannot quietly create a new
 // event type nobody ever queries for.
 export const AUDIT_EVENT_TYPES = [
@@ -44,7 +44,7 @@ export const AUDIT_EVENT_TYPES = [
   'plan_created',
   'draft_generated',
   'draft_blocked',
-  // M4-C: a human editing a plan. `plan_revised` records the new decision,
+  // a human editing a plan. `plan_revised` records the new decision,
   // `draft_edit_blocked` records an edit the guardrails refused — the second is
   // written even though no revision exists, because an attempt to put unsafe
   // text in front of a customer is exactly the thing an audit log is for.
@@ -62,7 +62,7 @@ export const AUDIT_EVENT_TYPES = [
   'crm_record_updated',
   'outbox_queued',
   'outbox_suppressed',
-  // M4-D. Every outbound attempt is traceable, and the four are distinct
+  // the outbound adapter. Every outbound attempt is traceable, and the four are distinct
   // situations: one was tried, one landed, one was refused by the provider,
   // one was refused by us before the provider was ever asked.
   'outbound_send_attempted',
