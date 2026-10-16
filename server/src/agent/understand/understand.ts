@@ -108,7 +108,10 @@ export async function understandEmail(
       // another provider and never a fabricated result. The email stays in the
       // queue, retryable, and nothing is persisted.
       const message = err instanceof Error ? err.message : String(err);
-      logger.error('Provider call failed', { provider: provider.name, attempt, internal: message });
+      // `kind` says whether it was a rate limit, a timeout, an outage or a refusal: the first needs
+      // waiting, the last needs a person, and "could not be reached" alone cannot tell them apart.
+      const kind = err instanceof LlmUnavailableError ? err.kind : 'unknown';
+      logger.error('Provider call failed', { provider: provider.name, attempt, kind, internal: message });
 
       await repos.emails.setState(email.id, 'understand_failed');
       await repos.audit.append({
@@ -119,7 +122,7 @@ export async function understandEmail(
         actor: 'system',
         outcome: 'failed',
         summary: 'The analysis provider could not be reached, so this email was not read.',
-        payload: { provider: provider.name, attempt, error: message },
+        payload: { provider: provider.name, attempt, kind, error: message },
       });
 
       const security = buildSecurity(email, false);
