@@ -4,6 +4,7 @@ import { deterministicId } from '../lib/ids.ts';
 import { ProblemCollector, requireEmail, requireString, requireOneOf } from '../lib/validate.ts';
 import { CONTACT_LIFECYCLES, DEAL_STAGES, SERVICE_LINES, ACTIVITY_TYPES } from '../domain/crm.ts';
 import type { Repositories } from './repositories/index.ts';
+import type { AutonomyLevel } from '../domain/policy.ts';
 
 // Demo CRM seeding (spec §22).
 //
@@ -157,7 +158,15 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value !== '' ? value : null;
 }
 
-export async function seedDemoData(repos: Repositories, file: SeedFile): Promise<SeedCounts> {
+export type SeedOptions = {
+  /**
+   * The autonomy level the seeded database starts at. `manual` by default: every plan waits for a person.
+   * `assisted` is available (`AUTONOMY_LEVEL=assisted npm run demo`) and lets tier-0 actions run on their own.
+   */
+  autonomyLevel?: AutonomyLevel;
+};
+
+export async function seedDemoData(repos: Repositories, file: SeedFile, options: SeedOptions = {}): Promise<SeedCounts> {
   const counts: SeedCounts = {
     companies: 0,
     contacts: 0,
@@ -299,22 +308,14 @@ export async function seedDemoData(repos: Repositories, file: SeedFile): Promise
 
     await tx.settings.seedDefaults();
 
-    // The demo runs at `assisted`; a new installation stays at `manual`.
-    //
-    // These are different questions with different right answers. For a client
-    // whose inbox this has never seen, `manual` is correct: trust is earned with
-    // evidence from their own mail, so everything waits for a person at first.
-    // For the demo that is the wrong default — it hides half the product, since
-    // nothing ever auto-executes and all ten emails look identical.
-    //
-    // `assisted` shows both paths in one sitting: the tier-0 emails file
-    // themselves, and the consequential ones still stop and ask. Tier 2 is
-    // unaffected either way — no autonomy level permits it to run unattended,
-    // and that is enforced in `requiresApproval`, not here (§16).
-    //
-    // `DEFAULT_SETTINGS` is untouched, so a bare `npm run migrate` with no seed
-    // still comes up `manual`.
-    await tx.settings.set('autonomy_level', 'assisted', 'seed');
+    // The demo is seeded at `manual`, like a new installation: nothing runs until a
+    // person approves it, so the demo never does anything the visitor did not click.
+    // `assisted` is still available, for showing both paths in one sitting (the tier-0
+    // emails file themselves and the consequential ones still stop and ask):
+    // `AUTONOMY_LEVEL=assisted npm run demo`. Tier 2 is unaffected either way: no
+    // autonomy level permits it to run unattended, and that is enforced in
+    // `requiresApproval`, not here (§16).
+    await tx.settings.set('autonomy_level', options.autonomyLevel ?? 'manual', 'seed');
   });
 
   return counts;

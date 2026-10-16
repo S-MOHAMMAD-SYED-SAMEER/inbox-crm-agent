@@ -35,6 +35,20 @@ One terminal is enough: the server serves the dashboard on the same address as t
 synthetic data with the deterministic mock LLM provider, so **no API key is needed**, and nothing is
 ever sent. Every run starts from the same pristine state.
 
+**The demo starts at `manual` autonomy**: every plan waits for you to approve it, so it never does
+anything you did not click. `AUTONOMY_LEVEL=assisted npm run demo` starts it at `assisted`, where the
+harmless tier-0 plans (archiving the spam, logging a support request) run on their own while anything
+consequential still stops and asks. No autonomy level lets a consequential action run unattended.
+
+**To run it on the real model** (Gemini, `gemini-3.5-flash-lite`), put `GEMINI_API_KEY` in `server/.env` and run
+`cd server && npm run live`. It is the same one command with the real provider; it refuses to start without the
+key and prints the provider, model and temperature (never the key). **It has not been run yet**: the Gemini
+adapter is tested only against a fake client, and the first real request is a planned step. Each email costs
+one to two requests, so click through the batches rather than scripting them. The Anthropic provider is
+implemented and also unrun.
+
+**Hosting your own copy** is optional and covered in [docs/HOSTING.md](./docs/HOSTING.md). Nothing is hosted for you.
+
 <!-- DEMO_VIDEO: 60–90s screen recording of the app running locally goes here -->
 
 ## Development setup
@@ -69,7 +83,7 @@ npm run dev         # http://localhost:5175
 ```
 
 `npm run reset` clears everything and re-seeds, restoring the demo to an identical starting state —
-ids included. It refuses to run against a hosted database.
+ids included. It refuses to run against a database it does not recognise as demo data.
 
 Port 3100, not 3000, so this runs alongside Project 1 during a demo.
 
@@ -207,9 +221,10 @@ exactly that by feeding it a response that tries.
 the email there would have it claim something is happening when nothing is. M4 makes that transition
 when it can honour it.
 
-**Autonomy note.** The shipped default is `manual` (§16: "the default for a new client"), under which
-every plan needs approval. Spec §22's tier-0 auto-execution for E-05 and E-09 is what `assisted`
-means, so the M3 evaluation runs at `assisted` and the test suite covers both.
+**Autonomy note.** The default is `manual` (§16: "the default for a new client"), under which every plan needs
+approval, and the demo is seeded at `manual` too. Spec §22's tier-0 auto-execution for E-05 and E-09 is what
+`assisted` means, so the DECIDE evaluation runs at `assisted`, and the demo walkthrough runs at both
+(`npm run demo:walkthrough` at `manual`: 151 checks; `AUTONOMY_LEVEL=assisted npm run demo:walkthrough`: 153).
 
 ## Approval and execution
 
@@ -243,8 +258,8 @@ no database server, no Docker and no account, so `npm run migrate && npm run see
 
 So there are two drivers behind one `Database` interface: Node's built-in `node:sqlite` (the same
 zero-dependency choice Project 1 made for its conversation memory) for local development and tests,
-and `pg` for hosted Postgres. Driver selection is *derived*, not configured: a `postgres://` URL
-means Postgres, its absence means the local file. Deploying to Neon is one environment variable.
+and `pg` for Postgres. Driver selection is *derived*, not configured: a `postgres://` URL
+means Postgres, its absence means the local file.
 
 The spec's portability rules (§9) were written to allow exactly this — app-generated UUIDs, `TEXT` +
 `CHECK` instead of Postgres `ENUM`, no triggers or stored procedures — and honouring them is what
@@ -397,10 +412,8 @@ explicitly triggered too — a scheduler can call it, but nothing here runs on i
 
 Authentication was built after this section was first written: session-based operator
 authentication (scrypt-hashed password, `httpOnly` `SameSite=Strict` cookies). A public read-only
-demo mode (`DEMO_PUBLIC_READONLY`, off by default) is built in for anyone hosting their own
-instance: anonymous GET requests reach an allow-listed set of read routes over synthetic data, they
-are granted no session, and every mutation still fails closed with a 401. No instance is hosted;
-the app is run locally.
+demo mode (`DEMO_PUBLIC_READONLY`, off by default) exists for anyone hosting their own copy; see
+[docs/HOSTING.md](./docs/HOSTING.md). **No instance is hosted;** the app is run locally.
 
 **Approve-with-edits (M4-C) is built.** A reviewer can edit a plan's whitelisted fields before
 approving; the edit produces a new decision (v2) with its own approval while the original is kept,

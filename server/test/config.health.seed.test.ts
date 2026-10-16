@@ -244,19 +244,21 @@ test('Acme Commerce is deliberately absent so the hero lead is genuinely new', a
   await close();
 });
 
-test('seeding installs the defaults, but demos at assisted autonomy', async () => {
-  // CONTRACT CHANGE (M6-B): the demo seed now sets `assisted` deliberately.
-  //
-  // `manual` remains the default for a new installation — trust is earned with
-  // evidence from a client's own inbox — but it is the wrong default for a
-  // demo, where it hides half the product: nothing auto-executes and all ten
-  // emails look identical. `assisted` shows both paths in one sitting.
+test('the demo is seeded at manual autonomy; assisted is available on request', async () => {
+  // The demo is seeded like a new installation: nothing runs until a person approves
+  // it, so it never does anything the visitor did not click. `assisted` (the tier-0
+  // emails file themselves, the consequential ones still stop) is one option away.
   const { repos, close } = await createTestContext();
   await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
 
   const settings = await repos.settings.getAll();
-  assert.equal(settings.autonomy_level, 'assisted', 'the demo does not show the auto-execute path');
-  assert.equal(DEFAULT_SETTINGS.autonomy_level, 'manual', 'a new installation must still start manual');
+  assert.equal(settings.autonomy_level, 'manual', 'the demo seeds something other than manual');
+  assert.equal(DEFAULT_SETTINGS.autonomy_level, 'manual', 'a new installation must start manual');
+
+  const assisted = await createTestContext();
+  await seedDemoData(assisted.repos, readSeedFile(DEMO_DATA_DIR), { autonomyLevel: 'assisted' });
+  assert.equal((await assisted.repos.settings.getAll()).autonomy_level, 'assisted');
+  await assisted.close();
 
   // Everything else still comes from the defaults, and outbound stays off.
   assert.equal(settings.outbound_send_enabled, false);
@@ -268,7 +270,7 @@ test('assisted autonomy still cannot auto-execute a consequential action', async
   // The reason the demo default is safe to change at all. No autonomy level
   // permits tier 2, and that is enforced in the policy rather than in the seed.
   const { repos, close } = await createTestContext();
-  await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
+  await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR), { autonomyLevel: 'assisted' });
   assert.equal((await repos.settings.getAll()).autonomy_level, 'assisted');
 
   const { requiresApproval } = await import('../src/agent/policy/approval.ts');

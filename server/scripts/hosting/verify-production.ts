@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hashPassword } from '../src/lib/password.ts';
+import { hashPassword } from '../../src/lib/password.ts';
 
 // M7-B — production build verification.
 //
@@ -37,7 +37,7 @@ import { hashPassword } from '../src/lib/password.ts';
 // anything but sqlite.
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SERVER_ROOT = path.resolve(HERE, '..');
+const SERVER_ROOT = path.resolve(HERE, '..', '..');
 const WEB_DIST = path.resolve(SERVER_ROOT, '..', 'web', 'dist');
 const ENTRY = path.join(SERVER_ROOT, 'src', 'index.ts');
 

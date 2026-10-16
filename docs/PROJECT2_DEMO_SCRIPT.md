@@ -8,7 +8,7 @@ No instance is hosted.
 This is the runbook for showing Project 2 to a client. The narrative is not new:
 it is §25 of `PROJECT2_SYSTEM_AUDIT.md` ("the strongest demo flow") turned into
 something you can hold in one hand, with the states and safety moments taken
-from the 153-check local walkthrough (`npm run demo:walkthrough`).
+from the local walkthrough (`npm run demo:walkthrough`: 151 checks at the default `manual`, 153 at `assisted`).
 
 Total running time: **8–12 minutes**. The core story is four minutes; the safety
 closers are what actually sell it.
@@ -40,7 +40,8 @@ cd inbox-crm-agent/server
 npm run demo:walkthrough
 ```
 
-153 checks covering the same journey. Expect them all to pass.
+151 checks covering the same journey at the demo's default `manual` autonomy (153 with
+`AUTONOMY_LEVEL=assisted`). Expect them all to pass.
 
 ---
 
@@ -142,7 +143,12 @@ Click **Approve**.
 
 ---
 
-## 4. What it handled alone — e05 and e09
+## 4. What it handled alone — e05 and e09 (only at `assisted`)
+
+> **This section needs `AUTONOMY_LEVEL=assisted npm run demo`.** The demo starts at `manual`, where nothing runs
+> until a person approves it: e05 and e09 then sit in **Waiting for approval** like the rest, each with a tier-0
+> plan you can approve in one click. Say so, and use this section to show the difference: "at `assisted`, these two
+> would have filed themselves; the consequential ones would still stop here."
 
 Back to the Inbox.
 
@@ -234,32 +240,8 @@ approvals settle, and agent-created CRM rows accumulate. Reset before the next
 client, or they will see a used system with the best moment already spent.
 
 **Running locally with `npm run demo`:** stop it (Ctrl+C) and run `npm run demo` again — every
-start resets to the pristine state. The steps below are only for someone hosting their own
-instance against a Postgres database.
-
-**One-time setup** (pins the target so the reset can never wander):
-
-```bash
-cd inbox-crm-agent/server
-npm run demo:reset -- --show-identity     # prints a fingerprint, writes nothing
-```
-
-Set `DEMO_RESET_TARGET` to that value in your local `server/.env`.
-
-**After each demo:**
-
-```bash
-npm run demo:reset -- --production              # dry run: shows what it WOULD delete
-npm run demo:reset -- --production --confirm    # does it
-```
-
-It ends with **PRISTINE — ready for a demonstration**. Re-check §1 before the
-next call.
-
-**A dry run is the default** — without `--confirm` nothing is written. The reset
-refuses if the target is not the pinned database, if the declared target does not
-match the actual connection, or if it finds any row it does not recognise as
-demo data. It aborts rather than guessing.
+start resets to the pristine state. Resetting a database you host yourself is covered in
+[HOSTING.md](./HOSTING.md); nothing is hosted for you.
 
 ---
 
@@ -279,7 +261,7 @@ demo data. It aborts rather than guessing.
 cd inbox-crm-agent/server && npm run demo:walkthrough
 ```
 
-153 checks covering the same journey. Not as good as clicking through it, but it
+151 checks covering the same journey. Not as good as clicking through it, but it
 proves every claim above in front of the client.
 
 ---
@@ -300,7 +282,7 @@ Being straight about the edges is more persuasive than dodging.
 
 ## Manual browser verification — REQUIRED BEFORE FIRST CLIENT USE
 
-Everything below the API layer is verified automatically (895 tests, 153-check
+Everything below the API layer is verified automatically (895 tests, 151-check
 walkthrough, 51-check deployment verification). **The rendering is not.**
 There is no browser automation in this project — Playwright and jsdom are
 excluded by NFR-9 — so the screens themselves have never been machine-checked.

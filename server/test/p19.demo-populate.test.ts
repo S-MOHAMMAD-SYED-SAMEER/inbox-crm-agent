@@ -410,7 +410,7 @@ test('populating never approves, executes or sends anything', async () => {
 // --- the script itself holds no decisions -----------------------------------
 
 test('the script defers every judgement to the tested module', () => {
-  const script = fs.readFileSync(path.join(SERVER_ROOT, 'scripts/demo-populate.ts'), 'utf8');
+  const script = fs.readFileSync(path.join(SERVER_ROOT, 'scripts/hosting/demo-populate.ts'), 'utf8');
 
   assert.match(script, /assessPopulate\(/, 'the script does not ask for permission');
   assert.match(script, /verifyPopulated\(/, 'the script does not check the result');
@@ -427,7 +427,7 @@ test('the script defers every judgement to the tested module', () => {
 });
 
 test('the password is prompted for, never an argument and never printed', () => {
-  const script = fs.readFileSync(path.join(SERVER_ROOT, 'scripts/demo-populate.ts'), 'utf8');
+  const script = fs.readFileSync(path.join(SERVER_ROOT, 'scripts/hosting/demo-populate.ts'), 'utf8');
 
   assert.match(script, /createInterface/, 'the password is not prompted for');
 

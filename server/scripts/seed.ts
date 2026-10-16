@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     }
 
     const repos = createRepositories(db);
-    const counts = await seedDemoData(repos, readSeedFile(config.demoDataDir));
+    const counts = await seedDemoData(repos, readSeedFile(config.demoDataDir), { autonomyLevel: config.autonomyLevel });
 
     console.log('[seed] inserted:', {
       companies: counts.companies,

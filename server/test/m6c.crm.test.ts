@@ -53,7 +53,8 @@ function deps(repos: Repositories) {
 /** A seeded CRM with the hero plan applied, so agent-created rows exist. */
 async function withAgentRecords(): Promise<Awaited<ReturnType<typeof createTestContext>>> {
   const ctx = await createTestContext({ idPrefix: 'm6c' });
-  await seedDemoData(ctx.repos, readSeedFile(DEMO_DATA_DIR));
+  // `assisted`, because these tests are about the unattended tier-0 plan as well as the approved one.
+  await seedDemoData(ctx.repos, readSeedFile(DEMO_DATA_DIR), { autonomyLevel: 'assisted' });
 
   const d = deps(ctx.repos);
   await ingestEmails(d, {});

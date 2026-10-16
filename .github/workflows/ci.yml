@@ -42,6 +42,11 @@ jobs:
           npm run eval:execute
           npm run eval:revise
           npm run eval:outbound
+      # The demo journey end to end over real HTTP, once at the demo's default autonomy and once at assisted.
+      - name: Demo walkthrough (manual, then assisted)
+        run: |
+          npm run demo:walkthrough
+          AUTONOMY_LEVEL=assisted npm run demo:walkthrough
 
   web:
     name: Web (Node 24)
