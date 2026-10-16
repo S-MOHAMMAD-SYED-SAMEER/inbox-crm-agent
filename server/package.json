@@ -28,7 +28,8 @@
     "eval:execute": "node scripts/eval-execute.ts",
     "eval:revise": "node scripts/eval-revise.ts",
     "eval:outbound": "node scripts/eval-outbound.ts",
-    "eval:real": "node scripts/eval-real.ts"
+    "eval:real": "node scripts/eval-real.ts",
+    "eval:injection": "node scripts/eval-injection.ts"
   },
   "engines": {
     "node": ">=24.0.0"
