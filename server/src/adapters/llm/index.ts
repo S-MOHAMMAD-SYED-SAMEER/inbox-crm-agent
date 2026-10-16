@@ -3,8 +3,18 @@ import { createMockLlmProvider } from './mock.ts';
 import { createAnthropicProvider } from './anthropic.ts';
 import { LlmUnavailableError, type LlmProvider } from './types.ts';
 
-export type { LlmProvider, LlmRequest, LlmResponse, LlmToolSchema, LlmMessage } from './types.ts';
+export type {
+  LlmProvider,
+  LlmRequest,
+  LlmResponse,
+  LlmToolSchema,
+  LlmMessage,
+  LlmUsage,
+  LlmFailureKind,
+} from './types.ts';
 export { LlmUnavailableError } from './types.ts';
+export { summarizeUsage, formatUsage, type UsageSummary } from './usage.ts';
+export { withRetry, classifyFailure, isRetryable, requestedDelayMs, MAX_RETRY_WAIT_MS } from './resilience.ts';
 export { createMockLlmProvider, MockResponseNotFoundError, type MockLlmProvider } from './mock.ts';
 export { registerDemoFixtures, readMockUnderstandings } from './fixtures.ts';
 export {

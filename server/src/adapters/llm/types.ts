@@ -46,12 +46,37 @@ export type LlmRequest = {
   metadata?: Record<string, string>;
 };
 
+/**
+ * What one model call cost, as the provider reported it. Tokens, not money: a
+ * price per token is not something this code can know. Absent from the mock.
+ */
+export type LlmUsage = {
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  /** Reasoning tokens, for providers that count them apart from the visible reply. */
+  thinkingTokens: number | null;
+  totalTokens: number | null;
+  /** Wall-clock time for the call including any retries, so a slow retried call shows up as slow. */
+  latencyMs: number;
+  /** How many times the provider was asked (1, or more after a retried 429/5xx/timeout). */
+  attempts: number;
+  /** The provider's own stop / finish reason. */
+  finishReason: string | null;
+  /** The temperature that was sent. */
+  temperature: number;
+  /** The output-token cap that was sent. */
+  maxTokens: number;
+};
+
 export type LlmResponse = {
   /** The tool's argument object — the structured output, unparsed and unvalidated. */
   toolInput: Record<string, unknown>;
   model: string;
   latencyMs: number;
   stopReason: string;
+  /** Present for real providers; the mock makes no model call and has none. */
+  usage?: LlmUsage;
 };
 
 export type LlmProvider = {
@@ -61,12 +86,45 @@ export type LlmProvider = {
   complete(request: LlmRequest): Promise<LlmResponse>;
 };
 
-/** Thrown when a provider cannot produce a response at all (network, auth, quota). */
+/** Why a call produced nothing usable. Recorded in the audit log, so an outage reads differently from a refusal. */
+export type LlmFailureKind =
+  | 'rate_limit' // HTTP 429: too many requests, or a spent quota
+  | 'timeout' // the call took longer than the configured timeout
+  | 'network' // a dropped or refused connection
+  | 'server' // HTTP 5xx from the provider
+  | 'auth' // HTTP 401/403: a missing, wrong or unauthorised key
+  | 'rejected' // HTTP 400/404/422: the request itself was refused (a wrong model id, a bad schema)
+  | 'blocked' // the model declined: a safety block or a refusal; asking again repeats it
+  | 'truncated' // the reply hit the output-token cap before the tool call finished
+  | 'no_tool_call' // a reply arrived but did not call the tool, or its argument was not an object
+  | 'unknown';
+
+/** Thrown when a provider cannot produce a usable response at all (network, auth, quota, refusal). */
 export class LlmUnavailableError extends Error {
   readonly provider: string;
-  constructor(provider: string, message: string, options: { cause?: unknown } = {}) {
-    super(message, options);
+  readonly kind: LlmFailureKind;
+  /** Whether asking again could plausibly work. A refusal or a wrong key cannot. */
+  readonly retryable: boolean;
+  readonly status: number | undefined;
+  /** How long the server asked us to wait, when it said. */
+  readonly retryAfterMs: number | undefined;
+  constructor(
+    provider: string,
+    message: string,
+    options: {
+      cause?: unknown;
+      kind?: LlmFailureKind;
+      retryable?: boolean;
+      status?: number;
+      retryAfterMs?: number;
+    } = {},
+  ) {
+    super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = 'LlmUnavailableError';
     this.provider = provider;
+    this.kind = options.kind ?? 'unknown';
+    this.retryable = options.retryable ?? false;
+    this.status = options.status;
+    this.retryAfterMs = options.retryAfterMs;
   }
 }

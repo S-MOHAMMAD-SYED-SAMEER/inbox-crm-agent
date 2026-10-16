@@ -94,6 +94,18 @@ function readNonNegativeInt(key: string, fallback: number, problems: string[]): 
   return parsed;
 }
 
+/** An optional non-negative number: unset or blank means "use the provider's default". */
+function readOptionalNumber(key: string, max: number, problems: string[]): number | null {
+  const raw = process.env[key];
+  if (raw === undefined || raw.trim() === '') return null;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > max) {
+    problems.push(`${key} must be a number from 0 to ${max}; received "${raw}". Using the provider default.`);
+    return null;
+  }
+  return parsed;
+}
+
 export type AppConfig = {
   port: number;
   databaseUrl: string | null;
@@ -103,6 +115,13 @@ export type AppConfig = {
   anthropicApiKey: string | null;
   anthropicModel: string;
   geminiApiKey: string | null;
+  geminiModel: string;
+  /** Per attempt: a model call that takes longer is cut off, then retried or failed. */
+  llmTimeoutMs: number;
+  /** Extra attempts after a 429, a 5xx, a timeout or a dropped connection. A requested wait over 15 s is never retried. */
+  llmMaxRetries: number;
+  /** Null means each provider's own default (Gemini 1.0, Anthropic 0.2). */
+  llmTemperature: number | null;
   emailSource: EmailSourceName;
   crmTarget: CrmTargetName;
   allowOutboundSend: boolean;
@@ -295,6 +314,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
       anthropicApiKey,
       anthropicModel: readString('ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
       geminiApiKey,
+      geminiModel: readString('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+      llmTimeoutMs: readInt('LLM_TIMEOUT_MS', 30_000, problems),
+      llmMaxRetries: readNonNegativeInt('LLM_MAX_RETRIES', 2, problems),
+      llmTemperature: readOptionalNumber('LLM_TEMPERATURE', 2, problems),
       emailSource: emailSource === 'gmail' ? 'demo' : emailSource,
       crmTarget: crmTarget === 'hubspot' ? 'local' : crmTarget,
       allowOutboundSend,
