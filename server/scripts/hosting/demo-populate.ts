@@ -6,7 +6,7 @@ import {
   type HealthSnapshot,
   type PipelineOutcome,
   type PopulateTargetKind,
-} from '../src/demo/populate.ts';
+} from '../../src/demo/populate.ts';
 
 // `npm run demo:populate`
 //

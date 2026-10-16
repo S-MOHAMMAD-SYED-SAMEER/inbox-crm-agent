@@ -128,12 +128,13 @@ const db = createTestDatabase();
 await runMigrations(db, MIGRATIONS, { now: () => '2026-01-01T00:00:00.000Z' });
 
 const repos = createRepositories(db);
-await seedDemoData(repos, readSeedFile(DEMO_DIR));
 
-// Deliberately NOT setting the autonomy level here. The seed does it, and this
-// walkthrough exists to prove the demo comes up right on its own — a script
-// that configured the thing it then verified would prove only that the script
-// works.
+// The demo is seeded at `manual`, exactly as `npm run demo` seeds it; `AUTONOMY_LEVEL=assisted npm run
+// demo:walkthrough` walks the other path, where tier-0 plans settle on their own. Both are checked in
+// CI. The level is NOT set by a separate call here: the seed does it, and this walkthrough exists to
+// prove the demo comes up right on its own.
+const AUTONOMY = loadConfig(process.env).config.autonomyLevel;
+await seedDemoData(repos, readSeedFile(DEMO_DIR), { autonomyLevel: AUTONOMY });
 
 const config = {
   ...loadConfig({}).config,
@@ -159,7 +160,7 @@ console.log('══════════════════════�
 step('0. The demo comes up correctly from a plain seed');
 {
   const settings = await repos.settings.getAll();
-  check('the seeded demo runs at assisted autonomy', settings.autonomy_level === 'assisted', settings.autonomy_level);
+  check(`the seeded demo runs at ${AUTONOMY} autonomy`, settings.autonomy_level === AUTONOMY, settings.autonomy_level);
   check('outbound sending is off in the seeded settings', settings.outbound_send_enabled === false);
   check('the approval window is 24 hours', settings.approval_sla_hours === 24);
 }
@@ -247,13 +248,28 @@ step('3b. What the assistant handled without anyone');
   check('nothing was decided and then abandoned', stranded.length === 0, `deciding=${stranded.length}`);
 
   const settled = rows.filter((row: any) => row.state === 'completed' || row.state === 'archived');
-  check('the assistant finished some on its own', settled.length > 0, `settled=${settled.length}`);
-
-  // The support request: logged and a follow-up scheduled, no human involved.
   const support = rows.find((row: any) => row.subject?.includes('Checkout step failing'));
-  check('the support email was handled end to end', support?.state === 'completed', `state=${support?.state}`);
+  const spam = rows.find((row: any) => row.subject?.includes('losing traffic'));
 
-  if (support) {
+  if (AUTONOMY === 'manual') {
+    // The default: nothing happens until a person says so, not even the harmless tier-0 plans.
+    check('at manual autonomy the assistant finished nothing on its own', settled.length === 0, `settled=${settled.length}`);
+    check('the support email waits for a person', support?.state === 'awaiting_approval', `state=${support?.state}`);
+    check('the cold outreach waits for a person too', spam?.state === 'awaiting_approval', `state=${spam?.state}`);
+    if (support) {
+      const detail = await browser.call(`/api/emails/${support.id}`);
+      const d = detail.body;
+      check('its plan is tier 0, but manual autonomy still requires approval', d.decision?.plan.riskTier === 0 && d.decision?.plan.requiresApproval === true);
+      check('and nothing has been executed for it', d.executions.filter((e: any) => e.status === 'succeeded').length === 0);
+    }
+  } else {
+    check('the assistant finished some on its own', settled.length > 0, `settled=${settled.length}`);
+
+    // The support request: logged and a follow-up scheduled, no human involved.
+    check('the support email was handled end to end', support?.state === 'completed', `state=${support?.state}`);
+  }
+
+  if (support && AUTONOMY === 'assisted') {
     const detail = await browser.call(`/api/emails/${support.id}`);
     const d = detail.body;
     check('its plan was tier 0 and needed no approval', d.decision?.plan.riskTier === 0 && d.decision?.plan.requiresApproval === false);
@@ -263,8 +279,9 @@ step('3b. What the assistant handled without anyone');
   }
 
   // The spam: archived, with no CRM identity acquired along the way.
-  const spam = rows.find((row: any) => row.subject?.includes('losing traffic'));
-  check('the cold outreach was archived without a person', spam?.state === 'archived', `state=${spam?.state}`);
+  if (AUTONOMY === 'assisted') {
+    check('the cold outreach was archived without a person', spam?.state === 'archived', `state=${spam?.state}`);
+  }
 }
 
 // ======================================================= 4. APPROVAL QUEUE
@@ -367,8 +384,10 @@ step('7. The CRM actually changed');
   check('a company was created', counts.companies === 7, `companies=${counts.companies}`);
   check('a contact was created', counts.contacts === 10, `contacts=${counts.contacts}`);
   check('a deal entered the pipeline', counts.deals === 5, `deals=${counts.deals}`);
-  check('a follow-up task was scheduled', counts.tasks === 7, `tasks=${counts.tasks}`);
-  check('the email was logged on the timeline', counts.activities === 22, `activities=${counts.activities}`);
+  // Under `assisted` the support email's tier-0 plan adds one task and one activity of its own.
+  const unattended = AUTONOMY === 'assisted' ? 1 : 0;
+  check('a follow-up task was scheduled', counts.tasks === 6 + unattended, `tasks=${counts.tasks}`);
+  check('the email was logged on the timeline', counts.activities === 21 + unattended, `activities=${counts.activities}`);
 
   const deal = (await repos.deals.list({ limit: 50 })).find((d) => d.title.includes('Acme'));
   check('the deal is named after the lead', Boolean(deal), 'no Acme deal found');

@@ -44,15 +44,25 @@ export function StateChip({ state, reviewReason }: { state: string; reviewReason
   // colour a transient state green while a failed execution stayed grey.
   const presentation = stateLabel(state);
 
+  // The chip is one short line. The reason a person is needed is a sentence, and inside a rounded
+  // pill in a narrow table cell it wrapped into a small oval with its lines on top of each other;
+  // it now sits under the chip as ordinary wrapping text, in the same tone.
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-meta ${
-        STATE_TONE_CLASS[presentation.tone]
-      }`}
-    >
-      <span aria-hidden="true">{presentation.marker}</span>
-      <span>{presentation.label}</span>
-      {reviewReason ? <span className="opacity-75">· {reviewReasonLabel(reviewReason)}</span> : null}
+    <span className="inline-flex max-w-[16rem] flex-col items-start gap-1">
+      <span
+        data-state-chip
+        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-pill border px-2 py-0.5 text-meta ${
+          STATE_TONE_CLASS[presentation.tone]
+        }`}
+      >
+        <span aria-hidden="true">{presentation.marker}</span>
+        <span>{presentation.label}</span>
+      </span>
+      {reviewReason ? (
+        <span data-state-reason className="text-meta leading-snug text-ink-muted">
+          {reviewReasonLabel(reviewReason)}
+        </span>
+      ) : null}
     </span>
   );
 }

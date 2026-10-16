@@ -212,6 +212,28 @@ try {
   await waitFor('document.querySelectorAll("a[href^=\\"#/inbox/\\"]").length >= 10', 'Ingesting the demo inbox did not show the ten emails');
   console.log('PASS  ingesting the demo inbox works and shows the ten emails');
 
+  // The rest of the pipeline, then a look at what is drawn. A "needs a person" state used to print its
+  // whole reason inside a rounded pill, which wrapped into a small oval with overlapping lines; no
+  // unit test can see that, so the check is made on the real layout: every state chip must be one
+  // line high, and its reason must sit outside it.
+  for (const label of ['analyse waiting email', 'match to crm', 'decide']) {
+    await evaluate(
+      `[...document.querySelectorAll("button")].find((b) => b.textContent.toLowerCase().includes(${JSON.stringify(label)})).click()`,
+    );
+    await sleep(1500);
+  }
+  await waitFor(
+    'document.querySelectorAll("[data-state-reason]").length >= 3',
+    'The emails that need a person (a conflict, an ambiguous one and the injection) did not show a reason',
+  );
+  const tallest = Number(
+    await evaluate('Math.max(...[...document.querySelectorAll("[data-state-chip]")].map((el) => el.getBoundingClientRect().height))'),
+  );
+  if (!(tallest > 0 && tallest <= 32)) fail(`A state chip is ${tallest} px tall: its text is wrapping inside the pill`);
+  const reasonInsideChip = await evaluate('!!document.querySelector("[data-state-chip] [data-state-reason]")');
+  if (reasonInsideChip) fail('A review reason is drawn inside the state chip again');
+  console.log(`PASS  every state chip is one line high (${tallest} px) and the reason sits under it`);
+
   cdp.close();
   console.log('\nRESULT: the documented first run works in a real browser.');
 } catch (error) {

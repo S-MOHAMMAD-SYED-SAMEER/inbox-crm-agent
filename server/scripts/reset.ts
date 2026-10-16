@@ -31,7 +31,7 @@ async function main(): Promise<void> {
     await clearAllData(repos);
     console.log('[reset] cleared all data.');
 
-    const counts = await seedDemoData(repos, readSeedFile(config.demoDataDir));
+    const counts = await seedDemoData(repos, readSeedFile(config.demoDataDir), { autonomyLevel: config.autonomyLevel });
     console.log('[reset] reseeded:', {
       companies: counts.companies,
       contacts: counts.contacts,

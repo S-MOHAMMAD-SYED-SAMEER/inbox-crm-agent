@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { config } from '../src/config/env.ts';
-import { createDatabase } from '../src/db/index.ts';
-import { createRepositories } from '../src/db/repositories/index.ts';
-import { clearAllData, readSeedFile, seedDemoData } from '../src/db/seed.ts';
-import { assessDemoReset, computeIdentity, verifyPristine, type ResetTargetKind } from '../src/demo/reset.ts';
+import { config } from '../../src/config/env.ts';
+import { createDatabase } from '../../src/db/index.ts';
+import { createRepositories } from '../../src/db/repositories/index.ts';
+import { clearAllData, readSeedFile, seedDemoData } from '../../src/db/seed.ts';
+import { assessDemoReset, computeIdentity, verifyPristine, type ResetTargetKind } from '../../src/demo/reset.ts';
 
 // `npm run demo:reset`
 //
