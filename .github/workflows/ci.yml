@@ -1,0 +1,76 @@
+name: CI
+
+# Every push to any branch and every pull request. Nothing here needs an API key, a database
+# server or the network at test time: the tests use an in-memory SQLite database, and the
+# evaluations replay scripted model answers with the mock provider.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push to the same ref cancels the run it supersedes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server (Node 24)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Mock evaluations
+        run: |
+          npm run eval:understand
+          npm run eval:resolve
+          npm run eval:decide
+          npm run eval:execute
+          npm run eval:revise
+          npm run eval:outbound
+
+  web:
+    name: Web (Node 24)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  audit:
+    name: npm audit (high and above)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm audit --audit-level=high
+        working-directory: server
+      - run: npm audit --audit-level=high
+        working-directory: web
