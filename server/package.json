@@ -20,6 +20,7 @@
     "verify:production": "node scripts/verify-production.ts",
     "verify:deployment": "node scripts/verify-deployment.ts",
     "demo:walkthrough": "node scripts/demo-walkthrough.ts",
+    "verify:browser": "node scripts/verify-browser.ts",
     "eval:understand": "node scripts/eval-understand.ts",
     "eval:resolve": "node scripts/eval-resolve.ts",
     "eval:decide": "node scripts/eval-decide.ts",

@@ -18,10 +18,24 @@ import { AppError } from '../lib/errors.ts';
 //
 // SAME-ORIGIN REQUESTS ARE NOT CORS
 //
-// A browser sends no `Origin` on a same-origin GET, and the front end is served
-// from the same origin as the API. So the default configuration — an empty
-// allow-list — is not "CORS is broken", it is "there are no cross-origin
+// The front end is served from the same origin as the API, so the default
+// configuration — an empty allow-list — means "there are no cross-origin
 // clients", which is the correct posture until there are.
+//
+// A browser sends no `Origin` on a same-origin GET, but it DOES send one on a
+// same-origin POST (and on any other non-GET fetch). An earlier version of this
+// file treated every `Origin` as foreign unless listed, so with an empty
+// allow-list the server refused its own dashboard's sign-in with a 403. The
+// rule is now: an `Origin` that equals this server's own origin (the scheme the
+// request arrived on plus its `Host`) is the server's own front end, not a
+// cross-origin client, and passes with an empty allow-list. Any other `Origin`
+// still needs to be in the allow-list.
+//
+// Why comparing against `Host` is safe: a page on another site cannot make a
+// browser send an `Origin` of this server, and cannot change the `Host` the
+// browser sends to it. A request that forges both is not a browser, and a
+// non-browser client was never what this check protects against (it holds no
+// session cookie it did not obtain itself, and the CSRF token still applies).
 //
 // CROSS-ORIGIN STATE CHANGES ARE REFUSED OUTRIGHT
 //
@@ -39,16 +53,35 @@ const ALLOWED_HEADERS = 'content-type, x-csrf-token';
 const ALLOWED_METHODS = 'GET, POST, OPTIONS';
 
 function isAllowed(origin: string | undefined, allowed: readonly string[]): boolean {
-  if (!origin) return true; // same-origin, or a non-browser client
+  if (!origin) return true; // a same-origin GET, or a non-browser client
   return allowed.includes(origin);
+}
+
+/**
+ * The origin this request was made to: the scheme it arrived on and its `Host`.
+ * `req.protocol` honours `trust proxy`, so behind a configured TLS-terminating
+ * proxy this is the public https origin, and with no proxy configured a forged
+ * `X-Forwarded-Proto` is ignored.
+ */
+export function ownOrigin(req: Request): string | undefined {
+  const host = req.get('host');
+  return host ? `${req.protocol}://${host}` : undefined;
+}
+
+/** True when `origin` is exactly this server's own origin (case-insensitive scheme and host). */
+export function isOwnOrigin(origin: string | undefined, own: string | undefined): boolean {
+  return Boolean(origin && own && origin.toLowerCase() === own.toLowerCase());
 }
 
 export function cors({ allowedOrigins }: CorsOptions) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const origin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
-    const permitted = isAllowed(origin, allowedOrigins);
+    // The server's own front end is never a cross-origin client: it passes, and
+    // needs no CORS headers (the browser does not apply CORS to it).
+    const own = isOwnOrigin(origin, ownOrigin(req));
+    const permitted = own || isAllowed(origin, allowedOrigins);
 
-    if (origin && permitted) {
+    if (origin && permitted && !own) {
       // Echoed only after an allow-list match, never reflected blindly.
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
