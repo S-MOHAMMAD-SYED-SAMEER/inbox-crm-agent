@@ -31,7 +31,7 @@ test('every evaluation dataset says who wrote it', () => {
     assert.match(dataset.provenance ?? '', /reviewed with AI assistance/i);
     assert.match(dataset.provenance ?? '', /not an independent human review/i);
     assert.equal(dataset.goldLabel, GOLD_LABEL, `${name}.dataset.json declares a different label from the code`);
-    assert.match(dataset.version ?? '', /-1\.1\.0$/, `${name}.dataset.json was not versioned after the review`);
+    assert.match(dataset.version ?? '', /-1\.[1-9]\.0$/, `${name}.dataset.json was not versioned after the review`);
   }
 });
 
@@ -58,7 +58,10 @@ test('every evaluation script prints the label, and the README explains it', () 
   for (const script of ['understand', 'resolve', 'decide', 'execute', 'revise', 'outbound', 'real']) {
     assert.match(read(SERVER_ROOT, 'scripts', `eval-${script}.ts`), /goldBanner|GOLD_LABEL/, `eval-${script} does not print the label`);
   }
-  assert.match(read(REPO_ROOT, 'README.md'), /scored against AI-written gold \(Claude-written, not yet human-reviewed\)/);
+  const readme = read(REPO_ROOT, 'README.md');
+  assert.ok(readme.includes(GOLD_LABEL), 'the README does not carry the label of the gold it reports against');
+  assert.match(readme, /not an independent human review/);
+  assert.match(read(REPO_ROOT, 'docs', 'results', 'RESULTS_SUMMARY.md'), /not an independent human\s+review/);
 });
 
 test('npm run eval:real is a dry run unless told --go, and refuses --go without a key', () => {

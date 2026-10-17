@@ -68,6 +68,7 @@ export function loadDataset(filePath: string): { version: string; cases: EvalCas
       expected: {
         category: expected.category as string,
         ...(alsoAccept.length > 0 ? { alsoAcceptCategories: alsoAccept as string[] } : {}),
+        ...(Array.isArray(expected.alsoAcceptOutcomes) ? { alsoAcceptOutcomes: expected.alsoAcceptOutcomes as NonNullable<EvalCase['expected']['alsoAcceptOutcomes']> } : {}),
         priority: expected.priority as string,
         confidenceBand: expected.confidenceBand as string,
         state: expected.state as string,

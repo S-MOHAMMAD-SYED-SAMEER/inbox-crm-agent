@@ -41,6 +41,12 @@ export type EvalExpectation = {
   category: string;
   /** Other categories that count as right too (the review accepted either for a mass sales pitch). */
   alsoAcceptCategories?: string[];
+  /**
+   * Another way the case may legitimately end: the same email, handed to a person by a named rule in the code (recorded in
+   * validation.coherenceAdjustments) instead of by the later stage the case was written for. It is accepted only when that
+   * rule actually fired and the category, state and reason are exactly the ones listed.
+   */
+  alsoAcceptOutcomes?: Array<{ viaRule: string; category: string; state: string; reviewReason: string | null }>;
   priority: string;
   confidenceBand: string;
   state: string;
@@ -113,11 +119,21 @@ export function evaluateCase(evalCase: EvalCase, outcome: UnderstandOutcome): Ca
     };
   }
 
+  // A case may also end in an accepted alternative outcome, but only if the named rule really did the work.
+  const alternative = (expected.alsoAcceptOutcomes ?? []).find(
+    (accepted) =>
+      outcome.validation.coherenceAdjustments.some((adjustment) => adjustment.rule === accepted.viaRule) &&
+      understanding.category === accepted.category &&
+      outcome.state === accepted.state &&
+      (outcome.reviewReason ?? null) === accepted.reviewReason,
+  );
+  const viaNote = alternative ? ` (accepted alternative: ${alternative.state} via ${alternative.viaRule}, which also ends with a person)` : '';
+
   checks.push(
     check(
       'category',
-      understanding.category === expected.category || (expected.alsoAcceptCategories ?? []).includes(understanding.category),
-      `expected ${[expected.category, ...(expected.alsoAcceptCategories ?? [])].join(' or ')}, got ${understanding.category}`,
+      alternative !== undefined || understanding.category === expected.category || (expected.alsoAcceptCategories ?? []).includes(understanding.category),
+      alternative ? `got ${understanding.category}${viaNote}` : `expected ${[expected.category, ...(expected.alsoAcceptCategories ?? [])].join(' or ')}, got ${understanding.category}`,
     ),
   );
   checks.push(
@@ -138,13 +154,13 @@ export function evaluateCase(evalCase: EvalCase, outcome: UnderstandOutcome): Ca
   // Routing is the safety-relevant check: did an uncertain reading actually
   // reach a person, with the right reason recorded?
   checks.push(
-    check('state', outcome.state === expected.state, `expected ${expected.state}, got ${outcome.state}`),
+    check('state', alternative !== undefined || outcome.state === expected.state, alternative ? `got ${outcome.state}${viaNote}` : `expected ${expected.state}, got ${outcome.state}`),
   );
   checks.push(
     check(
       'review_reason',
-      (outcome.reviewReason ?? null) === expected.reviewReason,
-      `expected ${expected.reviewReason ?? 'none'}, got ${outcome.reviewReason ?? 'none'}`,
+      alternative !== undefined || (outcome.reviewReason ?? null) === expected.reviewReason,
+      alternative ? `got ${outcome.reviewReason}${viaNote}` : `expected ${expected.reviewReason ?? 'none'}, got ${outcome.reviewReason ?? 'none'}`,
     ),
   );
 

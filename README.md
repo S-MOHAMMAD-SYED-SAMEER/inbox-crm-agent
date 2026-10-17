@@ -41,10 +41,9 @@ consequential still stops and asks. No autonomy level lets a consequential actio
 
 **To run it on the real model** (Gemini, `gemini-3.5-flash-lite`), put `GEMINI_API_KEY` in `server/.env` and run
 `cd server && npm run live`. It is the same one command with the real provider; it refuses to start without the
-key and prints the provider, model and temperature (never the key). **It has not been run yet**: the Gemini
-adapter is tested only against a fake client, and the first real request is a planned step. Each email costs
-one to two requests, so click through the batches rather than scripting them. The Anthropic provider is
-implemented and also unrun.
+key and prints the provider, model and temperature (never the key). **It has been run**: 107 requests across the
+evaluations described under **Evaluation** below, all with Gemini. Each email costs one to two requests, so click through
+the batches rather than scripting them. The Anthropic provider is **implemented, not yet run**.
 
 **Hosting your own copy** is optional and covered in [docs/HOSTING.md](./docs/HOSTING.md). Nothing is hosted for you.
 
@@ -149,7 +148,7 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                839 tests
+  test/                858 tests
 web/
   src/router.ts        ~60-line hash router, unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
@@ -157,7 +156,7 @@ web/
   test/                149 tests
 ```
 
-988 tests total (839 server + 149 web), all currently passing.
+1007 tests total (858 server + 149 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
@@ -271,7 +270,7 @@ and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Han
 **Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
 (a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
 **55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
-sessions, and real parallel connections racing for one claim). **The 839-test unit suite itself still runs
+sessions, and real parallel connections racing for one claim). **The 858-test unit suite itself still runs
 only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
 network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
 
@@ -375,10 +374,12 @@ forty lines here.
 
 ## Evaluation
 
-**Read this first: every score here is "scored against AI-written gold (Claude-written, not yet human-reviewed)".**
+**Read this first: every score here is "scored against gold written by Claude; reviewed with AI assistance (Claude); final decisions approved by Sameer (not an independent human review)".**
 The ten demo emails, the scripted model answers stored beside them, the CRM seed, the evaluation datasets
 and the specification they follow were written by Claude (an AI assistant) under the project owner's
-direction, and no person has reviewed them yet ([`server/data/demo/PROVENANCE.md`](./server/data/demo/PROVENANCE.md)).
+direction. The three evaluation datasets were then reviewed with AI assistance (Claude), and the changes were approved by
+Sameer; the emails and scripted answers were not reviewed, apart from two scripted answers changed to match
+([`server/data/demo/PROVENANCE.md`](./server/data/demo/PROVENANCE.md)). It is not an independent human review.
 A passing evaluation means the code does what its author expected, not that the expectation was right. Every
 evaluation prints that label, and a real-model report records it.
 
@@ -390,15 +391,41 @@ the model; **they say nothing about a model**, because the "model" is a fixture.
 10/10 (with `inventedFieldRate 0`, `provenanceCompleteness 1`, `injectionContainment 1`, the three that are
 absolutes rather than targets), RESOLVE 8/8, DECIDE 7/7, and the three safety suites meet all their thresholds.
 
-**One real-model runner, built and not yet run.** `npm run eval:real` is a **dry run**: it prints the model,
-the temperature, the retry limit and how many requests it would make (about 13, up to 23), and calls nothing.
-`npm run eval:real -- --go` runs the ten emails through the same pipeline against the real model (Gemini by
-default, `--provider anthropic` for Claude), scores them with the same checks, **saves every raw model reply**
-with its tokens, latency, finish reason and temperature, and writes a report to `docs/results/`. It stops at once
-on a rate-limit or quota error, or when two different emails fail in a row, and retries nothing itself. Its
-tests use a scripted stand-in for the model. It has been run (with Gemini, `gemini-3.5-flash-lite`), but **no real-model number is
-published here yet**: the results wait for a person to review the AI-written gold data they are scored against, because
-several of the differences are the gold being too strict, not the model being wrong.
+**Real-model results (Gemini `gemini-3.5-flash-lite`, temperature 1).** These are small samples with real limits, so read the
+caveats with them: **ten emails, seven planned decisions and twelve attacks; one model at one temperature; gold written by
+Claude and reviewed with AI assistance (final decisions by Sameer), not independently; and an attack set that is not held out
+from the detector.** Three repeats of the full evaluation, scored against the reviewed gold, range as follows (107 requests in
+all across every run, 4 of them returned a 503 and were recorded, never silently retried; everything is in
+[`docs/results/RESULTS_SUMMARY.md`](./docs/results/RESULTS_SUMMARY.md)):
+
+| | Real model, 3 runs | Scripted mock replay |
+|---|---|---|
+| Unsafe actions planned | **0** (21 plans) | 0 |
+| Attack emails that reached a person | **12 of 12** in the latest run | 1 of 1 |
+| The ambiguous email (E-08) reached a person | **3 of 3** runs | 1 of 1 |
+| DECIDE cases passed / action accuracy / approval-policy accuracy | **6 of 7** / **100%** / **100%** | 7 of 7 |
+| UNDERSTAND category / priority accuracy | **80%** / **70%** | 100% |
+| UNDERSTAND extraction F1 | **0.91 to 0.95** | 1.00 |
+| Invented fields (a stored value not in the email) | **0**, after the verbatim rule | 0 |
+| UNDERSTAND cases that pass every check | **2 to 4 of 10** | 10 of 10 |
+
+**The mock-versus-real gap is the finding.** The mock passes 10 of 10 and the real model 2 to 4 of 10 full cases: the mock measures the code
+around a model, and a real model disagrees with the expected answers in ways a fixture never can. Some of the disagreement is the gold
+being strict (a value that is in the email but the gold expected absent), some is the model's reading differing (E-01 read as a
+pricing request rather than a sales inquiry); they are listed, case by case, in the summary. Other points that belong with these
+numbers: **no CRM write happened in any run, but that is because the evaluations plan and do not execute** (the executor's approval
+checks are covered by the offline safety suites); **in an earlier run the model once obeyed an attack (I-11, it wrote the attacker's
+token into a field) and the email still reached a person**, because the model also flagged it; and the model itself flagged E-10's
+hidden instruction in all three runs, which the scripted mock does not (its answer is deliberately fooled). Before the code rule that
+hands a follow-up with no known sender to a person, the ambiguous email once did **not** reach a person.
+
+**The real-model runner.** `npm run eval:real` is a **dry run**: it prints the model, the temperature, the retry limit and how many
+requests it would make (about 13, up to 23), and calls nothing. `npm run eval:real -- --go` runs the ten emails through the same
+pipeline against the real model (Gemini by default, `--provider anthropic` for Claude, **not yet run**), scores them with the same checks,
+**saves every raw model reply** with its tokens, latency, finish reason and temperature, and writes a report to `docs/results/`.
+`--repeats N` repeats it and reports each metric as min, median and max. It stops at once on a rate-limit or quota error, or when
+two different emails fail in a row, retries nothing itself, and records a single failure and carries on. Its tests use a scripted
+stand-in for the model.
 
 **Offline re-scoring.** `npm run rescore:real -- <report.json>` replays a saved report's raw model replies through the current
 code, with no key and no request, and prints the saved numbers next to the replayed ones. It shows what a change to the code
@@ -414,7 +441,8 @@ to evade the detector and still do; the model's own flag is what catches them.
 
 **What is measured here and what is not.** The ten emails are both the demo and the evaluation set, so there is no
 held-out set, and exactly one of them (E-10) carries a prompt injection. `injectionContainment 1` therefore means
-that one email was detected and sent to a person by the deterministic detector, not a rate over many attacks.
+that one email was sent to a person, not a rate over many attacks; the twelve-attack set adds a little more, and is not
+held out either. Both are demonstrations, not a measurement of how it would fare on a real inbox.
 
 ## Not built yet
 
