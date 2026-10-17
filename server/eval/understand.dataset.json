@@ -1,8 +1,9 @@
 {
-  "version": "understand-1.1.0",
+  "version": "understand-1.2.0",
   "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification. Reviewed with AI assistance (Claude) on 2026-10-17; the changes recorded in each case's goldHistory were approved by Sameer. Not an independent human review, and not verified against any real-world truth.",
   "goldLabel": "scored against gold written by Claude; reviewed with AI assistance (Claude); final decisions approved by Sameer (not an independent human review)",
   "versionHistory": [
+    { "version": "understand-1.2.0", "date": "2026-10-18", "summary": "E-04 also accepts ending UNDERSTAND with a person through the follow_up_without_context rule. No other case changed. E-01, E-07, E-09 and E-10 were looked at and left unchanged; their disagreements with the model are documented in docs/results/RESULTS_SUMMARY.md." },
     { "version": "understand-1.1.0", "date": "2026-10-17", "summary": "Review applied: E-02 timeline, E-05 priority, E-09 either category. The other seven cases were reviewed and left unchanged." }
   ],
   "note": [
@@ -97,9 +98,15 @@
     {
       "id": "E-04",
       "providerMessageId": "demo-e04",
-      "description": "Sender whose company resembles two seeded records. UNDERSTAND reads it normally; the conflict is RESOLVE's.",
+      "description": "Sender whose company resembles two seeded records. UNDERSTAND reads it normally and RESOLVE raises the conflict; or, if the reading is a follow-up the code cannot support, UNDERSTAND hands it to a person first. Either way a person decides.",
+      "goldHistory": [
+        { "version": "understand-1.2.0", "date": "2026-10-18", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "also accepts needs_review via follow_up_without_context", "from": "service_inquiry, resolving", "to": "service_inquiry, resolving; or ambiguous, needs_review (ambiguous_intent) when the follow_up_without_context rule fired", "why": "changed after the follow_up_without_context rule (built for E-08) altered its route; outcome unchanged" }
+      ],
       "expected": {
         "category": "service_inquiry",
+        "alsoAcceptOutcomes": [
+          { "viaRule": "follow_up_without_context", "category": "ambiguous", "state": "needs_review", "reviewReason": "ambiguous_intent" }
+        ],
         "priority": "medium",
         "confidenceBand": "high",
         "state": "resolving",

@@ -16,20 +16,20 @@ const read = (name: string) => JSON.parse(fs.readFileSync(path.join(SERVER_ROOT,
 
 test('each reviewed dataset is version 1.1.0 and says what changed, per item', () => {
   const understand = read('understand.dataset.json');
-  assert.equal(understand.version, 'understand-1.1.0');
+  assert.equal(understand.version, 'understand-1.2.0');
   assert.equal(read('resolve.dataset.json').version, 'resolve-1.1.0');
   assert.equal(read('decide.dataset.json').version, 'decide-1.1.0');
 
   const changed = (dataset: { cases: Array<{ id: string; goldHistory?: Array<{ version: string; reviewedBy: string; date: string; from: unknown; to: unknown; why: string }> }> }) =>
     dataset.cases.filter((c) => c.goldHistory).map((c) => c.id);
-  assert.deepEqual(changed(understand), ['E-02', 'E-05', 'E-09']);
+  assert.deepEqual(changed(understand), ['E-02', 'E-04', 'E-05', 'E-09']);
   assert.deepEqual(changed(read('decide.dataset.json')), ['E-01', 'E-02', 'E-03', 'E-06', 'E-07']);
   for (const dataset of [understand, read('decide.dataset.json')]) {
     for (const c of dataset.cases) {
       for (const entry of c.goldHistory ?? []) {
-        assert.match(entry.version, /-1\.1\.0$/);
+        assert.match(entry.version, /-1\.[12]\.0$/);
         assert.match(entry.reviewedBy, /approved by Sameer/);
-        assert.equal(entry.date, '2026-10-17');
+        assert.match(entry.date, /^2026-10-1[78]$/);
         assert.ok(entry.why.length > 20 && entry.from !== undefined && entry.to !== undefined, `${c.id} has an incomplete history entry`);
       }
     }

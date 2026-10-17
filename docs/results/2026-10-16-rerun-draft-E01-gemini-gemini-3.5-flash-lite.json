@@ -1,0 +1,324 @@
+{
+  "label": "scored against AI-written gold (Claude-written, not yet human-reviewed)",
+  "settings": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "temperature": 1,
+    "maxRetries": 0,
+    "timeoutMs": 30000
+  },
+  "understandReplayedFrom": "real-eval report E-01 raw reply",
+  "calls": [
+    {
+      "n": 1,
+      "purpose": "understand",
+      "promptVersion": "understand.v1",
+      "fixtureId": "demo-e01",
+      "ok": true,
+      "response": {
+        "toolInput": {
+          "confidence": 1,
+          "flags": {
+            "possibleInjection": false,
+            "ambiguousIntent": false,
+            "insufficientInformation": false
+          },
+          "summary": "Acmecommerce is inquiring about the rough cost of adding an AI chatbot for product and shipping questions to their Shopify store.",
+          "priorityReason": "Direct sales lead with clear project scope asking for pricing on a standard service offering.",
+          "category": "pricing_request",
+          "extracted": {
+            "contactPhone": {
+              "confidence": 1,
+              "value": null,
+              "sourceSpan": "null"
+            },
+            "timeline": {
+              "sourceSpan": "null",
+              "value": null,
+              "confidence": 1
+            },
+            "jobTitle": {
+              "confidence": 1,
+              "value": null,
+              "sourceSpan": "null"
+            },
+            "requirementSummary": {
+              "confidence": 1,
+              "sourceSpan": "adding an AI chatbot that can answer product and shipping questions",
+              "value": "adding an AI chatbot that can answer product and shipping questions"
+            },
+            "companyDomain": {
+              "sourceSpan": "acmecommerce.invalid",
+              "confidence": 1,
+              "value": "acmecommerce.invalid"
+            },
+            "budget": {
+              "confidence": 1,
+              "sourceSpan": "null",
+              "value": null
+            },
+            "serviceInterest": {
+              "confidence": 1,
+              "value": "AI chatbot",
+              "sourceSpan": "AI chatbot"
+            },
+            "companyName": {
+              "sourceSpan": "Acmecommerce",
+              "value": "Acmecommerce",
+              "confidence": 1
+            },
+            "contactName": {
+              "sourceSpan": "Sarah",
+              "value": "Sarah",
+              "confidence": 1
+            },
+            "contactEmail": {
+              "sourceSpan": "sarah@acmecommerce.invalid",
+              "confidence": 1,
+              "value": "sarah@acmecommerce.invalid"
+            },
+            "urgencyCues": {
+              "sourceSpan": "null",
+              "confidence": 1,
+              "value": null
+            }
+          },
+          "priority": "medium",
+          "intent": "The sender wants to know the approximate cost of adding an AI chatbot to their Shopify store to answer product and shipping questions.",
+          "questionAsked": "Could you tell us roughly how much this would cost?"
+        },
+        "model": "gemini-3.5-flash-lite",
+        "latencyMs": 7484.8264,
+        "stopReason": "STOP",
+        "usage": {
+          "model": "gemini-3.5-flash-lite",
+          "inputTokens": 2651,
+          "outputTokens": 404,
+          "thinkingTokens": null,
+          "totalTokens": 3055,
+          "latencyMs": 7484.8264,
+          "attempts": 1,
+          "finishReason": "STOP",
+          "temperature": 1,
+          "maxTokens": 4096
+        }
+      }
+    },
+    {
+      "n": 2,
+      "purpose": "draft",
+      "promptVersion": "draft.v1",
+      "fixtureId": "demo-e01:draft",
+      "ok": true,
+      "response": {
+        "toolInput": {
+          "subject": "Re: Shopify AI chatbot project",
+          "body": "Hi Sarah,\n\nPricing for an AI customer support chatbot depends on the scope and your current product catalogue setup. \n\nTo help me give you an accurate cost estimate, could you let me know roughly how many products you carry, and what platform or tools you currently use for customer support?\n\nAI Business Automation"
+        },
+        "model": "gemini-3.5-flash-lite",
+        "latencyMs": 4359.3027999999995,
+        "stopReason": "STOP",
+        "usage": {
+          "model": "gemini-3.5-flash-lite",
+          "inputTokens": 709,
+          "outputTokens": 88,
+          "thinkingTokens": null,
+          "totalTokens": 797,
+          "latencyMs": 4359.3027999999995,
+          "attempts": 1,
+          "finishReason": "STOP",
+          "temperature": 1,
+          "maxTokens": 4096
+        }
+      }
+    }
+  ],
+  "decision": {
+    "id": "93dd61a5-70a9-5931-aa38-379456ea27e1",
+    "emailId": "8f13c80a-1666-59c9-a111-6fbb8e3773dc",
+    "analysisId": "dc0ee382-5d94-5377-b0e3-080b19210b6a",
+    "resolutionRun": "f5630d12-055e-4343-887f-4b816e96c135",
+    "plan": {
+      "actions": [
+        {
+          "type": "create_company",
+          "payload": {
+            "name": "Acmecommerce",
+            "domain": "acmecommerce.invalid"
+          }
+        },
+        {
+          "type": "create_contact",
+          "payload": {
+            "fullName": "Sarah",
+            "email": "sarah@acmecommerce.invalid",
+            "jobTitle": null,
+            "phone": null,
+            "company": {
+              "kind": "new",
+              "ref": "company"
+            }
+          }
+        },
+        {
+          "type": "log_activity",
+          "payload": {
+            "type": "email_in",
+            "subject": "Shopify AI chatbot project",
+            "body": "Acmecommerce is inquiring about the rough cost of adding an AI chatbot for product and shipping questions to their Shopify store.",
+            "contact": {
+              "kind": "new",
+              "ref": "contact"
+            },
+            "company": {
+              "kind": "new",
+              "ref": "company"
+            }
+          }
+        },
+        {
+          "type": "create_deal",
+          "payload": {
+            "title": "Acmecommerce — AI chatbot",
+            "stage": "qualifying",
+            "serviceLine": "ai_customer_support",
+            "budgetNote": null,
+            "timelineNote": null,
+            "requirementSummary": "adding an AI chatbot that can answer product and shipping questions",
+            "company": {
+              "kind": "new",
+              "ref": "company"
+            },
+            "contact": {
+              "kind": "new",
+              "ref": "contact"
+            }
+          }
+        },
+        {
+          "type": "create_task",
+          "payload": {
+            "title": "Respond with scope and pricing approach: Shopify AI chatbot project",
+            "description": null,
+            "dueAt": "2026-09-06T00:00:00.000Z",
+            "priority": "medium",
+            "contact": {
+              "kind": "new",
+              "ref": "contact"
+            },
+            "company": {
+              "kind": "new",
+              "ref": "company"
+            },
+            "deal": null
+          }
+        },
+        {
+          "type": "send_email",
+          "payload": {
+            "toEmail": "sarah@acmecommerce.invalid",
+            "inReplyToProviderMessageId": "demo-e01"
+          }
+        }
+      ],
+      "riskTier": 2,
+      "requiresApproval": true,
+      "approvalReasons": [
+        {
+          "code": "consequential_action",
+          "message": "This plan contains actions that always needs a person: create_deal, send_email."
+        },
+        {
+          "code": "autonomy_level",
+          "message": "Autonomy is set to assisted, which does not run this kind of action unattended."
+        }
+      ],
+      "rationale": "Read as a pricing request (high confidence). no existing company matched and the email names \"Acmecommerce\"; no existing contact matched sarah@acmecommerce.invalid; they asked what it costs, which is a real opportunity and a reply that must not quote a price. Rules fired: R-01, R-02, R-14.",
+      "ruleTrace": [
+        {
+          "rule": "R-01",
+          "fired": true,
+          "because": "no existing company matched and the email names \"Acmecommerce\""
+        },
+        {
+          "rule": "R-02",
+          "fired": true,
+          "because": "no existing contact matched sarah@acmecommerce.invalid"
+        },
+        {
+          "rule": "R-03",
+          "fired": false,
+          "because": "both the contact and the company must already exist"
+        },
+        {
+          "rule": "R-10",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-11",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-12",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-13",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-14",
+          "fired": true,
+          "because": "they asked what it costs, which is a real opportunity and a reply that must not quote a price"
+        },
+        {
+          "rule": "R-15",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-16",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-17",
+          "fired": false,
+          "because": "the category is pricing_request"
+        },
+        {
+          "rule": "R-18",
+          "fired": false,
+          "because": "the category is pricing_request"
+        }
+      ],
+      "draft": {
+        "subject": "Re: Shopify AI chatbot project",
+        "body": "Hi Sarah,\n\nPricing for an AI customer support chatbot depends on the scope and your current product catalogue setup. \n\nTo help me give you an accurate cost estimate, could you let me know roughly how many products you carry, and what platform or tools you currently use for customer support?\n\nAI Business Automation",
+        "guardrailsPassed": [
+          "no_price_commitment",
+          "no_delivery_promise",
+          "no_discount_or_offer",
+          "no_legal_or_contractual_language",
+          "no_pii_echo",
+          "no_invented_facts"
+        ],
+        "blockedBy": []
+      },
+      "draftFailedReason": null
+    },
+    "model": "gemini-3.5-flash-lite",
+    "promptVersion": "draft.v1",
+    "latencyMs": 4359.3027999999995,
+    "supersededBy": null,
+    "parentDecisionId": null,
+    "revision": 1,
+    "origin": "agent",
+    "editedBy": null,
+    "createdAt": "2026-06-01T00:01:23.000Z"
+  }
+}
