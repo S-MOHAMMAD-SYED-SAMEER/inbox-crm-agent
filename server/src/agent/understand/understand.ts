@@ -197,6 +197,17 @@ export async function understandEmail(
     };
   }
 
+  // --- follow-up without context ---------------------------------------------
+  //
+  // A model that calls an email a follow-up is saying "this continues something already under way". If nothing
+  // we hold agrees (no prior thread, no contact with this address, no company on this domain), the claim has no
+  // support, and acting on it (advancing a deal that is not there, or filing it as routine) would be acting on a
+  // guess. So the category is changed to ambiguous and the email goes to a person. Code decides this, not the
+  // prompt: a model can be talked into or out of calling something a follow-up, but whether we know the sender is
+  // a fact in our own records.
+  const reading = await withFollowUpContextCheck(repos, email, understanding, validation);
+  understanding = reading;
+
   // --- deterministic security pass -----------------------------------------
 
   const security = await buildSecurity(repos, email, understanding.flags.possibleInjection);
@@ -244,6 +255,8 @@ export async function understandEmail(
       // second table that is never deleted.
       inputDigest: `sha256:${stableHash({ subject: email.subject, body: email.bodyText })}`,
       attempts: attempt,
+      // Named rules the code applied to the model's reading (see validation.coherenceAdjustments).
+      rules: validation.coherenceAdjustments.flatMap((adjustment) => (adjustment.rule ? [adjustment.rule] : [])),
     },
     latencyMs,
     entityType: 'analysis',
@@ -366,6 +379,36 @@ function decideReviewReason(understanding: Understanding, security: SecurityReco
   if (understanding.flags.insufficientInformation) return 'insufficient_information';
   if (understanding.confidenceBand === 'low') return 'low_confidence';
   return null;
+}
+
+export const FOLLOW_UP_WITHOUT_CONTEXT = 'follow_up_without_context';
+
+/** What we already know about this sender: a thread, a contact with this address, or a company on this domain. */
+export async function senderContext(repos: Repositories, email: EmailRecord): Promise<{ known: boolean; because: string | null }> {
+  if (email.threadId !== null) return { known: true, because: 'the email is part of an existing thread' };
+  if ((await repos.contacts.findByEmail(email.fromEmail)) !== null) return { known: true, because: 'a CRM contact has this address' };
+  const domain = email.fromEmail.split('@')[1] ?? '';
+  if (domain !== '' && (await repos.companies.findByDomain(domain)) !== null) return { known: true, because: 'a CRM company has this domain' };
+  return { known: false, because: null };
+}
+
+async function withFollowUpContextCheck(
+  repos: Repositories,
+  email: EmailRecord,
+  understanding: Understanding,
+  validation: ValidationRecord,
+): Promise<Understanding> {
+  if (understanding.category !== 'follow_up') return understanding;
+  const context = await senderContext(repos, email);
+  if (context.known) return understanding;
+
+  validation.coherenceAdjustments.push({
+    what: 'changed the category from follow_up to ambiguous',
+    why:
+      'the reading says this continues an earlier conversation, but there is no prior thread, no CRM contact with this address and no CRM company on this domain, so nothing supports it',
+    rule: FOLLOW_UP_WITHOUT_CONTEXT,
+  });
+  return { ...understanding, category: 'ambiguous', flags: { ...understanding.flags, ambiguousIntent: true } };
 }
 
 async function buildSecurity(repos: Repositories, email: EmailRecord, modelFlagged: boolean): Promise<SecurityRecord> {

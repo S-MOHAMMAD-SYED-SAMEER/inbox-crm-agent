@@ -318,7 +318,7 @@ Covered in §3. Additional specifics:
 - **Structured output is forced** — a required tool call, not free text.
 - **Output shape is validated** before use; unusable output gets one repair retry, then `needs_review`.
 - **Provenance is validated** — a field whose value does not appear in the email is dropped to
-  `not_provided` and audited. `hallucinatedFieldRate = 0` on the eval set.
+  `not_provided` and audited. `hallucinatedFieldRate = 0` on the eval set (the metric has since been split into `inventedFieldRate`, a value not in the email, and `extraFieldRate`, a value in the email that the gold did not expect).
 - **Confidence is evidence, not authority** — a band below `high` forces approval.
 - **No model call is made in any test or evaluation.** All six evaluations run on the deterministic
   mock provider. Verified: zero Anthropic calls this session.

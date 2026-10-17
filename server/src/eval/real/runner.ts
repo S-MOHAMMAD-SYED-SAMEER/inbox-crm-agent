@@ -345,8 +345,10 @@ function missingEmail(id: string, description: string, providerMessageId: string
     passed: false,
     checks: [{ name: 'fixture_present', passed: false, detail: `no email ${providerMessageId}` }],
     extraction: { truePositives: 0, falsePositives: 0, falseNegatives: 0 },
-    hallucinations: 0,
-    hallucinationOpportunities: 0,
+    invented: 0,
+    inventedOpportunities: 0,
+    extra: 0,
+    extraOpportunities: 0,
   };
 }
 

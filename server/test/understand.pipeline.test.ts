@@ -6,6 +6,7 @@ import { createMockLlmProvider, registerDemoFixtures } from '../src/adapters/llm
 import { ingestEmails } from '../src/agent/ingest/ingest.ts';
 import { understandEmail, assertUnderstandable } from '../src/agent/understand/understand.ts';
 import { createLogger } from '../src/lib/logger.ts';
+import { readSeedFile, seedDemoData } from '../src/db/seed.ts';
 import { emptyExtraction } from '../src/domain/understanding.ts';
 import type { LlmProvider, LlmRequest, LlmResponse } from '../src/adapters/llm/types.ts';
 import type { Repositories } from '../src/db/repositories/index.ts';
@@ -612,5 +613,85 @@ test('an email with nothing hidden has a clean sanitisation record, not a stub o
   assert.equal(outcome.security.sanitisation.removedHiddenCharacters, 0);
   assert.equal(outcome.security.sanitisation.removedHiddenElements, 0);
   assert.equal(outcome.security.injection.suspected, false);
+  await close();
+});
+
+// ============================================== follow_up_without_context (a rule in code)
+
+async function ingestOne(repos: Repositories, id: string, fromEmail: string, threadId: string | null = null): Promise<EmailRecord> {
+  const source = createDemoEmailSource({
+    fixtures: [
+      {
+        provider: 'demo',
+        providerMessageId: id,
+        threadId,
+        fromName: 'Alex Ng',
+        fromEmail,
+        toEmail: 'hello@us.invalid',
+        cc: null,
+        subject: 'Following up',
+        bodyText: 'Hi, just following up on what we talked about. Let me know.',
+        headers: {},
+        receivedAt: '2026-09-01T09:00:00.000Z',
+      },
+    ],
+  });
+  await ingestEmails({ repos, source, logger: quiet });
+  return emailFor(repos, id);
+}
+
+const followUpModel = () => scriptedProvider(() => response(goodOutput({ category: 'follow_up', extracted: { ...emptyExtraction(), contactName: { value: 'Alex Ng', confidence: 0.9, sourceSpan: 'Alex Ng' } }, flags: { insufficientInformation: false, ambiguousIntent: false, possibleInjection: false } })));
+
+test('a follow-up from a stranger (no thread, no contact, no company) becomes ambiguous and goes to a person, and the rule is recorded', async () => {
+  const { repos, close } = await createTestContext();
+  const email = await ingestOne(repos, 'stranger-1', 'alex@unknown-company.invalid');
+  const outcome = await understandEmail(email, { repos, provider: followUpModel(), logger: quiet });
+  assert.equal(outcome.understanding?.category, 'ambiguous');
+  assert.equal(outcome.understanding?.flags.ambiguousIntent, true);
+  assert.equal(outcome.state, 'needs_review');
+  assert.equal(outcome.reviewReason, 'ambiguous_intent');
+  const adjustment = outcome.validation.coherenceAdjustments.find((a) => a.rule === 'follow_up_without_context');
+  assert.ok(adjustment, 'the rule is in the trace');
+  assert.match(adjustment.what, /follow_up to ambiguous/);
+  // The model's own answer is kept, so the change is a diff and not a rewrite of history.
+  const stored = await repos.analyses.getLatestForEmail(email.id);
+  assert.ok(stored);
+  assert.equal((stored.modelOutput as { category?: string }).category, 'follow_up');
+  assert.equal(stored.understanding.category, 'ambiguous');
+  const audit = (await repos.audit.listByEmail(email.id)).find((event) => event.eventType === 'classification_recorded');
+  assert.ok(audit);
+  assert.deepEqual((audit.payload as { rules?: string[] }).rules, ['follow_up_without_context']);
+  await close();
+});
+
+test('a real follow-up still passes: a CRM contact with that address, a company on that domain, or an existing thread', async () => {
+  const { repos, close } = await createTestContext();
+  await seedDemoData(repos, readSeedFile(DEMO_DATA_DIR));
+
+  // E-06's sender is a seeded contact (dana@solsticeretail.invalid), and the demo's scripted answer calls it a follow-up.
+  await ingestDemo(repos);
+  const e06 = await understandEmail(await emailFor(repos, 'demo-e06'), { repos, provider: demoProvider(), logger: quiet });
+  assert.equal(e06.understanding?.category, 'follow_up');
+  assert.equal(e06.state, 'resolving');
+  assert.equal(e06.validation.coherenceAdjustments.some((a) => a.rule === 'follow_up_without_context'), false);
+
+  // A new person at a company that IS in the CRM (matched by domain).
+  const byDomain = await understandEmail(await ingestOne(repos, 'colleague-1', 'newperson@solsticeretail.invalid'), { repos, provider: followUpModel(), logger: quiet });
+  assert.equal(byDomain.understanding?.category, 'follow_up');
+  assert.equal(byDomain.state, 'resolving');
+
+  // A stranger, but the email is part of an existing thread.
+  const inThread = await understandEmail(await ingestOne(repos, 'thread-1', 'alex@unknown-company.invalid', 'thread-abc'), { repos, provider: followUpModel(), logger: quiet });
+  assert.equal(inThread.understanding?.category, 'follow_up');
+  assert.equal(inThread.state, 'resolving');
+  await close();
+});
+
+test('the rule only touches follow-ups: any other category from a stranger is left alone', async () => {
+  const { repos, close } = await createTestContext();
+  const email = await ingestOne(repos, 'stranger-2', 'alex@unknown-company.invalid');
+  const outcome = await understandEmail(email, { repos, provider: scriptedProvider(() => response(goodOutput())), logger: quiet });
+  assert.equal(outcome.understanding?.category, 'sales_inquiry');
+  assert.equal(outcome.validation.coherenceAdjustments.some((a) => a.rule), false);
   await close();
 });

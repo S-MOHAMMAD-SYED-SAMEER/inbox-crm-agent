@@ -387,7 +387,7 @@ evaluation prints that label, and a real-model report records it.
 injection detection, matching, rules, approval policy, executor, persistence) with the **mock provider**,
 which replays the scripted answers. No key, no spend, byte-identical on every run. They test the code around
 the model; **they say nothing about a model**, because the "model" is a fixture. Current results: UNDERSTAND
-10/10 (with `hallucinatedFieldRate 0`, `provenanceCompleteness 1`, `injectionContainment 1`, the three that are
+10/10 (with `inventedFieldRate 0`, `provenanceCompleteness 1`, `injectionContainment 1`, the three that are
 absolutes rather than targets), RESOLVE 8/8, DECIDE 7/7, and the three safety suites meet all their thresholds.
 
 **One real-model runner, built and not yet run.** `npm run eval:real` is a **dry run**: it prints the model,

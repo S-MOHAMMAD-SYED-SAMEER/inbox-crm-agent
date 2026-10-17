@@ -296,7 +296,7 @@ export type Understanding = {
 export type ValidationRecord = {
   problems: string[];
   droppedFields: Array<{ field: string; reason: string; claimedValue: string }>;
-  coherenceAdjustments: Array<{ what: string; why: string }>;
+  coherenceAdjustments: Array<{ what: string; why: string; rule?: string }>;
   normalisations: Array<{ what: string; why: string }>;
   attempts: number;
 };

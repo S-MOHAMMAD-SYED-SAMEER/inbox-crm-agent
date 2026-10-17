@@ -181,7 +181,7 @@ function normaliseForMatch(text: string): string {
   return text.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-function corpusContains(corpus: string, candidate: string): boolean {
+export function corpusContains(corpus: string, candidate: string): boolean {
   return normaliseForMatch(corpus).includes(normaliseForMatch(candidate));
 }
 
@@ -197,7 +197,7 @@ function compact(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function identityValueFound(field: ExtractedField, value: string, evidence: IdentityEvidence): boolean {
+export function identityValueFound(field: ExtractedField, value: string, evidence: IdentityEvidence): boolean {
   if (corpusContains(evidence.text, value)) return true;
   // A company is often named only by the address it writes from. Allowed when the whole name,
   // ignoring spaces and punctuation, is one of the domain's labels ("Acme Commerce" is acmecommerce).
@@ -336,6 +336,41 @@ function applyCoherence(
   return { category, flags, summary };
 }
 
+// ---------------------------------------------------------------- pass 0
+
+/**
+ * The words a model writes when it means "nothing" but has filled a string slot: "null", "none", "n/a" and a blank.
+ * A real model did exactly this (the word "null" as a value and as a quoted span), and they were then discarded one by
+ * one as unsupported, which was safe but noisy: every empty field became a "dropped field". Read as null, they are the
+ * honest "not provided" they were meant to be.
+ */
+const NOTHING_WORDS = /^(?:null|none|nil|n\/a|na|undefined|not provided|not stated|unknown)?$/i;
+
+export function readNothingAsNull(raw: unknown, record: ValidationRecord): unknown {
+  if (!isPlainObject(raw) || !isPlainObject(raw.extracted)) return raw;
+  const extracted: Record<string, unknown> = {};
+  for (const [field, entry] of Object.entries(raw.extracted)) {
+    if (!isPlainObject(entry)) {
+      extracted[field] = entry;
+      continue;
+    }
+    const next = { ...entry };
+    let changed = false;
+    for (const key of ['value', 'sourceSpan'] as const) {
+      const current = next[key];
+      if (typeof current === 'string' && NOTHING_WORDS.test(current.trim())) {
+        next[key] = null;
+        changed = true;
+      }
+    }
+    if (changed) {
+      record.normalisations.push({ what: `read the text "null"-style placeholder as no value for ${field}`, why: 'a model wrote a placeholder word where it meant not provided' });
+    }
+    extracted[field] = next;
+  }
+  return { ...raw, extracted };
+}
+
 // ---------------------------------------------------------------- entry
 
 export function validateUnderstanding(
@@ -345,7 +380,7 @@ export function validateUnderstanding(
   const record = emptyRecord(options.attempt ?? 1);
   const problems: string[] = [];
 
-  const shaped = validateShape(raw, problems);
+  const shaped = validateShape(readNothingAsNull(raw, record), problems);
   if (!shaped) {
     record.problems = problems;
     return { ok: false, problems, record };

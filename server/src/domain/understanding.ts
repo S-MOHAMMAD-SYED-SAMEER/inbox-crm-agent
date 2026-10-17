@@ -117,7 +117,8 @@ export type ValidationRecord = {
   /** Fields reset to not_provided, with the reason. The anti-hallucination record. */
   droppedFields: Array<{ field: ExtractedField; reason: string; claimedValue: string }>;
   /** Incoherences deterministic code corrected, e.g. a missing ambiguity flag. */
-  coherenceAdjustments: Array<{ what: string; why: string }>;
+  /** Changes the code made to the model's reading. `rule` is a stable code for the ones that have a name (for example follow_up_without_context). */
+  coherenceAdjustments: Array<{ what: string; why: string; rule?: string }>;
   /** Values normalised without changing meaning, e.g. an over-long summary. */
   normalisations: Array<{ what: string; why: string }>;
   attempts: number;

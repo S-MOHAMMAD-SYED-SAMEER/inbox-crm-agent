@@ -73,10 +73,16 @@ async function main(): Promise<void> {
     });
     after = report;
     const rows: Array<[string, unknown, unknown]> = [];
-    for (const key of Object.keys(saved.understand.metrics)) rows.push([`UNDERSTAND ${key}`, saved.understand.metrics[key], (report.understand.metrics as Record<string, unknown>)[key]]);
-    for (const key of Object.keys(saved.decide.metrics)) rows.push([`DECIDE ${key}`, saved.decide.metrics[key], (report.decide.metrics as Record<string, unknown>)[key]]);
+    // Metrics are listed by the UNION of the saved and the replayed names, so a metric that was split or renamed shows on
+    // both sides: the old name with no replayed value, the new names with no saved one.
+    const union = (a: object, b: object): string[] => [...new Set([...Object.keys(a), ...Object.keys(b)])];
+    for (const key of union(saved.understand.metrics, report.understand.metrics)) rows.push([`UNDERSTAND ${key}`, saved.understand.metrics[key] ?? '-', (report.understand.metrics as Record<string, unknown>)[key] ?? '-']);
+    for (const key of union(saved.decide.metrics, report.decide.metrics)) rows.push([`DECIDE ${key}`, saved.decide.metrics[key] ?? '-', (report.decide.metrics as Record<string, unknown>)[key] ?? '-']);
     console.log(`  ${'metric'.padEnd(36)}${'before'.padEnd(10)}after`);
     for (const [name, before, now] of rows) console.log(`  ${name.padEnd(36)}${String(before).padEnd(10)}${String(now)}${before === now ? '' : '   <- changed'}`);
+    if ('hallucinatedFieldRate' in saved.understand.metrics) {
+      console.log('  (hallucinatedFieldRate is the old combined name: it counted a value the email never contains and a value the email does contain but the gold did not expect as the same thing. It is now split into inventedFieldRate and extraFieldRate.)');
+    }
     const changed = (report.understand.results as Array<{ id: string; passed: boolean }>).filter((r, i) => r.passed !== saved.understand.results[i]?.passed);
     console.log(`  UNDERSTAND cases whose pass/fail changed: ${changed.map((c) => c.id).join(', ') || 'none'}`);
     const dchanged = (report.decide.results as Array<{ id: string; passed: boolean }>).filter((r) => r.passed !== saved.decide.results.find((b: { id: string }) => b.id === r.id)?.passed);
