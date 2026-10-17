@@ -80,6 +80,22 @@ const RULES: Rule[] = [
     why: 'Contains markup shaped like an instruction fence.',
   },
   {
+    name: 'chat_or_tool_markup',
+    severity: 'high',
+    // Chat-template tokens and tool-call envelopes, and the opening or closing tag of a conversation turn. No
+    // ordinary business email contains any of them; they exist to be read as structure by a model.
+    pattern: /<\|[a-z_]{2,24}\|>|\[\/?INST\]|<<\/?SYS>>|<\/?\s*(?:tool_calls?|function_calls?|tool_use|tool_result|untrusted_email|assistant|human)\s*>|"(?:tool_calls?|function_call|tool_use|tool_name)"\s*:/i,
+    why: 'Contains chat-template or tool-call markup, which is structure for a model and never part of an ordinary email.',
+  },
+  {
+    name: 'tool_call_instruction',
+    severity: 'high',
+    // "call record_something": a verb of invocation followed by a snake_case identifier, the way a function
+    // is named in code and not in correspondence.
+    pattern: /\b(?:call|invoke|execute|run)\s+(?:the\s+)?(?:(?:tool|function)\s+)?[a-z]+(?:_[a-z0-9]+)+\b/i,
+    why: 'Tells the reader to call a function by its code name.',
+  },
+  {
     name: 'encoded_payload',
     severity: 'medium',
     // A long unbroken base64-ish run in a business email is not a sentence.
@@ -104,13 +120,17 @@ export function detectInjection(
 ): InjectionRecord {
   const matches: InjectionMatch[] = [];
 
+  // Generic normalisation only. NFKC folds full-width letters, ligatures and similar look-alike forms into plain
+  // ones, so "\uFF49gnore" is read as "ignore". Nothing here is specific to any particular attack.
+  const normalised = text.normalize('NFKC');
+
   for (const rule of RULES) {
-    const match = rule.pattern.exec(text);
+    const match = rule.pattern.exec(normalised);
     if (match) {
       matches.push({
         rule: rule.name,
         severity: rule.severity,
-        evidence: evidenceFor(text, match),
+        evidence: evidenceFor(normalised, match),
         why: rule.why,
       });
     }
@@ -128,6 +148,30 @@ export function detectInjection(
       evidence: `${hidden} hidden character(s) removed during sanitisation`,
       why: 'Invisible characters can carry text a human reviewer cannot see but a model can.',
     });
+  }
+
+  // Text the sanitiser removed because a reader could not see it. Its presence is a finding of its own, and
+  // what it said is read by the same rules, so a hidden "ignore your instructions" is reported as that.
+  const hiddenElements = options.sanitisation?.removedHiddenElements ?? 0;
+  if (hiddenElements > 0) {
+    matches.push({
+      rule: 'hidden_content',
+      severity: 'medium',
+      evidence: `${hiddenElements} hidden element(s) or comment(s) removed during sanitisation`,
+      why: 'Text a human reviewer cannot see but a model can is the standard way to smuggle in instructions.',
+    });
+    const hiddenText = (options.sanitisation?.hiddenText ?? '').normalize('NFKC');
+    for (const rule of RULES) {
+      const match = rule.pattern.exec(hiddenText);
+      if (match) {
+        matches.push({
+          rule: rule.name,
+          severity: rule.severity,
+          evidence: `(in hidden text) ${evidenceFor(hiddenText, match)}`,
+          why: rule.why,
+        });
+      }
+    }
   }
 
   const modelFlagged = options.modelFlagged === true;

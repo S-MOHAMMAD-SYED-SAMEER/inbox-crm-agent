@@ -13,6 +13,7 @@ import {
   type ValidationRecord,
 } from '../../domain/understanding.ts';
 import type { EmailCategory, Priority } from '../../domain/email.ts';
+import type { IdentityEvidence } from './prompt.ts';
 
 // Deterministic validation of model output.
 //
@@ -189,10 +190,29 @@ function digitsOnly(text: string): string {
   return text.replace(/\D/g, '');
 }
 
+/** Fields holding a name or title: the value itself must be written in the message. */
+export const IDENTITY_FIELDS: readonly ExtractedField[] = ['contactName', 'companyName', 'jobTitle'];
+
+function compact(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function identityValueFound(field: ExtractedField, value: string, evidence: IdentityEvidence): boolean {
+  if (corpusContains(evidence.text, value)) return true;
+  // A company is often named only by the address it writes from. Allowed when the whole name,
+  // ignoring spaces and punctuation, is one of the domain's labels ("Acme Commerce" is acmecommerce).
+  if (field === 'companyName') {
+    const wanted = compact(value);
+    return wanted.length >= 3 && evidence.domainLabels.some((label) => compact(label) === wanted);
+  }
+  return false;
+}
+
 function validateProvenance(
   understanding: ModelUnderstanding,
   corpus: string,
   record: ValidationRecord,
+  evidence?: IdentityEvidence,
 ): Record<ExtractedField, ExtractedValue> {
   const kept = emptyExtraction();
 
@@ -233,6 +253,13 @@ function validateProvenance(
         drop('the value itself does not appear in the email, and this field must be exact');
         continue;
       }
+    }
+
+    // A name or a title must be written in the message, not just have a quoted span somewhere in
+    // the headers. Without `evidence` (a caller that has none) the old, looser check stands.
+    if (evidence && IDENTITY_FIELDS.includes(field) && !identityValueFound(field, claimed.value, evidence)) {
+      drop('not found in email: the value itself is not written in the message body, subject or sender name');
+      continue;
     }
 
     // A money claim whose evidence contains no number is not evidence.
@@ -313,7 +340,7 @@ function applyCoherence(
 
 export function validateUnderstanding(
   raw: unknown,
-  options: { corpus: string; attempt?: number; thresholds?: { high: number; medium: number } },
+  options: { corpus: string; evidence?: IdentityEvidence; attempt?: number; thresholds?: { high: number; medium: number } },
 ): ValidationOutcome {
   const record = emptyRecord(options.attempt ?? 1);
   const problems: string[] = [];
@@ -324,7 +351,7 @@ export function validateUnderstanding(
     return { ok: false, problems, record };
   }
 
-  const extracted = validateProvenance(shaped, options.corpus, record);
+  const extracted = validateProvenance(shaped, options.corpus, record, options.evidence);
   const { category, flags, summary } = applyCoherence(shaped, extracted, record);
 
   const understanding: Understanding = {

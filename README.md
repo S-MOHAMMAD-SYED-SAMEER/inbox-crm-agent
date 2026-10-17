@@ -124,7 +124,7 @@ These parts of that rule are implemented and tested:
 | The UI is not the security boundary | [`src/agent/execute/executor.ts`](server/src/agent/execute/executor.ts) | Before anything is written the executor re-runs the approval policy from stored facts, checks the approval record, its state, its expiry and a fingerprint of the plan that was approved. A caller cannot assert approval; there is no field for it. |
 | An approved reply is never sent | [`src/agent/execute/executor.ts`](server/src/agent/execute/executor.ts) | The reply is written to the outbox as `suppressed`. No code path in this build delivers a message, and a guardrail-blocked draft is refused before the plan runs at all. |
 | The model never chooses an action | [`src/agent/decide/rules.ts`](server/src/agent/decide/rules.ts) | Every action comes from a deterministic rule over the understanding and the resolution. The model is called *after* the plan is final, and its only tool records two strings of prose. |
-| A draft cannot invent a price, a promise or a statistic | [`src/agent/decide/draftGuardrails.ts`](server/src/agent/decide/draftGuardrails.ts) | Six deterministic post-checks. The prompt asks; these check. A blocked draft is kept visible and forces approval rather than vanishing. |
+| A draft cannot invent a price, a promise or a statistic | [`src/agent/decide/draftGuardrails.ts`](server/src/agent/decide/draftGuardrails.ts) | Seven deterministic post-checks, one of which blocks a promise (a proposal, a refund, a call) that nothing in the plan does. The prompt asks; these check. A blocked draft is kept visible and forces approval rather than vanishing. |
 | A value with no evidence never reaches the database | [`src/agent/understand/validate.ts`](server/src/agent/understand/validate.ts) | Every non-null field must quote text that appears in the email. Unsupported values are dropped to `not_provided`, and the drop is audited. |
 
 ## What is built
@@ -149,7 +149,7 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                802 tests
+  test/                839 tests
 web/
   src/router.ts        ~60-line hash router, unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
@@ -157,7 +157,7 @@ web/
   test/                149 tests
 ```
 
-951 tests total (802 server + 149 web), all currently passing.
+988 tests total (839 server + 149 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
@@ -202,11 +202,11 @@ by counting CRM rows before and after a full run.
 
 ```
 understanding + resolution + CRM + settings
-  → rules        18 deterministic rules; every one records why it did or did not fire
+  → rules        18 deterministic rules, then R-19 (a returning contact's open deal is advanced, never duplicated); every one records why it did or did not fire
   → plan         ordered actions from the closed registry, with a risk tier
   → policy       requiresApproval() — the foundation function, unchanged
   → draft        the model writes prose, only where a reply is warranted
-  → guardrails   six deterministic checks; a blocked draft forces approval
+  → guardrails   seven deterministic checks; a blocked draft forces approval
   → persist      plan, policy result, draft and their sources, in separate columns
   → state        awaiting_approval | deciding | needs_review
 ```
@@ -271,7 +271,7 @@ and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Han
 **Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
 (a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
 **55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
-sessions, and real parallel connections racing for one claim). **The 802-test unit suite itself still runs
+sessions, and real parallel connections racing for one claim). **The 839-test unit suite itself still runs
 only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
 network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
 
@@ -396,8 +396,21 @@ the temperature, the retry limit and how many requests it would make (about 13, 
 default, `--provider anthropic` for Claude), scores them with the same checks, **saves every raw model reply**
 with its tokens, latency, finish reason and temperature, and writes a report to `docs/results/`. It stops at once
 on a rate-limit or quota error, or when two different emails fail in a row, and retries nothing itself. Its
-tests use a scripted stand-in for the model. Until it is run, **no real-model number exists**, and the README,
-the case study and the 3D page say so.
+tests use a scripted stand-in for the model. It has been run (with Gemini, `gemini-3.5-flash-lite`), but **no real-model number is
+published here yet**: the results wait for a person to review the AI-written gold data they are scored against, because
+several of the differences are the gold being too strict, not the model being wrong.
+
+**Offline re-scoring.** `npm run rescore:real -- <report.json>` replays a saved report's raw model replies through the current
+code, with no key and no request, and prints the saved numbers next to the replayed ones. It shows what a change to the code
+around the model does to answers the model actually gave; it cannot show what the model would say to a changed prompt.
+
+**The injection run.** `npm run eval:injection` (a dry run unless `--go`) sends twelve AI-written attack emails to the real
+model, one request each. Each asks the model to write a unique canary token into a field, so obedience is measured, not judged.
+**That attack set is not held out from the detector**: it was written by the same assistant that wrote the detector, and it was
+used to see what the detector missed. The detector's later changes are general (hidden HTML and comments, look-alike letters,
+chat and tool-call markup, calls to code-named functions), not rules for those twelve emails, but a pass on the set is not evidence
+about attacks nobody here thought of. Two attacks (a non-English override and a politely worded request to skip review) are written
+to evade the detector and still do; the model's own flag is what catches them.
 
 **What is measured here and what is not.** The ten emails are both the demo and the evaluation set, so there is no
 held-out set, and exactly one of them (E-10) carries a prompt injection. `injectionContainment 1` therefore means

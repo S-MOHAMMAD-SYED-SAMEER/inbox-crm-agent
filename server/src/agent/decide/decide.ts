@@ -88,12 +88,21 @@ export async function decideEmail(
       deals.filter((deal) => deal.stage !== 'won' && deal.stage !== 'lost').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
   }
 
+  // The sender's own open deal, looked up by contact rather than by company: a returning contact
+  // with a deal already open is not a new lead, whatever the model called the email.
+  let openDealForContact = null;
+  if (contact.selectedEntityId !== null) {
+    const deals = await repos.deals.listByPrimaryContact(contact.selectedEntityId);
+    openDealForContact = deals.filter((deal) => deal.stage !== 'won' && deal.stage !== 'lost')[0] ?? null;
+  }
+
   const ctx: DecisionContext = {
     email,
     understanding: analysis.understanding,
     contact,
     company,
     openDeal,
+    openDealForContact,
     matchedContact,
     now: clock.nowIso(),
   };
@@ -143,6 +152,7 @@ export async function decideEmail(
           understanding: analysis.understanding,
           senderEmail: email.fromEmail,
           businessName: settings.business_profile.name,
+          plannedActions: evaluation.actions.map((action) => action.type),
         });
 
         draft = {

@@ -27,6 +27,12 @@ export type GuardrailContext = {
   understanding: Understanding;
   senderEmail: string;
   businessName: string;
+  /**
+   * The action types in the plan this draft belongs to. A draft may promise only what the plan
+   * actually does: "we will follow up" is backed by a create_task, "I will put together a proposal"
+   * is backed by nothing, because no action in the registry produces one. Absent means none.
+   */
+  plannedActions?: readonly string[];
 };
 
 type Guardrail = {
@@ -54,6 +60,52 @@ function stripStructuralDigits(text: string): string {
     .map((line) => line.replace(/^\s*[-*]?\s*\d+[.)]\s+/, ''))
     .join('\n')
     .replace(/^\s*>.*$/gm, '');
+}
+
+// The words that turn a sentence into a promise by the business: "I will", "we'll", "let me", "I am
+// going to". Questions and hedges ("I would rather not put a number") do not match.
+const PROMISE = String.raw`\b(?:i|we)(?:\s+will|\s*(?:'|’)ll|\s+shall|\s+(?:am|are)\s+going\s+to)\b|\blet\s+me\b`;
+
+// What the promise is about. Only the last kind can ever be backed by a plan action.
+const PROMISE_KINDS: Array<{ kind: string; backedBy: string | null; verbs: string }> = [
+  {
+    kind: 'a document or deliverable',
+    backedBy: null,
+    verbs: String.raw`(?:also\s+|then\s+|personally\s+|gladly\s+)?(?:put\s+together|prepare|draft|write\s+up|compile|produce|build|create|send(?:\s+(?:over|you|across))?|share|provide|forward|email|attach)\b`,
+  },
+  {
+    kind: 'a refund, credit or compensation',
+    backedBy: null,
+    verbs: String.raw`(?:also\s+|then\s+)?(?:refund|credit|reimburse|compensate|replace|cancel)\b`,
+  },
+  {
+    kind: 'a call, meeting or introduction',
+    backedBy: null,
+    verbs: String.raw`(?:also\s+|then\s+)?(?:schedule|book|arrange|set\s+up|organi[sz]e|call|phone|ring|meet|introduce|connect)\b`,
+  },
+  {
+    kind: 'a follow-up',
+    backedBy: 'create_task',
+    verbs: String.raw`(?:also\s+|then\s+)?(?:follow\s+up|get\s+back|be\s+in\s+touch|reach\s+out|circle\s+back|respond|reply|come\s+back|check\s+in)\b`,
+  },
+];
+
+/**
+ * The first promise in the draft that nothing in the plan backs, or null.
+ *
+ * "We will follow up" is fine when the plan creates a task to follow up; "I will put together a
+ * proposal" never is, because no action in the registry produces one. The sentence is judged by what
+ * it commits the business to, not by how it is worded, so the kinds above are about the commitment.
+ */
+function firstUnplannedPromise(text: string, planned: readonly string[]): string | null {
+  for (const { backedBy, verbs, kind } of PROMISE_KINDS) {
+    const pattern = new RegExp(`(?:${PROMISE})\\s+${verbs}[^.\\n]{0,60}`, 'i');
+    const evidence = firstMatch(text, pattern);
+    if (evidence === null) continue;
+    if (backedBy !== null && planned.includes(backedBy)) continue;
+    return `${evidence} (promises ${kind}, and the plan does not do that)`;
+  }
+  return null;
 }
 
 const GUARDRAILS: Guardrail[] = [
@@ -92,6 +144,11 @@ const GUARDRAILS: Guardrail[] = [
         ctx.draftBody,
         /\b(?:guarantee[ds]?|guaranteed|warrant(?:y|ies|ed)|liabilit(?:y|ies)|indemnif\w*|binding|terms and conditions|service level agreement|\bSLA\b|refund policy)\b/i,
       ),
+  },
+  {
+    name: 'no_unplanned_commitment',
+    why: 'A reply may promise only what the approved plan actually does; a promised proposal, refund or call is work nobody has agreed to do.',
+    check: (ctx) => firstUnplannedPromise(ctx.draftBody, ctx.plannedActions ?? []),
   },
   {
     name: 'no_pii_echo',

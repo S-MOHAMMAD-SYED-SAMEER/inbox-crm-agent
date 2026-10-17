@@ -149,7 +149,7 @@ export async function reviseDecision(
   //    written nothing.
   const edits = validateEditEnvelope(input.edits, decision.plan, now);
 
-  // 3. Guardrails, on the edited text only. The same six checks the model's
+  // 3. Guardrails, on the edited text only. The same checks the model's
   //    draft faced, run by the same function against the same grounding — a
   //    human may rewrite the reply, but not to something the business would not
   //    have been allowed to say automatically.
@@ -170,6 +170,8 @@ export async function reviseDecision(
       understanding: analysis.understanding,
       senderEmail: email.fromEmail,
       businessName: settings.business_profile.name,
+      // The plan being approved: an edit may promise only what these actions do.
+      plannedActions: decision.plan.actions.map((action) => action.type),
     });
 
     if (!guardrails.safe) {

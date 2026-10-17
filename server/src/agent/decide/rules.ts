@@ -76,6 +76,11 @@ export type DecisionContext = {
   company: EntityResolution;
   /** The most recently updated open deal on the matched company, if any. */
   openDeal: Deal | null;
+  /**
+   * The most recently updated open deal whose primary contact is the matched contact, if any.
+   * Read by R-19, which stops a returning contact from getting a second deal.
+   */
+  openDealForContact?: Deal | null;
   /** The contact record when the contact resolved to a MATCH. Needed by R-03. */
   matchedContact: Contact | null;
   /** Decision time, from the injectable clock — never `new Date()`. */
@@ -489,6 +494,54 @@ const categoryRules: Rule[] = [
 
 export const RULES: readonly Rule[] = [...entityRules, ...categoryRules];
 
+const NEW_DEAL_RULES = ['R-14', 'R-15', 'R-16'];
+
+/**
+ * R-19: a NEW deal is never planned for a contact who already has an open one.
+ *
+ * It runs after the category rules, over the plan they produced, because it exists to correct
+ * them: whatever the email was called (a pricing request, a sales inquiry, a service inquiry),
+ * if its sender already has an open deal then a second deal for the same person is a duplicate.
+ * The new deal is replaced by advancing the existing one a stage (the same step R-12 takes on a
+ * follow-up) or, where that deal has no automatic next stage, by nothing: the activity, task and
+ * reply the category rule planned stay. The trace says which rule's deal was replaced and why, so
+ * "why didn't it create a deal?" has an answer.
+ */
+function applyExistingDealRule(ctx: DecisionContext, actions: ProposedAction[], trace: RuleTraceEntry[]): ProposedAction[] {
+  const description = "A new deal is replaced by the sender's own open deal when they already have one.";
+  const existing = ctx.openDealForContact ?? null;
+  const planned = actions.findIndex((action) => action.type === 'create_deal');
+
+  if (planned === -1) {
+    trace.push({ rule: 'R-19', fired: false, because: 'no new deal was planned, so there is nothing to replace' });
+    return actions;
+  }
+  if (existing === null) {
+    trace.push({ rule: 'R-19', fired: false, because: 'the sender has no open deal, so a new one is allowed' });
+    return actions;
+  }
+
+  const byRule = trace.filter((entry) => entry.fired && NEW_DEAL_RULES.includes(entry.rule)).map((entry) => entry.rule);
+  const replaced = byRule.length > 0 ? byRule.join(', ') : 'a category rule';
+  const next = STAGE_ADVANCE[existing.stage];
+  const rest = actions.filter((_, index) => index !== planned);
+  if (next === undefined) {
+    trace.push({
+      rule: 'R-19',
+      fired: true,
+      because: `${description} ${replaced} planned a new deal, but the sender already has "${existing.title}" open at "${existing.stage}", which has no automatic next stage, so no deal action is planned`,
+    });
+    return rest;
+  }
+  trace.push({
+    rule: 'R-19',
+    fired: true,
+    because: `${description} ${replaced} planned a new deal, but the sender already has "${existing.title}" open at "${existing.stage}", so it moves to "${next}" instead`,
+  });
+  rest.push({ type: 'update_deal_stage', payload: { dealId: existing.id, fromStage: existing.stage, toStage: next } });
+  return rest;
+}
+
 export type RuleEvaluation = {
   actions: ProposedAction[];
   trace: RuleTraceEntry[];
@@ -511,7 +564,7 @@ export function evaluateRules(ctx: DecisionContext): RuleEvaluation {
     if (result.fired && result.actions) actions.push(...result.actions);
   }
 
-  return { actions: orderActions(actions), trace };
+  return { actions: orderActions(applyExistingDealRule(ctx, actions, trace)), trace };
 }
 
 /** The operator-facing sentence for a plan. */
