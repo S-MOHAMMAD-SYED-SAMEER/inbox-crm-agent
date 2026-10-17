@@ -347,7 +347,7 @@ const categoryRules: Rule[] = [
   },
   {
     id: 'R-12',
-    description: 'A follow-up on an open deal advances that deal a stage.',
+    description: 'A follow-up on an open deal advances that deal a stage and opens a task for a person to deal with what they asked.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'follow_up') {
         return { fired: false, because: `the category is ${ctx.understanding.category}` };
@@ -364,13 +364,16 @@ const categoryRules: Rule[] = [
       }
       return {
         fired: true,
-        because: `an open deal at "${ctx.openDeal.stage}" moves to "${next}" on a follow-up`,
+        because: `an open deal at "${ctx.openDeal.stage}" moves to "${next}" on a follow-up, and a person is given a task to deal with what they asked`,
         actions: [
           activityAction(ctx),
           {
             type: 'update_deal_stage',
             payload: { dealId: ctx.openDeal.id, fromStage: ctx.openDeal.stage, toStage: next },
           },
+          // The follow-up usually asks for something (a proposal to sign, an answer). Nothing replies
+          // automatically, so a person needs to be told to do it.
+          taskAction(ctx, `Prepare and send what they asked for: ${ctx.email.subject}`, ctx.understanding.extracted.requirementSummary.value),
         ],
       };
     },

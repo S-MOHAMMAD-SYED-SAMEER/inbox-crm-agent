@@ -14,6 +14,11 @@ import type { LlmResponse } from '../src/adapters/llm/index.ts';
 // `--fill` supplies replies for requests that failed in the saved run (a draft that got a 503 and
 // was asked again later): its calls are used only where the saved run has no reply.
 //
+// `--understand-dataset` and `--decide-dataset` score against other copies of the datasets (for example the
+// first, unreviewed versions from git history), so the same replies can be scored against the old and the new gold.
+// The label printed and saved is the one the dataset itself declares (`goldLabel`); a dataset without one is the
+// unreviewed original.
+//
 // What it cannot tell you: what the model would say to a CHANGED prompt. That needs a real request.
 
 const SERVER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -34,7 +39,7 @@ async function main(): Promise<void> {
   }
   const saved = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
   const { createReplayProvider, replayKey } = await import('../src/eval/real/replay.ts');
-  const { GOLD_LABEL } = await import('../src/eval/provenance.ts');
+  const { GOLD_LABEL, LEGACY_GOLD_LABEL } = await import('../src/eval/provenance.ts');
 
   const fill = new Map<string, LlmResponse>();
   const fillPath = argValue('--fill');
@@ -44,7 +49,13 @@ async function main(): Promise<void> {
     for (const call of extraCalls) if (call.ok && call.response) fill.set(replayKey(call.fixtureId, call.purpose), call.response);
   }
 
-  console.log(`\nOFFLINE RE-SCORE of ${path.basename(reportPath)} (no request is made). ${GOLD_LABEL}`);
+  const understandPath = argValue('--understand-dataset') ?? path.join(SERVER_ROOT, 'eval', 'understand.dataset.json');
+  const decidePath = argValue('--decide-dataset') ?? path.join(SERVER_ROOT, 'eval', 'decide.dataset.json');
+  const goldOf = (file: string): { version: string; goldLabel?: string } => JSON.parse(fs.readFileSync(file, 'utf8'));
+  const goldLabel = goldOf(understandPath).goldLabel ?? LEGACY_GOLD_LABEL;
+  void GOLD_LABEL;
+  console.log(`\nOFFLINE RE-SCORE of ${path.basename(reportPath)} (no request is made).`);
+  console.log(`  Gold: ${goldLabel} (${goldOf(understandPath).version}, ${goldOf(decidePath).version})`);
   console.log(`  Saved run: ${saved.settings.provider} ${saved.settings.model}, temperature ${saved.settings.temperature}, ${saved.providerCalls} requests, ${saved.failedCalls} failed.`);
 
   let after: unknown;
@@ -54,8 +65,9 @@ async function main(): Promise<void> {
     const report = await runRealEvaluation({
       provider: createReplayProvider(calls, { fill }),
       settings: saved.settings,
-      understandDatasetPath: path.join(SERVER_ROOT, 'eval', 'understand.dataset.json'),
-      decideDatasetPath: path.join(SERVER_ROOT, 'eval', 'decide.dataset.json'),
+      understandDatasetPath: understandPath,
+      decideDatasetPath: decidePath,
+      goldLabel,
       demoDataDir: path.join(SERVER_ROOT, 'data', 'demo'),
       migrationsDir: path.join(SERVER_ROOT, 'migrations'),
     });

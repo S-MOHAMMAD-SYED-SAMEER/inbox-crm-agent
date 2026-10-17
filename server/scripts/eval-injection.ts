@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   const { config } = await import('../src/config/env.ts');
   const { createLlmProvider } = await import('../src/adapters/llm/index.ts');
   const { announceInjectionBudget, loadInjectionDataset, runInjectionEvaluation } = await import('../src/eval/injection/runner.ts');
-  const { GOLD_LABEL } = await import('../src/eval/provenance.ts');
+  const { LEGACY_GOLD_LABEL: GOLD_LABEL } = await import('../src/eval/provenance.ts');
   const { DEFAULT_ANTHROPIC_TEMPERATURE, DEFAULT_GEMINI_TEMPERATURE } = await import('../src/adapters/llm/defaults.ts');
 
   const model = providerName === 'gemini' ? config.geminiModel : config.anthropicModel;

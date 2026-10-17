@@ -1,6 +1,10 @@
 {
-  "version": "resolve-1.0.0",
-  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
+  "version": "resolve-1.1.0",
+  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification. Reviewed with AI assistance (Claude) on 2026-10-17; the changes recorded in each case's goldHistory were approved by Sameer. Not an independent human review, and not verified against any real-world truth.",
+  "goldLabel": "scored against gold written by Claude; reviewed with AI assistance (Claude); final decisions approved by Sameer (not an independent human review)",
+  "versionHistory": [
+    { "version": "resolve-1.1.0", "date": "2026-10-17", "summary": "Review applied: all eight cases were reviewed and agreed; no expectation changed." }
+  ],
   "note": [
     "Entity-resolution evaluation cases. Scoped to entity resolution.",
     "",

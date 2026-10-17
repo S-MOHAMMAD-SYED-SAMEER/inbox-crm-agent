@@ -92,7 +92,7 @@
   },
   {
     "providerMessageId": "demo-e02",
-    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant. On 2026-10-17 the scripted timeline (this year) was changed to match the gold review (Claude-assisted, approved by Sameer).",
     "scenario": "E-02 — service inquiry with no stated budget. The canned model response deliberately INVENTS a budget so the provenance validator can be seen discarding it: the span it cites is real but contains no number.",
     "threadId": null,
     "fromName": "Tom Reyes",
@@ -163,9 +163,9 @@
           "sourceSpan": "we have a reasonable budget in mind"
         },
         "timeline": {
-          "value": null,
-          "confidence": 0,
-          "sourceSpan": null
+          "value": "this year",
+          "confidence": 0.8,
+          "sourceSpan": "rebuilding it properly this year"
         },
         "urgencyCues": {
           "value": null,
@@ -365,7 +365,7 @@
   },
   {
     "providerMessageId": "demo-e05",
-    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant.",
+    "provenance": "AI-written (Claude, an AI assistant), not human-reviewed. See server/data/demo/PROVENANCE.md. The email, mockUnderstanding and mockDraft were all written by the same assistant. On 2026-10-17 the scripted priority (high) was changed to match the gold review (Claude-assisted, approved by Sameer).",
     "scenario": "E-05 — a support request from an existing customer. Shows that not everything is a lead and that the system does not ask a human about everything.",
     "threadId": null,
     "fromName": "Marcus Bell",
@@ -381,8 +381,8 @@
     "mockUnderstanding": {
       "category": "support_request",
       "intent": "Reporting that the mobile checkout payment step fails on Safari and asking for investigation.",
-      "priority": "medium",
-      "priorityReason": "An existing customer reporting a live checkout fault, though limited to one browser.",
+      "priority": "high",
+      "priorityReason": "An existing customer reporting that the payment step of their live checkout fails on mobile, so the store is losing sales now.",
       "confidence": 0.87,
       "flags": {
         "insufficientInformation": false,

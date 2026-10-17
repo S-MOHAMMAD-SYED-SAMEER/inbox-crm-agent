@@ -1,6 +1,10 @@
 {
-  "version": "understand-1.0.0",
-  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
+  "version": "understand-1.1.0",
+  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification. Reviewed with AI assistance (Claude) on 2026-10-17; the changes recorded in each case's goldHistory were approved by Sameer. Not an independent human review, and not verified against any real-world truth.",
+  "goldLabel": "scored against gold written by Claude; reviewed with AI assistance (Claude); final decisions approved by Sameer (not an independent human review)",
+  "versionHistory": [
+    { "version": "understand-1.1.0", "date": "2026-10-17", "summary": "Review applied: E-02 timeline, E-05 priority, E-09 either category. The other seven cases were reviewed and left unchanged." }
+  ],
   "note": [
     "UNDERSTAND evaluation cases. Scoped to UNDERSTAND only.",
     "",
@@ -43,7 +47,10 @@
     {
       "id": "E-02",
       "providerMessageId": "demo-e02",
-      "description": "Service inquiry with NO budget stated. The model invents one; it must be discarded.",
+      "description": "Service inquiry with NO budget stated. The model invents one; it must be discarded. The email does give a vague timeline (this year).",
+      "goldHistory": [
+        { "version": "understand-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "timeline is provided", "from": "not provided", "to": "this year", "why": "The email says it is looking at rebuilding the site properly this year: a vague but real project timeline. The budget stays not provided: no number is given." }
+      ],
       "expected": {
         "category": "service_inquiry",
         "priority": "medium",
@@ -53,10 +60,11 @@
         "mustExtract": {
           "contactName": "Tom Reyes",
           "companyName": "Northline Studio",
-          "companyDomain": "northlinestudio.invalid"
+          "companyDomain": "northlinestudio.invalid",
+          "timeline": "this year"
         },
         "mustBePresent": ["requirementSummary", "serviceInterest"],
-        "mustBeNotProvided": ["budget", "timeline"],
+        "mustBeNotProvided": ["budget"],
         "questionAsked": true,
         "injectionSuspected": false,
         "droppedFields": ["budget"]
@@ -111,9 +119,12 @@
       "id": "E-05",
       "providerMessageId": "demo-e05",
       "description": "Support request from an existing customer — not a lead, and must not be read as one.",
+      "goldHistory": [
+        { "version": "understand-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "priority", "from": "medium", "to": "high", "why": "The payment step of a live checkout has failed on mobile since Friday, so the store is losing sales now. The category support_request stands." }
+      ],
       "expected": {
         "category": "support_request",
-        "priority": "medium",
+        "priority": "high",
         "confidenceBand": "high",
         "state": "resolving",
         "reviewReason": null,
@@ -199,9 +210,13 @@
     {
       "id": "E-09",
       "providerMessageId": "demo-e09",
-      "description": "Cold SEO spam. Must be recognised as noise rather than becoming a lead.",
+      "description": "Cold SEO pitch. Must be recognised as noise (spam or vendor_pitch) rather than becoming a lead.",
+      "goldHistory": [
+        { "version": "understand-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "category accepted as either", "from": "spam", "to": "spam or vendor_pitch", "why": "A mass Dear Sir/Madam SEO pitch is reasonably either; both categories are archived with no CRM record, so the outcome is the same." }
+      ],
       "expected": {
         "category": "spam",
+        "alsoAcceptCategories": ["vendor_pitch"],
         "priority": "low",
         "confidenceBand": "high",
         "state": "resolving",

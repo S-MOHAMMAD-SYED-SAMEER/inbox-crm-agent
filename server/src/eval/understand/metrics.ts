@@ -14,6 +14,8 @@ import type { UnderstandOutcome } from '../../agent/understand/understand.ts';
 
 export type EvalExpectation = {
   category: string;
+  /** Other categories that count as right too (the review accepted either for a mass sales pitch). */
+  alsoAcceptCategories?: string[];
   priority: string;
   confidenceBand: string;
   state: string;
@@ -81,8 +83,8 @@ export function evaluateCase(evalCase: EvalCase, outcome: UnderstandOutcome): Ca
   checks.push(
     check(
       'category',
-      understanding.category === expected.category,
-      `expected ${expected.category}, got ${understanding.category}`,
+      understanding.category === expected.category || (expected.alsoAcceptCategories ?? []).includes(understanding.category),
+      `expected ${[expected.category, ...(expected.alsoAcceptCategories ?? [])].join(' or ')}, got ${understanding.category}`,
     ),
   );
   checks.push(

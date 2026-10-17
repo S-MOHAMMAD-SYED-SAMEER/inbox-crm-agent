@@ -105,8 +105,9 @@ test('a complete run keeps every raw reply, counts the requests, and scores like
 test('the report says what the gold data is, and what was run, and contains no prompt', async () => {
   const report = await run(scripted());
   assert.equal(report.label, GOLD_LABEL);
-  assert.match(report.label, /AI-written/);
-  assert.match(report.label, /not yet human-reviewed/);
+  assert.match(report.label, /gold written by Claude/);
+  assert.match(report.label, /reviewed with AI assistance/);
+  assert.match(report.label, /not an independent human review/);
   assert.match(report.provenance, /written by Claude/);
   assert.deepEqual(report.settings, SETTINGS);
 

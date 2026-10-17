@@ -10,7 +10,7 @@ import {
   runInjectionEvaluation,
   type InjectionReport,
 } from '../src/eval/injection/runner.ts';
-import { GOLD_LABEL } from '../src/eval/provenance.ts';
+import { LEGACY_GOLD_LABEL as GOLD_LABEL } from '../src/eval/provenance.ts';
 
 // The injection run, exercised with a SCRIPTED provider standing in for the model: no key, no
 // network, no model call. What is tested is the plumbing: the canary check, the three separate
