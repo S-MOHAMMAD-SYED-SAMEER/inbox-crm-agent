@@ -53,6 +53,10 @@ export function loadDataset(filePath: string): { version: string; cases: EvalCas
 
     const expected = (entry.expected ?? {}) as Record<string, unknown>;
     requireOneOf(expected.category, `${where}.expected.category`, EMAIL_CATEGORIES, problems);
+    const alsoAccept = Array.isArray(expected.alsoAcceptCategories) ? (expected.alsoAcceptCategories as unknown[]) : [];
+    alsoAccept.forEach((value, at) =>
+      requireOneOf(value, `${where}.expected.alsoAcceptCategories[${at}]`, EMAIL_CATEGORIES, problems),
+    );
     requireOneOf(expected.priority, `${where}.expected.priority`, PRIORITIES, problems);
     requireOneOf(expected.confidenceBand, `${where}.expected.confidenceBand`, CONFIDENCE_BANDS, problems);
     requireOneOf(expected.state, `${where}.expected.state`, EMAIL_STATES, problems);
@@ -63,6 +67,7 @@ export function loadDataset(filePath: string): { version: string; cases: EvalCas
       description: requireString(entry.description, `${where}.description`, problems),
       expected: {
         category: expected.category as string,
+        ...(alsoAccept.length > 0 ? { alsoAcceptCategories: alsoAccept as string[] } : {}),
         priority: expected.priority as string,
         confidenceBand: expected.confidenceBand as string,
         state: expected.state as string,

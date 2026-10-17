@@ -174,6 +174,8 @@ export async function runRealEvaluation(options: {
   logger?: Logger;
   /** One line per finished email, for the operator. */
   onProgress?: (line: string) => void;
+  /** What the datasets are called in the report. Defaults to the reviewed label; a rescore against the old datasets passes the legacy one. */
+  goldLabel?: string;
   /** Wait between emails, to stay under a free tier's requests-per-minute. Default none (tests). */
   pauseMs?: number;
   sleep?: (ms: number) => Promise<void>;
@@ -310,7 +312,7 @@ export async function runRealEvaluation(options: {
 
   return {
     kind: 'real-evaluation',
-    label: GOLD_LABEL,
+    label: options.goldLabel ?? GOLD_LABEL,
     provenance: GOLD_PROVENANCE,
     startedAt,
     settings: options.settings,

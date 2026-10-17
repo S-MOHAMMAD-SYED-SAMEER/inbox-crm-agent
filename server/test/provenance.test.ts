@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { GOLD_LABEL, GOLD_PROVENANCE, goldBanner } from '../src/eval/provenance.ts';
+import { GOLD_LABEL, GOLD_PROVENANCE, LEGACY_GOLD_LABEL, goldBanner } from '../src/eval/provenance.ts';
 
 // Who wrote the data the evaluations are scored against, and that every place a number appears says so.
 
@@ -12,18 +12,26 @@ const SERVER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const REPO_ROOT = path.resolve(SERVER_ROOT, '..');
 const read = (...parts: string[]) => fs.readFileSync(path.join(...parts), 'utf8');
 
-test('the label says AI-written and not human-reviewed, and the banner carries it', () => {
-  assert.match(GOLD_LABEL, /AI-written/);
-  assert.match(GOLD_LABEL, /not yet human-reviewed/);
+test('the label says who wrote the gold, that it was reviewed with AI help, and that it is not independent; the old label is kept for old results', () => {
+  assert.match(GOLD_LABEL, /gold written by Claude/);
+  assert.match(GOLD_LABEL, /reviewed with AI assistance \(Claude\)/);
+  assert.match(GOLD_LABEL, /final decisions approved by Sameer/);
+  assert.match(GOLD_LABEL, /not an independent human review/);
+  assert.match(LEGACY_GOLD_LABEL, /AI-written/);
+  assert.match(LEGACY_GOLD_LABEL, /not yet human-reviewed/);
   assert.match(GOLD_PROVENANCE, /written by Claude/);
+  assert.match(GOLD_PROVENANCE, /not an independent human review/);
   assert.deepEqual(goldBanner(), [`  Gold data: ${GOLD_LABEL}`]);
 });
 
 test('every evaluation dataset says who wrote it', () => {
   for (const name of ['understand', 'resolve', 'decide']) {
-    const dataset = JSON.parse(read(SERVER_ROOT, 'eval', `${name}.dataset.json`)) as { provenance?: string };
+    const dataset = JSON.parse(read(SERVER_ROOT, 'eval', `${name}.dataset.json`)) as { provenance?: string; goldLabel?: string; version?: string };
     assert.match(dataset.provenance ?? '', /written by Claude/, `${name}.dataset.json has no provenance`);
-    assert.match(dataset.provenance ?? '', /not human-reviewed/);
+    assert.match(dataset.provenance ?? '', /reviewed with AI assistance/i);
+    assert.match(dataset.provenance ?? '', /not an independent human review/i);
+    assert.equal(dataset.goldLabel, GOLD_LABEL, `${name}.dataset.json declares a different label from the code`);
+    assert.match(dataset.version ?? '', /-1\.1\.0$/, `${name}.dataset.json was not versioned after the review`);
   }
 });
 
@@ -60,7 +68,7 @@ test('npm run eval:real is a dry run unless told --go, and refuses --go without 
   assert.match(dry.stdout, /REAL-MODEL evaluation: gemini, model gemini-3\.5-flash-lite, temperature 1/);
   assert.match(dry.stdout, /Expected requests: 10 to read the emails and up to 3 to draft replies: about 13 requests, up to 23/);
   assert.match(dry.stdout, /DRY RUN: nothing was called/);
-  assert.match(dry.stdout, /scored against AI-written gold/);
+  assert.match(dry.stdout, /scored against gold written by Claude; reviewed with AI assistance/);
 
   const go = spawnSync(process.execPath, ['scripts/eval-real.ts', '--go'], { cwd: SERVER_ROOT, env, encoding: 'utf8', timeout: 30_000 });
   assert.equal(go.status, 1);

@@ -9,7 +9,7 @@ import { createDemoEmailSource, type DemoEmailFixture } from '../../adapters/ema
 import { summarizeUsage, type LlmProvider, type UsageSummary } from '../../adapters/llm/index.ts';
 import { ingestEmails } from '../../agent/ingest/ingest.ts';
 import { understandEmail } from '../../agent/understand/understand.ts';
-import { GOLD_LABEL } from '../provenance.ts';
+import { LEGACY_GOLD_LABEL } from '../provenance.ts';
 import { createRecordingProvider, type RecordedCall, type RunSettings, type StopReason } from '../real/runner.ts';
 
 // The prompt-injection run: twelve hostile emails through UNDERSTAND with a REAL model.
@@ -217,7 +217,7 @@ export async function runInjectionEvaluation(options: {
   const allCalls = provider.calls;
   return {
     kind: 'injection-evaluation',
-    label: GOLD_LABEL,
+    label: LEGACY_GOLD_LABEL,
     provenance: dataset.provenance,
     howToRead: dataset.howToRead,
     startedAt,

@@ -58,7 +58,7 @@ async function main(): Promise<void> {
 
   console.log(`\nREAL-MODEL evaluation: ${providerName}, model ${model}, temperature ${temperature}`);
   console.log(`  API key: ${key ? 'is set' : 'is NOT set'}   retries per call: ${config.llmMaxRetries}   timeout: ${config.llmTimeoutMs} ms`);
-  console.log(`  Gold data: ${GOLD_LABEL}`);
+  console.log(`  Gold data: ${GOLD_LABEL} (${loadDataset(understandPath).version}, ${loadDecideDataset(decidePath).version})`);
   console.log(`  Expected requests: ${budget.note}`);
   console.log(`  Pause between emails: ${pauseMs} ms. Stops at once on a 429 / quota error, or when two different emails fail in a row.`);
 

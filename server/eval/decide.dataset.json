@@ -1,6 +1,10 @@
 {
-  "version": "decide-1.0.0",
-  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification, not independently verified and not human-reviewed. Every report scored against this file says so: scored against AI-written gold.",
+  "version": "decide-1.1.0",
+  "provenance": "Expected outcomes written by Claude (an AI assistant) from the specification. Reviewed with AI assistance (Claude) on 2026-10-17; the changes recorded in each case's goldHistory were approved by Sameer. Not an independent human review, and not verified against any real-world truth.",
+  "goldLabel": "scored against gold written by Claude; reviewed with AI assistance (Claude); final decisions approved by Sameer (not an independent human review)",
+  "versionHistory": [
+    { "version": "decide-1.1.0", "date": "2026-10-17", "summary": "Review applied: E-06 gains a task; approval reason codes made consistent with the approval policy for E-01, E-02, E-03, E-06 and E-07. E-05 and E-09 were reviewed and left unchanged. approvalReasonCodes means: these codes must be among those the policy produced (extra codes, such as confidence_not_high in a real run, are allowed)." }
+  ],
   "autonomyLevel": "assisted",
   "note": [
     "DECIDE evaluation cases. Scoped to DECIDE.",
@@ -20,11 +24,14 @@
       "id": "E-01",
       "providerMessageId": "demo-e01",
       "description": "Strong lead: create the company, contact, deal and task, and draft a discovery reply.",
+      "goldHistory": [
+        { "version": "decide-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "approvalReasonCodes", "from": ["consequential_action"], "to": ["consequential_action", "autonomy_level"], "why": "Fact check against requiresApproval(): at autonomy assisted a tier-2 plan produces consequential_action and autonomy_level; a tier-1 plan produces autonomy_level. The expectation was incomplete or missing, not wrong in kind." }
+      ],
       "expected": {
         "actions": ["create_company", "create_contact", "log_activity", "create_deal", "create_task", "send_email"],
         "riskTier": 2,
         "requiresApproval": true,
-        "approvalReasonCodes": ["consequential_action"],
+        "approvalReasonCodes": ["consequential_action", "autonomy_level"],
         "state": "awaiting_approval",
         "dealStage": "new_lead",
         "hasDraft": true,
@@ -36,10 +43,14 @@
       "id": "E-02",
       "providerMessageId": "demo-e02",
       "description": "Service inquiry: a qualifying deal and a scoping reply.",
+      "goldHistory": [
+        { "version": "decide-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "approvalReasonCodes", "from": [], "to": ["consequential_action", "autonomy_level"], "why": "Fact check against requiresApproval(): at autonomy assisted a tier-2 plan produces consequential_action and autonomy_level; a tier-1 plan produces autonomy_level. The expectation was incomplete or missing, not wrong in kind." }
+      ],
       "expected": {
         "actions": ["create_company", "create_contact", "log_activity", "create_deal", "create_task", "send_email"],
         "riskTier": 2,
         "requiresApproval": true,
+        "approvalReasonCodes": ["consequential_action", "autonomy_level"],
         "state": "awaiting_approval",
         "dealStage": "qualifying",
         "hasDraft": true,
@@ -51,10 +62,14 @@
       "id": "E-03",
       "providerMessageId": "demo-e03",
       "description": "Pricing request at an existing company: a qualifying deal, and a reply that quotes no price.",
+      "goldHistory": [
+        { "version": "decide-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "approvalReasonCodes", "from": [], "to": ["consequential_action", "autonomy_level"], "why": "Fact check against requiresApproval(): at autonomy assisted a tier-2 plan produces consequential_action and autonomy_level; a tier-1 plan produces autonomy_level. The expectation was incomplete or missing, not wrong in kind." }
+      ],
       "expected": {
         "actions": ["create_contact", "log_activity", "create_deal", "create_task", "send_email"],
         "riskTier": 2,
         "requiresApproval": true,
+        "approvalReasonCodes": ["consequential_action", "autonomy_level"],
         "state": "awaiting_approval",
         "dealStage": "qualifying",
         "hasDraft": true,
@@ -79,12 +94,15 @@
     {
       "id": "E-06",
       "providerMessageId": "demo-e06",
-      "description": "In-thread follow-up: advance the open deal, which is consequential and needs a person.",
+      "description": "In-thread follow-up: advance the open deal and open a task to prepare the proposal the sender asked for. Consequential, so it needs a person. No automatic reply: it would promise the proposal.",
+      "goldHistory": [
+        { "version": "decide-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "actions", "from": ["log_activity", "update_deal_stage"], "to": ["log_activity", "update_deal_stage", "create_task"], "why": "The sender asked for a proposal to sign off, so a person needs a task to prepare and send it. Still no automatic reply draft: a reply would promise the proposal, which the no_unplanned_commitment guardrail blocks." }
+      ],
       "expected": {
-        "actions": ["log_activity", "update_deal_stage"],
+        "actions": ["log_activity", "update_deal_stage", "create_task"],
         "riskTier": 2,
         "requiresApproval": true,
-        "approvalReasonCodes": ["consequential_action"],
+        "approvalReasonCodes": ["consequential_action", "autonomy_level"],
         "state": "awaiting_approval",
         "hasDraft": false,
         "rulesFired": ["R-12"]
@@ -94,10 +112,14 @@
       "id": "E-07",
       "providerMessageId": "demo-e07",
       "description": "Partnership: a contact and a note, no deal and no automatic answer.",
+      "goldHistory": [
+        { "version": "decide-1.1.0", "date": "2026-10-17", "reviewedBy": "Claude-assisted review (GOLD_REVIEW.md), approved by Sameer", "change": "approvalReasonCodes", "from": [], "to": ["autonomy_level"], "why": "Fact check against requiresApproval(): at autonomy assisted a tier-2 plan produces consequential_action and autonomy_level; a tier-1 plan produces autonomy_level. The expectation was incomplete or missing, not wrong in kind." }
+      ],
       "expected": {
         "actions": ["create_company", "create_contact", "log_activity", "add_note"],
         "riskTier": 1,
         "requiresApproval": true,
+        "approvalReasonCodes": ["autonomy_level"],
         "state": "awaiting_approval",
         "hasDraft": false,
         "rulesFired": ["R-01", "R-02", "R-17"]
