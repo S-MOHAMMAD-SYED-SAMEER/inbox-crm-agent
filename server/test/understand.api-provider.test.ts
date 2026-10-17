@@ -305,7 +305,7 @@ test('the evaluation passes every threshold, deterministically', async () => {
   assert.equal(first.metrics.cases, 10);
   assert.equal(first.metrics.passed, 10);
   assert.deepEqual(thresholdFailures(first.metrics), []);
-  assert.equal(first.metrics.hallucinatedFieldRate, 0);
+  assert.equal(first.metrics.inventedFieldRate, 0);
   assert.equal(first.metrics.provenanceCompleteness, 1);
   assert.equal(first.metrics.injectionContainment, 1);
 

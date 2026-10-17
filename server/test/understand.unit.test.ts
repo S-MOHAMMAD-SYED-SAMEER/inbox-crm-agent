@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { sanitiseEmailBody, MAX_BODY_LENGTH } from '../src/agent/ingest/sanitise.ts';
 import { detectInjection } from '../src/agent/understand/injection.ts';
 import { validateUnderstanding } from '../src/agent/understand/validate.ts';
+import { evaluateCase, aggregate, thresholdFailures, fieldIsInEmail, type EvalCase } from '../src/eval/understand/metrics.ts';
+import type { UnderstandOutcome } from '../src/agent/understand/understand.ts';
 import {
   UNDERSTAND_SYSTEM_PROMPT,
   buildUnderstandMessages,
@@ -667,4 +669,139 @@ test('the prompt was not written around the evaluation emails: none of their wor
     const sentences = email.bodyText.split(/[.\n]/).map((s) => s.trim()).filter((s) => s.length > 24);
     for (const sentence of sentences) assert.ok(!prompt.includes(sentence.toLowerCase()), `the prompt quotes: ${sentence}`);
   }
+});
+
+// --- placeholder words are read as null before validation ---------------------------
+
+test('the strings "null", "none", "n/a" and a blank are read as no value, in a value and in a quoted span', () => {
+  for (const word of ['null', 'NULL', 'none', 'N/A', 'n/a', 'nil', '', '   ', 'Not provided', 'unknown']) {
+    const result = validateUnderstanding(
+      baseOutput({ extracted: { ...emptyExtraction(), contactPhone: { value: word, confidence: 1, sourceSpan: word } } }),
+      { corpus: CORPUS },
+    );
+    assert.equal(result.ok, true, `"${word}" made the answer unusable`);
+    if (!result.ok) return;
+    assert.equal(result.understanding.extracted.contactPhone.value, null, `"${word}" was kept as a value`);
+    assert.equal(result.record.droppedFields.some((d) => d.field === 'contactPhone'), false, `"${word}" was reported as a dropped field instead of read as nothing`);
+    assert.ok(result.record.normalisations.some((n) => /contactPhone/.test(n.what)), `"${word}" was not recorded as a normalisation`);
+  }
+});
+
+test('a real value is untouched, and a value that merely contains the word is not read as nothing', () => {
+  const result = validateUnderstanding(
+    baseOutput({
+      extracted: {
+        ...emptyExtraction(),
+        contactName: { value: 'Sarah Williams', confidence: 0.9, sourceSpan: 'Sarah Williams' },
+        requirementSummary: { value: 'none of our orders arrive', confidence: 0.8, sourceSpan: 'Sarah Williams' },
+      },
+    }),
+    { corpus: CORPUS },
+  );
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.understanding.extracted.contactName.value, 'Sarah Williams');
+  assert.equal(result.understanding.extracted.requirementSummary.value, 'none of our orders arrive');
+  assert.equal(result.record.normalisations.length, 0);
+});
+
+test('only a copy is read this way: the raw answer the caller holds is not rewritten', () => {
+  const raw = baseOutput({ extracted: { ...emptyExtraction(), jobTitle: { value: 'null', confidence: 1, sourceSpan: 'null' } } });
+  const snapshot = JSON.stringify(raw);
+  validateUnderstanding(raw, { corpus: CORPUS });
+  assert.equal(JSON.stringify(raw), snapshot);
+});
+
+// --- the invented / extra split ------------------------------------------------------
+
+const SPLIT_EMAIL = {
+  fromName: 'Pat Doe',
+  fromEmail: 'pat@acmeco.example',
+  toEmail: 'hello@us.example',
+  cc: null,
+  subject: 'Quote',
+  bodyText: 'Hi, we want to rebuild our site this year. Regards, Pat Doe, Acme Co',
+  receivedAt: '2026-08-24T09:12:00.000Z',
+  threadId: null,
+};
+
+function outcomeWith(extracted: Record<string, { value: string | null; sourceSpan: string | null }>): UnderstandOutcome {
+  const full = Object.fromEntries(
+    EXTRACTED_FIELDS.map((field) => [field, { value: extracted[field]?.value ?? null, confidence: 0.9, sourceSpan: extracted[field]?.sourceSpan ?? null }]),
+  );
+  return {
+    email: SPLIT_EMAIL,
+    state: 'resolving',
+    reviewReason: null,
+    understanding: { category: 'service_inquiry', priority: 'medium', confidenceBand: 'high', confidence: 0.9, flags: {}, extracted: full, questionAsked: null },
+    security: { injection: { suspected: false, matches: [] } },
+    validation: { droppedFields: [] },
+  } as unknown as UnderstandOutcome;
+}
+
+const SPLIT_CASE: EvalCase = {
+  id: 'X',
+  providerMessageId: 'x',
+  description: 'x',
+  expected: {
+    category: 'service_inquiry',
+    priority: 'medium',
+    confidenceBand: 'high',
+    state: 'resolving',
+    reviewReason: null,
+    mustExtract: {},
+    mustBePresent: [],
+    mustBeNotProvided: ['timeline', 'jobTitle'],
+    questionAsked: false,
+    injectionSuspected: false,
+    droppedFields: [],
+  },
+};
+
+const THIS_YEAR = { timeline: { value: 'this year', sourceSpan: 'rebuild our site this year' } };
+
+test('a value that IS in the email but the gold expects absent is EXTRA, not invented', () => {
+  const result = evaluateCase(SPLIT_CASE, outcomeWith(THIS_YEAR));
+  assert.equal(result.extra, 1);
+  assert.equal(result.invented, 0);
+  assert.match(result.checks.find((c) => c.name === 'not_provided:timeline')!.detail, /^extra: .* is in the email/);
+});
+
+test('a value that is NOT in the email is INVENTED, wherever the gold stands', () => {
+  // The title is written nowhere, and the gold also lists it as absent: invented, and not counted twice as extra.
+  const listed = evaluateCase(SPLIT_CASE, outcomeWith({ jobTitle: { value: 'CEO', sourceSpan: 'Pat Doe' } }));
+  assert.equal(listed.invented, 1);
+  assert.equal(listed.extra, 0);
+  assert.match(listed.checks.find((c) => c.name === 'not_provided:jobTitle')!.detail, /^invented: .* is not in the email/);
+  // A value the gold says nothing about is checked too.
+  const unlisted = evaluateCase(SPLIT_CASE, outcomeWith({ contactName: { value: 'Pat Smith', sourceSpan: 'Pat Doe' } }));
+  assert.equal(unlisted.invented, 1);
+  assert.equal(unlisted.inventedOpportunities, 1);
+});
+
+test('the aggregate reports two rates: the invented one is the absolute threshold, the extra one is not', () => {
+  const metrics = aggregate([
+    evaluateCase(SPLIT_CASE, outcomeWith(THIS_YEAR)),
+    evaluateCase(SPLIT_CASE, outcomeWith({ jobTitle: { value: 'CEO', sourceSpan: 'Pat Doe' } })),
+  ]);
+  assert.equal(metrics.extraFieldRate, 0.25); // 1 of the 4 fields the gold lists
+  assert.equal(metrics.inventedFieldRate, 0.5); // 1 of the 2 stored values
+  assert.ok(!('hallucinatedFieldRate' in metrics), 'the old combined name is gone');
+  const failures = thresholdFailures(metrics);
+  assert.ok(failures.some((f) => f.startsWith('inventedFieldRate')));
+  assert.ok(!failures.some((f) => f.startsWith('extraFieldRate')));
+  const onlyExtra = thresholdFailures(aggregate([evaluateCase(SPLIT_CASE, outcomeWith(THIS_YEAR))]));
+  assert.deepEqual(onlyExtra.filter((f) => f.startsWith('inventedFieldRate') || f.startsWith('extraFieldRate')), []);
+});
+
+test('fieldIsInEmail: names must be written, a company may match the sender domain, free-form fields are judged by their span', () => {
+  const v = (value: string, sourceSpan: string | null = value) => ({ value, confidence: 1, sourceSpan });
+  assert.equal(fieldIsInEmail('contactName', v('pat doe'), SPLIT_EMAIL), true);
+  assert.equal(fieldIsInEmail('contactName', v('acmeco'), SPLIT_EMAIL), false);
+  assert.equal(fieldIsInEmail('companyName', v('Acme Co'), SPLIT_EMAIL), true);
+  assert.equal(fieldIsInEmail('companyName', v('AcmeCo'), SPLIT_EMAIL), true);
+  assert.equal(fieldIsInEmail('companyName', v('Globex'), SPLIT_EMAIL), false);
+  assert.equal(fieldIsInEmail('requirementSummary', v('A site rebuild', 'rebuild our site this year'), SPLIT_EMAIL), true);
+  assert.equal(fieldIsInEmail('requirementSummary', v('A site rebuild', 'never said this'), SPLIT_EMAIL), false);
+  assert.equal(fieldIsInEmail('contactEmail', v('pat@acmeco.example'), SPLIT_EMAIL), true);
 });
