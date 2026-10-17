@@ -467,6 +467,14 @@ export function createDealRepository({ db, clock, newId }: RepoDeps) {
       return rows.map(mapDeal);
     },
 
+    async listByPrimaryContact(contactId: string): Promise<Deal[]> {
+      const rows = await db.query(
+        'SELECT * FROM deals WHERE primary_contact_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC',
+        [contactId],
+      );
+      return rows.map(mapDeal);
+    },
+
     async update(id: string, patch: Partial<CreateDealInput>): Promise<Deal> {
       const existing = await this.getById(id);
       if (!existing) throw new NotFoundError('Deal');

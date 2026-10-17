@@ -44,6 +44,41 @@ const IMG_TAG = /<img\b[^>]*>/gi;
 const REMOTE_REFERENCE = /<(?:link|iframe|object|embed|source|video|audio)\b[^>]*>/gi;
 const ANY_TAG = /<[^>]+>/g;
 
+// Text a person reading the rendered email cannot see: an element hidden by CSS or the `hidden`
+// attribute, and an HTML comment. Nested hidden elements are not unpicked (the outer one is taken whole),
+// and text hidden by colour alone (white on white) cannot be recognised without rendering, so it is not.
+const HIDING_STYLE =
+  /display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?:\.0+)?(?:px|pt|em|rem|%)?\s*(?:;|$)|opacity\s*:\s*0(?:\.0+)?\s*(?:;|$)|(?:max-)?height\s*:\s*0(?:px)?\s*(?:;|$)[^"']*overflow\s*:\s*hidden/i;
+const HIDDEN_ELEMENT =
+  /<(div|span|p|td|li|font|small|section|article|b|i|a|h[1-6])\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi;
+const HTML_COMMENT = /<!--([\s\S]*?)-->/g;
+const MAX_HIDDEN_TEXT = 400;
+
+function isHiddenByAttributes(attributes: string): boolean {
+  if (/(?:^|\s)hidden(?:\s|=|$)/i.test(attributes)) return true;
+  const style = /style\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(attributes);
+  return style !== null && HIDING_STYLE.test(style[1] ?? style[2] ?? '');
+}
+
+/** Removes hidden elements and comments from HTML, returning what they said. */
+function extractHidden(html: string): { html: string; pieces: string[] } {
+  const pieces: string[] = [];
+  const keep = (inner: string): void => {
+    const said = inner.replace(ANY_TAG, ' ').replace(/\s+/g, ' ').trim();
+    if (said !== '') pieces.push(said);
+  };
+  let out = html.replace(HTML_COMMENT, (_all, inner: string) => {
+    keep(inner);
+    return ' ';
+  });
+  out = out.replace(HIDDEN_ELEMENT, (all, _tag: string, attributes: string, inner: string) => {
+    if (!isHiddenByAttributes(attributes)) return all;
+    keep(inner);
+    return ' ';
+  });
+  return { html: out, pieces };
+}
+
 const BLOCK_BREAK = /<\/?(?:p|div|br|tr|li|h[1-6]|blockquote|table)\b[^>]*>/gi;
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -95,8 +130,12 @@ export function sanitiseEmailBody(raw: string, options: { maxLength?: number } =
   const images = countMatches(text, IMG_TAG);
   const remotes = countMatches(text, REMOTE_REFERENCE);
 
+  let hiddenPieces: string[] = [];
   if (isHtml) {
     text = text.replace(SCRIPT_OR_STYLE, ' ');
+    const hiddenOut = extractHidden(text);
+    text = hiddenOut.html;
+    hiddenPieces = hiddenOut.pieces;
     text = text.replace(IMG_TAG, ' ');
     text = text.replace(REMOTE_REFERENCE, ' ');
     text = text.replace(BLOCK_BREAK, '\n');
@@ -132,6 +171,8 @@ export function sanitiseEmailBody(raw: string, options: { maxLength?: number } =
       removedScripts: scripts,
       removedRemoteImages: images + remotes,
       removedHiddenCharacters: hidden,
+      removedHiddenElements: hiddenPieces.length,
+      ...(hiddenPieces.length > 0 ? { hiddenText: hiddenPieces.join(' | ').slice(0, MAX_HIDDEN_TEXT) } : {}),
       truncated,
       originalLength,
       finalLength: text.length,

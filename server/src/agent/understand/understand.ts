@@ -4,6 +4,7 @@ import {
   UNDERSTAND_SYSTEM_PROMPT,
   buildRepairMessages,
   buildUnderstandMessages,
+  identityEvidence,
   provenanceCorpus,
 } from './prompt.ts';
 import { validateUnderstanding } from './validate.ts';
@@ -14,6 +15,7 @@ import type { EmailRecord, ReviewReason } from '../../domain/email.ts';
 import type {
   AnalysisRecord,
   ModelUnderstanding,
+  SanitisationRecord,
   SecurityRecord,
   Understanding,
   ValidationRecord,
@@ -71,6 +73,7 @@ export async function understandEmail(
   { repos, provider, logger = createLogger('understand'), thresholds }: UnderstandDeps,
 ): Promise<UnderstandOutcome> {
   const corpus = provenanceCorpus(email);
+  const evidence = identityEvidence(email);
   const effectiveThresholds = thresholds ?? (await repos.settings.get('confidence_thresholds'));
 
   await repos.emails.setState(email.id, 'understanding');
@@ -125,7 +128,7 @@ export async function understandEmail(
         payload: { provider: provider.name, attempt, kind, error: message },
       });
 
-      const security = buildSecurity(email, false);
+      const security = await buildSecurity(repos, email, false);
       return {
         email: (await repos.emails.getById(email.id)) as EmailRecord,
         analysis: null,
@@ -142,6 +145,7 @@ export async function understandEmail(
 
     const outcome = validateUnderstanding(response.toolInput, {
       corpus,
+      evidence,
       attempt,
       thresholds: effectiveThresholds,
     });
@@ -161,7 +165,7 @@ export async function understandEmail(
   // --- unusable after the retry: never partially parsed ---------------------
 
   if (!understanding || !validation) {
-    const security = buildSecurity(email, false);
+    const security = await buildSecurity(repos, email, false);
     const record: ValidationRecord = validation ?? {
       problems: lastProblems,
       droppedFields: [],
@@ -195,7 +199,7 @@ export async function understandEmail(
 
   // --- deterministic security pass -----------------------------------------
 
-  const security = buildSecurity(email, understanding.flags.possibleInjection);
+  const security = await buildSecurity(repos, email, understanding.flags.possibleInjection);
 
   // The detector's verdict is authoritative over the model's: an email that
   // successfully manipulated the model would also have persuaded it not to
@@ -364,17 +368,23 @@ function decideReviewReason(understanding: Understanding, security: SecurityReco
   return null;
 }
 
-function buildSecurity(email: EmailRecord, modelFlagged: boolean): SecurityRecord {
-  // Sanitisation already happened at ingestion; what survives here is the
-  // record of it, reconstructed from the stored email. The detector runs on the
-  // stored (sanitised) text, which is the same text the model was shown.
-  const sanitisation = {
-    removedHtml: false,
-    removedScripts: 0,
-    removedRemoteImages: 0,
-    removedHiddenCharacters: 0,
+async function buildSecurity(repos: Repositories, email: EmailRecord, modelFlagged: boolean): Promise<SecurityRecord> {
+  // Sanitisation already happened at ingestion, and the record of what it removed was written to the audit
+  // log then (an event exists only when something was removed). It is read back here so that the detector
+  // can treat hidden characters and hidden elements as findings. An email with no such event had nothing
+  // removed, so a record of zeros is the true one. The detector runs on the stored (sanitised) text, which is
+  // the same text the model was shown.
+  const stored = (await repos.audit.listByEmail(email.id)).find((event) => event.eventType === 'content_sanitised');
+  const recorded = (stored?.payload ?? {}) as Partial<SanitisationRecord>;
+  const sanitisation: SanitisationRecord = {
+    removedHtml: recorded.removedHtml ?? false,
+    removedScripts: recorded.removedScripts ?? 0,
+    removedRemoteImages: recorded.removedRemoteImages ?? 0,
+    removedHiddenCharacters: recorded.removedHiddenCharacters ?? 0,
+    removedHiddenElements: recorded.removedHiddenElements ?? 0,
+    ...(typeof recorded.hiddenText === 'string' ? { hiddenText: recorded.hiddenText } : {}),
     truncated: email.bodyTruncated,
-    originalLength: email.bodyText.length,
+    originalLength: recorded.originalLength ?? email.bodyText.length,
     finalLength: email.bodyText.length,
   };
 

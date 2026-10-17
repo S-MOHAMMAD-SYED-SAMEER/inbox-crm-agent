@@ -266,7 +266,8 @@ test('the service line is inferred from what was actually asked for', () => {
 
 test('every rule reports itself, fired or not', () => {
   const trace = evaluateRules(ctx()).trace;
-  assert.equal(trace.length, RULES.length);
+  // R-19 is a pass over the finished plan rather than an entry in RULES, and reports itself too.
+  assert.equal(trace.length, RULES.length + 1);
   for (const entry of trace) {
     assert.ok(entry.because.length > 10, `${entry.rule} has no usable explanation`);
   }
@@ -395,8 +396,9 @@ const GROUNDING = buildGroundingText(
   { name: 'AI Business Automation', services: ['AI Customer Support & Sales Recovery'], tone: 'Direct.' },
 );
 
-function guard(body: string) {
+function guard(body: string, plannedActions: readonly string[] = []) {
   return checkDraft({
+    plannedActions,
     draftSubject: 'Re: test',
     draftBody: body,
     groundingText: GROUNDING,
@@ -513,4 +515,126 @@ test('the model is told what was decided but is given no way to change it', () =
   assert.match(content, /never mention these to the customer/i);
   // The tool it is handed records two strings and nothing else.
   assert.match(content, /create deal/);
+});
+
+// ================================================ R-19: no second deal for a returning contact
+
+const OPEN_DEAL = {
+  id: 'deal-9',
+  title: 'Solstice Retail — support automation',
+  stage: 'qualifying',
+  primaryContactId: 'c1',
+} as Deal;
+
+function returningContact(category: EmailCategory, deal: Deal | null): DecisionContext {
+  return ctx({
+    understanding: understanding({ category }),
+    contact: resolution('MATCH', 'contact', 'c1'),
+    company: resolution('MATCH', 'company', 'co1'),
+    matchedContact: { id: 'c1', companyId: 'co1' } as never,
+    openDealForContact: deal,
+  });
+}
+
+test('R-19: a sales inquiry from a contact with an open deal advances that deal instead of creating another', () => {
+  const evaluation = evaluateRules(returningContact('sales_inquiry', OPEN_DEAL));
+  const kinds = evaluation.actions.map((action) => action.type);
+  assert.ok(!kinds.includes('create_deal'), 'no duplicate deal');
+  const advance = evaluation.actions.find((action) => action.type === 'update_deal_stage');
+  assert.deepEqual(advance?.payload, { dealId: 'deal-9', fromStage: 'qualifying', toStage: 'proposal' });
+  assert.ok(kinds.includes('send_email') && kinds.includes('create_task') && kinds.includes('log_activity'), 'the rest of the plan stands');
+});
+
+test('R-19 records which rule it changed, and why', () => {
+  for (const [category, rule] of [['sales_inquiry', 'R-15'], ['pricing_request', 'R-14'], ['service_inquiry', 'R-16']] as const) {
+    const trace = evaluateRules(returningContact(category, OPEN_DEAL)).trace;
+    const entry = trace.find((item) => item.rule === 'R-19');
+    assert.equal(entry?.fired, true, `${category}: R-19 fired`);
+    assert.match(entry?.because ?? '', new RegExp(rule), `${category}: names the rule whose deal it replaced`);
+    assert.match(entry?.because ?? '', /Solstice Retail/, 'names the deal it advanced');
+    assert.equal(trace.find((item) => item.rule === rule)?.fired, true, `${rule} still fired; R-19 corrected its plan`);
+  }
+});
+
+test('R-19: an open deal with no automatic next stage means no deal action at all, and the rest of the plan stays', () => {
+  const kinds = types(returningContact('pricing_request', { ...OPEN_DEAL, stage: 'negotiation' } as Deal));
+  assert.ok(!kinds.includes('create_deal') && !kinds.includes('update_deal_stage'));
+  assert.ok(kinds.includes('send_email') && kinds.includes('create_task'));
+});
+
+test('R-19 does nothing when the contact has no open deal: the new deal is created as before', () => {
+  const evaluation = evaluateRules(returningContact('sales_inquiry', null));
+  assert.ok(evaluation.actions.some((action) => action.type === 'create_deal'));
+  const entry = evaluation.trace.find((item) => item.rule === 'R-19');
+  assert.equal(entry?.fired, false);
+  assert.match(entry?.because ?? '', /no open deal/);
+});
+
+test('R-19 does nothing when no deal was planned, and leaves R-12 follow-ups alone', () => {
+  const evaluation = evaluateRules(returningContact('follow_up', OPEN_DEAL));
+  assert.equal(evaluation.trace.find((item) => item.rule === 'R-19')?.fired, false);
+  assert.equal(evaluation.trace.find((item) => item.rule === 'R-19')?.because, 'no new deal was planned, so there is nothing to replace');
+});
+
+test('R-19 lowers nothing: the advance is a tier-2 action, so the plan still needs a person', () => {
+  const actions = evaluateRules(returningContact('sales_inquiry', OPEN_DEAL)).actions;
+  assert.equal(planRiskTier(actions), 2);
+});
+
+// ================================================ no_unplanned_commitment
+
+const violated = (body: string, planned: readonly string[] = []): string[] =>
+  guard(body, planned).violations.map((violation) => violation.guardrail);
+
+test('a promise to produce something no action produces is blocked, and the evidence quotes it', () => {
+  // The real draft that motivated this guardrail (a saved Gemini reply to the E-06 follow-up).
+  const result = guard(
+    'Hi Dana,\n\nThanks for confirming. I will put together a proposal for the AI Customer Support and Sales Recovery project based on the scope we discussed.\n\nAI Business Automation',
+    ['log_activity', 'create_task', 'send_email'],
+  );
+  const hit = result.violations.find((violation) => violation.guardrail === 'no_unplanned_commitment');
+  assert.ok(hit, 'blocked');
+  assert.match(hit.evidence, /put together a proposal/);
+  assert.match(hit.evidence, /promises a document or deliverable/);
+});
+
+test('promises of a document, a refund or a call are blocked whatever the plan contains', () => {
+  const everything = ['create_deal', 'create_task', 'log_activity', 'send_email', 'update_deal_stage'];
+  for (const body of [
+    "I'll send over our case studies this afternoon.",
+    'We will send you a quote once we have the details.',
+    "We'll prepare a scoping document for you.",
+    'Let me draft a proposal for the team.',
+    'We will refund the order in full.',
+    "I'll credit your account for the difference.",
+    "I'll schedule a call for Thursday.",
+    'We are going to arrange a demo for you.',
+    'I will introduce you to our delivery lead.',
+  ]) {
+    assert.ok(violated(body, everything).includes('no_unplanned_commitment'), `not blocked: ${body}`);
+  }
+});
+
+test('"we will follow up" is allowed when the plan creates a follow-up task, and blocked when it does not', () => {
+  const body = 'Thanks for the details. We will follow up with you on Monday.';
+  assert.ok(!violated(body, ['create_task', 'send_email']).includes('no_unplanned_commitment'));
+  assert.ok(violated(body, ['send_email']).includes('no_unplanned_commitment'));
+  assert.ok(violated("I'll get back to you shortly.", []).includes('no_unplanned_commitment'));
+  assert.ok(!violated("I'll get back to you shortly.", ['create_task']).includes('no_unplanned_commitment'));
+});
+
+test('ordinary questions, hedges and offers to help are not commitments', () => {
+  for (const body of [
+    'Could you tell me how many support messages you handle each month?',
+    'I would rather not put a number on it until I understand the work.',
+    'We can help with that. What platform are you on today?',
+    'What does your current process look like? I want to understand it first.',
+    'Thanks for reaching out about the redesign. Could you share your main goals?',
+  ]) {
+    assert.ok(!violated(body, ['create_task']).includes('no_unplanned_commitment'), `wrongly blocked: ${body}`);
+  }
+});
+
+test('a plan without a task cannot be talked into a follow-up by the draft: the guardrail reads the plan, not the prose', () => {
+  assert.equal(guard('We will follow up.', undefined).safe, false);
 });

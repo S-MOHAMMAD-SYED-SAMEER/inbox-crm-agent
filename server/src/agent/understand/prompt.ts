@@ -26,7 +26,7 @@ import type { LlmMessage } from '../../adapters/llm/types.ts';
 // so a change in behaviour after a prompt edit is attributable rather than
 // mysterious.
 
-export const UNDERSTAND_PROMPT_VERSION = 'understand.v1';
+export const UNDERSTAND_PROMPT_VERSION = 'understand.v2';
 
 const FENCE_OPEN = '<untrusted_email>';
 const FENCE_CLOSE = '</untrusted_email>';
@@ -57,6 +57,31 @@ export const UNDERSTAND_SYSTEM_PROMPT = [
   '  flags.ambiguousIntent rather than picking one and sounding confident.',
   '- Report confidence honestly. A low confidence routes the email to a person, which is the',
   '  correct outcome when you are unsure — it is not a failure.',
+  '',
+  'CHOOSING THE CATEGORY. Decide by what the sender is asking this business to do:',
+  '- sales_inquiry: a prospective customer showing interest in what the business sells, with no',
+  '  specific project described and no price asked for yet.',
+  '- service_inquiry: a prospective customer describing a specific project or problem they want the',
+  '  business to take on.',
+  '- pricing_request: the main thing asked is what it costs or for a quote.',
+  '- support_request: someone who already uses what the business provides, reporting a fault or',
+  '  asking for help with it.',
+  '- follow_up: a message that continues something already under way: it refers back to earlier',
+  '  discussion, a proposal, a scope or an agreement ("as discussed", "further to our call", "to confirm',
+  '  what we agreed"), or it is a reply in an existing thread. When the sender is clearly picking up',
+  '  existing work, choose follow_up even if the wording also sounds like a purchase; a new',
+  '  sales_inquiry is someone the conversation has not started with. The line "Part of an existing',
+  '  thread" above the email is evidence for follow_up, not proof of it.',
+  '- partnership: proposing to collaborate, resell, white-label or refer.',
+  '- vendor_pitch: an identifiable business offering its own product or service TO this business',
+  '  without being asked (marketing, SEO, hosting, software, recruiting), however cold or mass-sent.',
+  '  A real offer from a real-looking company is a vendor_pitch even when it is unwelcome.',
+  '- spam: no genuine offer or purpose: scams, phishing, prize or lottery messages, malicious links,',
+  '  gibberish, or mass junk with no identifiable business behind it. Unwanted is not the test;',
+  '  deceptive or empty is.',
+  '- ambiguous: the email never says what the sender wants. Use it rather than guessing.',
+  'If two categories fit, pick the one that decides what a person should do next, and lower your',
+  'confidence.',
 ].join('\n');
 
 /**
@@ -119,6 +144,30 @@ export function provenanceCorpus(email: PromptEmail): string {
     email.subject,
     email.bodyText,
   ].join('\n');
+}
+
+/**
+ * What a NAME-like value (contact name, company name, job title) is checked against.
+ *
+ * Stricter than `provenanceCorpus`, on purpose. That corpus includes the sender's address, so a
+ * name read off an address ("j.contact" from j.contact@fastmail.example) would pass as supported
+ * by "the email". A person's name, a company's name and a job title must instead be written in
+ * the message the way a reader would find them: in the body or signature, the subject, or the
+ * sender's display name. One narrow exception, for companies only: the sender's own domain
+ * names the company well enough (acmecommerce.example for "Acme Commerce"); see `domainLabels`.
+ */
+export type IdentityEvidence = {
+  text: string;
+  /** The labels of the sender's domain, for matching a company name against the domain it writes from. */
+  domainLabels: string[];
+};
+
+export function identityEvidence(email: PromptEmail): IdentityEvidence {
+  const domain = email.fromEmail.split('@')[1] ?? '';
+  return {
+    text: [email.fromName ?? '', email.subject, email.bodyText].join(String.fromCharCode(10)),
+    domainLabels: domain.split('.').filter((label) => label !== ''),
+  };
 }
 
 /**

@@ -128,6 +128,10 @@ export type SanitisationRecord = {
   removedScripts: number;
   removedRemoteImages: number;
   removedHiddenCharacters: number;
+  /** Elements hidden with CSS or the `hidden` attribute, and HTML comments, removed before the model read the email. */
+  removedHiddenElements?: number;
+  /** What those hidden elements said (capped), kept as evidence for the operator and for the detector. */
+  hiddenText?: string;
   truncated: boolean;
   originalLength: number;
   finalLength: number;

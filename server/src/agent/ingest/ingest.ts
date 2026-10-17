@@ -95,6 +95,7 @@ export async function ingestEmails(
       record.removedScripts > 0 ||
       record.removedRemoteImages > 0 ||
       record.removedHiddenCharacters > 0 ||
+      (record.removedHiddenElements ?? 0) > 0 ||
       record.truncated;
 
     if (removedSomething) {
@@ -128,6 +129,7 @@ function describeSanitisation(record: {
   removedScripts: number;
   removedRemoteImages: number;
   removedHiddenCharacters: number;
+  removedHiddenElements?: number;
   truncated: boolean;
 }): string {
   const parts: string[] = [];
@@ -136,6 +138,9 @@ function describeSanitisation(record: {
   if (record.removedRemoteImages > 0) parts.push(`removed ${record.removedRemoteImages} remote reference(s)`);
   if (record.removedHiddenCharacters > 0) {
     parts.push(`removed ${record.removedHiddenCharacters} hidden character(s)`);
+  }
+  if ((record.removedHiddenElements ?? 0) > 0) {
+    parts.push(`removed ${record.removedHiddenElements} hidden element(s) or comment(s)`);
   }
   if (record.truncated) parts.push('truncated the body for analysis');
   return `Sanitised the message: ${parts.join(', ')}.`;

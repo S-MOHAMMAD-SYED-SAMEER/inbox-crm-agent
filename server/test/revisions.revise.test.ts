@@ -7,6 +7,7 @@ import { createMockLlmProvider, registerDemoFixtures } from '../src/adapters/llm
 import { ingestEmails } from '../src/agent/ingest/ingest.ts';
 import { readSeedFile, seedDemoData } from '../src/db/seed.ts';
 import { createLogger } from '../src/lib/logger.ts';
+import { GUARDRAIL_NAMES } from '../src/agent/decide/draftGuardrails.ts';
 import { createFixedClock } from '../src/lib/clock.ts';
 import { createRepositories } from '../src/db/repositories/index.ts';
 import { createSequentialIds } from '../src/lib/ids.ts';
@@ -775,7 +776,7 @@ test('a blocked edit is audited as draft_edit_blocked, with no text in the recor
   await f.close();
 });
 
-test('a human edit cannot weaken any of the six guardrails', async () => {
+test('a human edit cannot weaken any guardrail', async () => {
   const f = await pending();
 
   const attempts: Array<[string, string]> = [
@@ -785,6 +786,7 @@ test('a human edit cannot weaken any of the six guardrails', async () => {
     ['no_legal_or_contractual_language', 'We guarantee this outcome and accept liability for it.'],
     ['no_pii_echo', 'Copying in my colleague at someone-else@unrelated.example for this.'],
     ['no_invented_facts', 'Our clients typically see a 312% increase in recovered carts.'],
+    ['no_unplanned_commitment', 'I will put together a proposal and send it over.'],
   ];
 
   for (const [guardrail, sentence] of attempts) {
@@ -810,7 +812,7 @@ test('a guardrail-safe edit is re-marked as having passed the checks', async () 
   });
 
   assert.deepEqual(result.decision.plan.draft?.blockedBy, []);
-  assert.equal(result.decision.plan.draft?.guardrailsPassed.length, 6);
+  assert.equal(result.decision.plan.draft?.guardrailsPassed.length, GUARDRAIL_NAMES.length);
 
   await f.close();
 });
