@@ -34,6 +34,8 @@ archived (no CRM change), and an ambiguous one can be let through to CRM matchin
 approval. One that may be trying to give the assistant instructions can only be archived. Every one of those actions is
 written to the audit log with who did it.
 
+A step-by-step guide, written for a newcomer and checked from a fresh clone, is in [docs/SETUP.md](./docs/SETUP.md).
+
 One terminal is enough: the server serves the dashboard on the same address as the API. It runs on
 synthetic data with the deterministic mock LLM provider, so **no API key is needed**, and nothing is
 ever sent. Every run starts from the same pristine state.
