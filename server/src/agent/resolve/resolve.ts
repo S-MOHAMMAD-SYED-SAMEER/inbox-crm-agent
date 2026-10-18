@@ -307,6 +307,15 @@ export async function resolveMatchByHuman(
         ? await repos.contacts.getById(choice.entityId)
         : await repos.companies.getById(choice.entityId);
     if (!exists) throw new AppError('VALIDATION_ERROR', `That ${choice.entityType} does not exist.`);
+
+    // A person may pick only from what the matcher found for THIS email. A record that exists but was never a candidate (another
+    // company, a contact of the wrong kind, another sandbox's id) is refused, whatever the caller says. "Create new" is the one other
+    // answer, and it is spelled differently (a null id) so it can never be confused with a record.
+    if (!previous.some((row) => row.entityId === choice.entityId)) {
+      throw new AppError('VALIDATION_ERROR', `That ${choice.entityType} is not one of the candidates found for this email.`, {
+        details: { reason: 'not_a_candidate' },
+      });
+    }
   }
 
   const chosen = previous.find((row) => row.entityId === choice.entityId);

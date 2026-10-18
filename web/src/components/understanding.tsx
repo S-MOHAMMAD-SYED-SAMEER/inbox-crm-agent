@@ -24,7 +24,7 @@ export function ConfidenceBadge({
   if (note !== null) {
     return (
       <span className="inline-flex flex-col items-start gap-0.5">
-        <span className="inline-flex rounded-pill border border-line-strong px-2 py-0.5 text-meta font-semibold text-ink-muted">Set by code</span>
+        <span className="inline-flex whitespace-nowrap rounded-pill border border-line-strong px-2 py-0.5 text-meta font-semibold text-ink-muted">Set by code</span>
         <span data-confidence-note className="text-meta text-ink-muted">{note}</span>
       </span>
     );
@@ -40,7 +40,7 @@ export function ConfidenceBadge({
         : 'bg-danger-tint text-danger';
 
   return (
-    <span className={`inline-flex items-baseline gap-1.5 rounded-pill px-2 py-0.5 text-meta font-semibold ${tone}`}>
+    <span className={`inline-flex items-baseline gap-1.5 whitespace-nowrap rounded-pill px-2 py-0.5 text-meta font-semibold ${tone}`}>
       <span className="capitalize">{band}</span>
       <span className="font-mono opacity-80">{confidence.toFixed(2)}</span>
     </span>
@@ -85,7 +85,7 @@ export function StateChip({ state, reviewReason }: { state: string; reviewReason
 
 export function CategoryChip({ category }: { category: string }): ReactNode {
   return (
-    <span className="inline-flex rounded-pill bg-brand-tint px-2 py-0.5 text-meta font-semibold capitalize text-brand">
+    <span className="inline-flex whitespace-nowrap rounded-pill bg-brand-tint px-2 py-0.5 text-meta font-semibold capitalize text-brand">
       {category.replace(/_/g, ' ')}
     </span>
   );
@@ -93,7 +93,7 @@ export function CategoryChip({ category }: { category: string }): ReactNode {
 
 export function PriorityChip({ priority }: { priority: string }): ReactNode {
   return (
-    <span className="inline-flex rounded-pill border border-line-strong px-2 py-0.5 text-meta capitalize text-ink-muted">
+    <span className="inline-flex whitespace-nowrap rounded-pill border border-line-strong px-2 py-0.5 text-meta capitalize text-ink-muted">
       {priority} priority
     </span>
   );

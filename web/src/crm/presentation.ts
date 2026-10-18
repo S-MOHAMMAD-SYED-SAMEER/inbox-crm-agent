@@ -173,3 +173,14 @@ const OUTCOMES: Readonly<Record<string, { label: string; tone: 'ok' | 'stopped' 
 export function outcomeLabel(outcome: string): { label: string; tone: 'ok' | 'stopped' | 'failed' } {
   return OUTCOMES[outcome] ?? { label: outcome, tone: 'ok' };
 }
+
+/**
+ * The words about budget that were found in the email, to be shown in quotation marks. When the email said nothing about it the stored
+ * note is the marker `not_provided`, which is not something anyone wrote: it is the absence of a quote, and shows as none.
+ */
+export function budgetQuote(note: string | null | undefined): string | null {
+  if (note === null || note === undefined) return null;
+  const text = note.trim();
+  if (text === '' || /^not[ _]provided$/i.test(text)) return null;
+  return text;
+}

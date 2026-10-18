@@ -12,6 +12,7 @@ import {
   PAUSED_FOR_PERSON,
   analyseButtonLabel,
   analyseCostNote,
+  countLabel,
   isPaused,
   mentionsDiscardedMarker,
 } from '../inbox/copy.ts';
@@ -169,31 +170,36 @@ export function Inbox(): ReactNode {
 
       {state.status === 'ready' && state.emails.length > 0 ? (
         <div className="overflow-x-auto rounded-card border border-line bg-surface shadow-resting">
-          <table className="w-full min-w-[860px] border-collapse text-left">
+          <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-line text-meta uppercase tracking-wide text-ink-muted">
-                <th className="px-4 py-3 font-semibold">From</th>
-                <th className="px-4 py-3 font-semibold">Subject</th>
-                <th className="px-4 py-3 font-semibold">Read as</th>
-                <th className="px-4 py-3 font-semibold">CRM match</th>
-                <th className="px-4 py-3 font-semibold">Recommendation</th>
-                <th className="px-4 py-3 font-semibold">Confidence</th>
-                <th className="px-4 py-3 font-semibold">State</th>
+                <th className="w-28 px-2 py-3 font-semibold">From</th>
+                <th className="min-w-[260px] px-2 py-3 font-semibold">Subject</th>
+                <th className="px-2 py-3 font-semibold">Read as</th>
+                <th className="px-2 py-3 font-semibold">CRM match</th>
+                <th className="px-2 py-3 font-semibold">Recommendation</th>
+                <th className="hidden px-2 py-3 font-semibold min-[1440px]:table-cell">Confidence</th>
+                <th className="px-2 py-3 font-semibold">State</th>
               </tr>
             </thead>
             <tbody>
               {state.emails.map((email) => (
                 <tr key={email.id} className="border-b border-line last:border-0 hover:bg-canvas">
-                  <td className="px-4 py-3 align-top">
+                  <td className="w-28 max-w-28 px-2 py-3 align-top">
                     <a
                       href={routeToHash({ name: 'inbox', id: email.id })}
-                      className="text-small font-semibold text-brand underline-offset-2 hover:underline"
+                      title={email.fromEmail}
+                      className="block truncate text-small font-semibold text-brand underline-offset-2 hover:underline"
                     >
                       {email.fromName ?? email.fromEmail}
                     </a>
-                    <p className="text-meta text-ink-muted">{email.fromEmail}</p>
+                    {email.fromName ? (
+                      <p title={email.fromEmail} className="truncate text-meta text-ink-muted">
+                        {email.fromEmail}
+                      </p>
+                    ) : null}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-2 py-3 align-top">
                     <a
                       href={routeToHash({ name: 'inbox', id: email.id })}
                       className="text-small text-ink underline-offset-2 hover:text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -217,19 +223,29 @@ export function Inbox(): ReactNode {
                       <p className="mt-0.5 text-meta text-ink-muted">Not analysed yet.</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-2 py-3 align-top">
                     {email.analysis ? (
                       <div className="flex flex-wrap items-center gap-1.5">
                         <CategoryChip category={email.analysis.category} />
                         <PriorityChip priority={email.analysis.priority} />
+                        <span className="min-[1440px]:hidden">
+                          <ConfidenceBadge
+                            band={email.analysis.confidenceBand}
+                            confidence={email.analysis.confidence}
+                            modelCategory={email.analysis.modelCategory}
+                          />
+                        </span>
                         {email.analysis.injectionSuspected ? (
-                          <span className="rounded-pill bg-danger-tint px-2 py-0.5 text-meta font-semibold text-danger">
+                          <span className="whitespace-nowrap rounded-pill bg-danger-tint px-2 py-0.5 text-meta font-semibold text-danger">
                             injection suspected
                           </span>
                         ) : null}
                         {email.analysis.droppedFieldCount > 0 ? (
-                          <span className="rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal">
-                            {email.analysis.droppedFieldCount} field(s) discarded
+                          <span
+                            title={`${countLabel(email.analysis.droppedFieldCount, 'field')} the checks discarded`}
+                            className="whitespace-nowrap rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal"
+                          >
+                            {email.analysis.droppedFieldCount} discarded
                           </span>
                         ) : null}
                       </div>
@@ -237,17 +253,17 @@ export function Inbox(): ReactNode {
                       <span className="text-meta text-ink-muted">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-2 py-3 align-top">
                     {email.resolution ? (
                       <div className="flex flex-col gap-1">
-                        <span className="flex items-center gap-1.5 text-meta text-ink-muted">
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta text-ink-muted">
                           contact{' '}
                           <VerdictChip
                             verdict={email.resolution.contact}
                             plannedToCreate={email.decision ? email.decision.createsContact : null}
                           />
                         </span>
-                        <span className="flex items-center gap-1.5 text-meta text-ink-muted">
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta text-ink-muted">
                           company{' '}
                           <VerdictChip
                             verdict={email.resolution.company}
@@ -261,7 +277,7 @@ export function Inbox(): ReactNode {
                       <span className="text-meta text-ink-muted">not matched yet</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-2 py-3 align-top">
                     {email.decision ? (
                       <div className="flex flex-col gap-1">
                         <span className="text-meta text-ink-muted">
@@ -269,7 +285,7 @@ export function Inbox(): ReactNode {
                           {email.decision.riskTier}
                         </span>
                         <span
-                          className={`rounded-pill px-2 py-0.5 text-meta font-semibold ${
+                          className={`w-fit whitespace-nowrap rounded-pill px-2 py-0.5 text-meta font-semibold ${
                             email.decision.requiresApproval
                               ? 'bg-signal-tint text-signal'
                               : 'bg-success-tint text-success'
@@ -278,7 +294,7 @@ export function Inbox(): ReactNode {
                           {email.decision.requiresApproval ? 'needs approval' : 'can run'}
                         </span>
                         {email.decision.draftBlocked ? (
-                          <span className="rounded-pill bg-danger-tint px-2 py-0.5 text-meta font-semibold text-danger">
+                          <span className="whitespace-nowrap rounded-pill bg-danger-tint px-2 py-0.5 text-meta font-semibold text-danger">
                             draft blocked
                           </span>
                         ) : null}
@@ -289,7 +305,7 @@ export function Inbox(): ReactNode {
                       <span className="text-meta text-ink-muted">not decided yet</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="hidden px-2 py-3 align-top min-[1440px]:table-cell">
                     {email.analysis ? (
                       <ConfidenceBadge
                         band={email.analysis.confidenceBand}
@@ -300,7 +316,7 @@ export function Inbox(): ReactNode {
                       <span className="text-meta text-ink-muted">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-2 py-3 align-top">
                     <StateChip state={email.state} reviewReason={email.reviewReason} />
                   </td>
                 </tr>

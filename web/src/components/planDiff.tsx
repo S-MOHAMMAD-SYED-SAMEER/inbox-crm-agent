@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ProposedAction } from '../api/types.ts';
 import { cutAtWord, formatMoment } from '../inbox/copy.ts';
+import { budgetQuote } from '../crm/presentation.ts';
 import { ExpandableText } from './expandable.tsx';
 
 // The approval diff.
@@ -53,7 +54,7 @@ function describe(action: ProposedAction): Change {
       const parts = [
         `"${text(payload.title)}"`,
         `stage: ${text(payload.stage).replace(/_/g, ' ')}`,
-        payload.budgetNote ? `budget noted: ${text(payload.budgetNote)}` : 'amount: not set',
+        budgetQuote(typeof payload.budgetNote === 'string' ? payload.budgetNote : null) ? `budget noted: ${text(payload.budgetNote)}` : 'amount: not set',
       ];
       return { before: 'no deal in the pipeline', after: parts.join(' · ') };
     }

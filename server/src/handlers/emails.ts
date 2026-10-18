@@ -465,7 +465,12 @@ export async function handleResolveMatch(
   const email = await deps.repos.emails.getById(id);
   if (!email) throw new NotFoundError('Email');
 
-  await resolveMatchByHuman(email, { entityType, entityId, decidedBy: operator }, deps);
+  const resolved = await resolveMatchByHuman(email, { entityType, entityId, decidedBy: operator }, deps);
+
+  // Once nothing is outstanding the email is ready for a recommendation, and a person picking a record is asking for one: decide runs now,
+  // the same stage and the same checks as ever. The plan it makes still needs approval wherever the policy says so; picking a record
+  // approves nothing.
+  if (resolved.state === 'deciding') return handleDecideEmail(deps, id);
   return handleGetEmail(deps, id);
 }
 

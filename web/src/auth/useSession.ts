@@ -135,6 +135,12 @@ export function useSession(): Session {
       // Leaving is idempotent on the server; whether or not it was reached, this browser is done with the demo.
     }
     setNotice(null);
+    // Back to the sign-in page at the site's own address. The hash ("#/approvals") belongs to the screens of the demo that was just left;
+    // keeping it would put a signed-out visitor at a deep link into a place they are no longer in.
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
     setState({ status: 'anonymous' });
   }, []);
 

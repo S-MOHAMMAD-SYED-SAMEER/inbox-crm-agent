@@ -1,3 +1,5 @@
+import { formatTimeLeft, timeLeftMs, type GuestInfo } from '../auth/guest.ts';
+
 // The small pieces of wording and formatting the Inbox, the email page, the approval queue and the audit log share.
 //
 // Pure, so each can be tested without a browser. Everything here exists because a screen said something that was
@@ -122,4 +124,57 @@ export function mentionsDiscardedMarker(mentions: ReadonlyArray<{ claimedValue: 
 export function codeOverrideNote(modelCategory: string | null, confidence: number): string | null {
   if (modelCategory === null) return null;
   return `model ${confidence.toFixed(2)} for ${modelCategory.replace(/_/g, ' ')}`;
+}
+
+/** Whether a person can be asked to choose between records: the email stopped because more than one CRM record could be the right one. */
+export function canChooseRecord(state: string, reviewReason: string | null): boolean {
+  return state === 'needs_review' && reviewReason === 'match_conflict';
+}
+
+export const CHOOSE_THE_RECORD = 'Choose the record';
+export const NONE_OF_THESE = 'None of these — create new records';
+
+const stateWords = (state: string): string => state.replace(/_/g, ' ');
+
+/**
+ * What Continue did, said where the person is looking. It used to be replaced by the next message, so the one thing a person needed
+ * to know ("matching found more than one record; choose one") was gone before they read it.
+ */
+export function continueResultMessage(state: string, reviewReason: string | null): string {
+  if (state === 'awaiting_approval') return 'Continued. The email was matched and planned; the plan is waiting for approval.';
+  if (canChooseRecord(state, reviewReason)) return 'Continued. CRM matching found more than one possible record; choose one.';
+  if (state === 'needs_review') return 'Continued. It still needs a person.';
+  return `Continued. It is now ${stateWords(state)}.`;
+}
+
+/** What a pick did. Picking never approves anything: when a plan was made, it is waiting for approval. */
+export function pickResultMessage(state: string, reviewReason: string | null, createNew: boolean): string {
+  const chosen = createNew ? 'Recorded: new records will be proposed.' : 'Record chosen.';
+  if (state === 'awaiting_approval') return `${chosen} The plan is waiting for approval.`;
+  if (canChooseRecord(state, reviewReason)) return `${chosen} The other kind of record still needs choosing.`;
+  return `${chosen} It is now ${stateWords(state)}.`;
+}
+
+/** A span as the approval queue says it: "5m", "3h 20m", "2d 4h". */
+export function formatDuration(ms: number): string {
+  const abs = Math.abs(ms);
+  const hours = Math.floor(abs / 3_600_000);
+  const minutes = Math.floor((abs % 3_600_000) / 60_000);
+  if (hours >= 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+  if (hours >= 1) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+/**
+ * The time on an approval row. An owner's approval has its own 24-hour clock. A guest's sandbox lives two hours at most, so "23h 59m
+ * left" would promise a day the demo does not have: a guest is told how long the demo itself has left, which is the truthful limit.
+ */
+export function approvalTimeLabel(msToExpiry: number, guest: GuestInfo | null, nowMs: number): string {
+  if (guest) return `Demo ends in ${formatTimeLeft(Math.min(timeLeftMs(guest.expiresAt, nowMs), Math.max(0, msToExpiry)))}`;
+  return msToExpiry < 0 ? `${formatDuration(msToExpiry)} overdue` : `${formatDuration(msToExpiry)} left`;
+}
+
+/** What approving did, in words: "Approved and carried out 1 action.", "... 3 actions.". */
+export function approvedMessage(executed: number): string {
+  return `Approved and carried out ${countLabel(executed, 'action')}.`;
 }

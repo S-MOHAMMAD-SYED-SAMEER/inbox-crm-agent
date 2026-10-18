@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { EntityResolution, ResolutionVerdict } from '../api/types.ts';
-import { crmMatchLabel } from '../inbox/copy.ts';
+import { CHOOSE_THE_RECORD, NONE_OF_THESE, crmMatchLabel } from '../inbox/copy.ts';
 
 // Resolution presentation.
 //
@@ -25,7 +25,7 @@ export function VerdictChip({
         ? 'bg-danger-tint text-danger'
         : 'bg-canvas text-ink-muted border border-line-strong';
 
-  return <span className={`inline-flex rounded-pill px-2 py-0.5 text-meta font-semibold ${tone}`}>{label}</span>;
+  return <span className={`inline-flex whitespace-nowrap rounded-pill px-2 py-0.5 text-meta font-semibold ${tone}`}>{label}</span>;
 }
 
 const METHOD_LABELS: Record<string, string> = {
@@ -90,7 +90,7 @@ export function ResolutionCard({
                   onClick={() => onChoose(candidate.entityId)}
                   className="mt-2 h-control rounded-control border border-line-strong px-3 text-meta font-semibold disabled:opacity-50"
                 >
-                  This is the right one
+                  Choose this record
                 </button>
               ) : null}
             </li>
@@ -105,9 +105,39 @@ export function ResolutionCard({
           onClick={() => onChoose(null)}
           className="mt-3 h-control rounded-control border border-line-strong px-3 text-meta font-semibold disabled:opacity-50"
         >
-          Neither — this is a new record
+          {NONE_OF_THESE}
         </button>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * "Choose the record": the candidates for each kind of record that is in doubt, each with why it matched, and "None of these". Only
+ * the kinds that are actually in doubt are offered; the server refuses anything that was not one of this email's own candidates.
+ */
+export function ChooseRecord({
+  resolution,
+  busy,
+  onChoose,
+}: {
+  resolution: { contact: EntityResolution; company: EntityResolution };
+  busy: boolean;
+  onChoose(entityType: 'contact' | 'company', entityId: string | null): void;
+}): ReactNode {
+  const inDoubt = (['contact', 'company'] as const).filter((kind) => resolution[kind].verdict === 'MATCH_CONFLICT');
+  return (
+    <div data-choose-record className="mt-3 space-y-3">
+      <h4 className="text-small font-semibold text-ink">{CHOOSE_THE_RECORD}</h4>
+      {inDoubt.map((kind) => (
+        <ResolutionCard
+          key={kind}
+          title={kind === 'contact' ? 'Contact' : 'Company'}
+          resolution={resolution[kind]}
+          busy={busy}
+          onChoose={(entityId) => onChoose(kind, entityId)}
+        />
+      ))}
+    </div>
   );
 }

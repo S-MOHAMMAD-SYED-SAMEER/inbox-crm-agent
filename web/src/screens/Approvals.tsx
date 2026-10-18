@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { usePublicDemo } from '../auth/publicDemo.tsx';
+import { useGuest } from '../auth/guestContext.tsx';
 import { api, ApiError } from '../api/client.ts';
 import type { ApprovalQueueRow, ApprovalState, EmailDetail, RevisionResult } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -14,7 +15,7 @@ import {
 } from '../revision/approvalPresentation.ts';
 import { TIER_LABELS } from '../components/decision.tsx';
 import { NeedsPersonList } from '../components/needsPerson.tsx';
-import { countLabel } from '../inbox/copy.ts';
+import { approvalTimeLabel, approvedMessage, countLabel } from '../inbox/copy.ts';
 
 // The approval queue (the specification, extended by approve-with-edits).
 //
@@ -39,15 +40,6 @@ const TONE_CLASS: Record<string, string> = {
   replaced: 'bg-canvas text-ink-muted',
 };
 
-function formatDuration(ms: number): string {
-  const abs = Math.abs(ms);
-  const hours = Math.floor(abs / 3_600_000);
-  const minutes = Math.floor((abs % 3_600_000) / 60_000);
-  if (hours >= 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
-  if (hours >= 1) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
 type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; rows: ApprovalQueueRow[]; counts: Record<string, number> }
@@ -55,6 +47,7 @@ type LoadState =
 
 export function Approvals(): ReactNode {
   const publicDemo = usePublicDemo();
+  const guest = useGuest();
   const [filter, setFilter] = useState<ApprovalState>('pending');
   // A second view alongside the approval states: the emails handed to a person. It is not an approval state, so it is its own flag.
   const [showNeedsPerson, setShowNeedsPerson] = useState(false);
@@ -228,10 +221,7 @@ export function Approvals(): ReactNode {
         ? state.rows.map((row) => {
             const isOpen = expanded === row.approval.id;
             const presentation = presentApproval(row.approval.state);
-            const slaLabel =
-              row.msToExpiry < 0
-                ? `${formatDuration(row.msToExpiry)} overdue`
-                : `${formatDuration(row.msToExpiry)} left`;
+            const slaLabel = approvalTimeLabel(row.msToExpiry, guest, Date.now());
 
             const rowDetail = isOpen && detail?.email.id === row.email.id ? detail : null;
             const editable = rowDetail ? canEdit(rowDetail) : { editable: false, reason: null };
@@ -328,7 +318,7 @@ export function Approvals(): ReactNode {
                             void run(row.approval.id, async () => {
                               const result = await api.approve(row.decision.id);
                               return result.ok
-                                ? `Approved and carried out ${result.executed} action(s).`
+                                ? approvedMessage(result.executed)
                                 : `Refused: ${result.refusalMessage ?? result.refusedWith}`;
                             })
                           }
