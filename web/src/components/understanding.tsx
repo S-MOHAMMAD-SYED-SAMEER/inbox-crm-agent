@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { reviewReasonLabel, stateLabel, type StateTone } from '../inbox/statePresentation.ts';
+import { codeOverrideNote } from '../inbox/copy.ts';
 
 // Small presentational pieces shared by the Inbox and the email detail screen.
 //
@@ -10,10 +11,25 @@ import { reviewReasonLabel, stateLabel, type StateTone } from '../inbox/statePre
 export function ConfidenceBadge({
   band,
   confidence,
+  modelCategory,
 }: {
   band: 'high' | 'medium' | 'low';
   confidence: number;
+  /** The category the model gave, when code changed it. The number was given for THAT category, not the one shown. */
+  modelCategory?: string | null;
 }): ReactNode {
+  // When code changed the category, a plain "High 0.80" beside the new category contradicts it: the model was confident about a
+  // different reading. Say whose number it is, and that the category was set by code.
+  const note = codeOverrideNote(modelCategory ?? null, confidence);
+  if (note !== null) {
+    return (
+      <span className="inline-flex flex-col items-start gap-0.5">
+        <span className="inline-flex rounded-pill border border-line-strong px-2 py-0.5 text-meta font-semibold text-ink-muted">Set by code</span>
+        <span data-confidence-note className="text-meta text-ink-muted">{note}</span>
+      </span>
+    );
+  }
+
   // The band is what changes system behaviour; the number alone invites false
   // precision, so both are always shown together.
   const tone =

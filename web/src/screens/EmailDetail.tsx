@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { usePublicDemo } from '../auth/publicDemo.tsx';
 import { api, ApiError } from '../api/client.ts';
 import type { EmailDetail as EmailDetailPayload } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -13,6 +14,20 @@ import { ResolutionCard } from '../components/resolution.tsx';
 import { describeDefence } from '../security/injectionPresentation.ts';
 import { DecisionCard } from '../components/decision.tsx';
 import { ExecutionCard } from '../components/execution.tsx';
+import { ExpandableText } from '../components/expandable.tsx';
+import { reviewReasonLabel } from '../inbox/statePresentation.ts';
+import { actorLabel } from '../crm/presentation.ts';
+import {
+  PAUSED_FOR_PERSON,
+  REVIEW_ACTION_LABELS,
+  formatLatency,
+  isPaused,
+  mentionsDiscardedMarker,
+  noContinueReason,
+  outcomeFor,
+  reviewActionsFor,
+  type ReviewAction,
+} from '../inbox/copy.ts';
 
 // The email detail screen — UNDERSTAND scope.
 //
@@ -59,6 +74,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   // *failed* load survived, because the error branch returns before reaching
   // the sixth hook.
   const [refusal, setRefusal] = useState<string | null>(null);
+  const publicDemo = usePublicDemo();
 
   const load = useCallback(async () => {
     try {
@@ -89,6 +105,10 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   const { email, analysis, resolution, decision, approval, executions, outbox, audit, stages } = state.detail;
   const understanding = analysis?.understanding;
   const highlight = hovered ? (understanding?.extracted[hovered]?.sourceSpan ?? null) : null;
+  // The category the model gave, when code changed it: the confidence number belongs to that reading, not to the one shown.
+  const givenCategory = analysis?.modelOutput?.category;
+  const modelCategory = typeof givenCategory === 'string' && givenCategory !== understanding?.category ? givenCategory : null;
+  const mentions = analysis?.validation.summaryMentions;
 
   const runAction = async (action: () => Promise<{ refusalMessage?: string | null; detail?: EmailDetailPayload }>): Promise<void> => {
     setBusy(true);
@@ -111,6 +131,19 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
       setState({ status: 'ready', detail: await api.resolveMatch(id, entityType, entityId) });
     } catch (err) {
       setState({ status: 'error', message: err instanceof ApiError ? err.message : 'Something went wrong.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const review = async (action: ReviewAction): Promise<void> => {
+    setBusy(true);
+    setRefusal(null);
+    try {
+      setState({ status: 'ready', detail: await api.reviewEmail(id, action) });
+    } catch (err) {
+      // A refusal from the server is shown where the buttons are, not by replacing the page.
+      setRefusal(err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
       setBusy(false);
     }
@@ -139,7 +172,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
           disabled={busy}
           className="h-control rounded-control border border-line-strong px-4 text-small font-semibold disabled:opacity-50"
         >
-          {busy ? 'Analysing…' : analysis ? 'Analyse again' : 'Analyse'}
+          {busy ? 'Working…' : analysis ? 'Analyse again (1 model request)' : 'Analyse (1 model request)'}
         </button>
       </div>
 
@@ -154,10 +187,49 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
           {understanding ? <CategoryChip category={understanding.category} /> : null}
           {understanding ? <PriorityChip priority={understanding.priority} /> : null}
           {understanding ? (
-            <ConfidenceBadge band={understanding.confidenceBand} confidence={understanding.confidence} />
+            <ConfidenceBadge
+              band={understanding.confidenceBand}
+              confidence={understanding.confidence}
+              modelCategory={modelCategory}
+            />
           ) : null}
         </div>
       </header>
+
+      {isPaused(email.state) ? (
+        <section data-needs-person className="rounded-card border border-signal bg-signal-tint p-5">
+          <h3 className="text-small font-semibold text-signal">A person has to look at this email</h3>
+          <p className="mt-1 text-small text-ink-muted">
+            {email.reviewReason ? `${reviewReasonLabel(email.reviewReason).replace(/^./, (c) => c.toUpperCase())}.` : 'The assistant handed it to a person.'}{' '}
+            It is paused: nothing has been matched, planned or changed.
+          </p>
+          {publicDemo ? null : (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {reviewActionsFor(email.state, email.reviewReason).map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  disabled={busy}
+                  title={REVIEW_ACTION_LABELS[action].hint}
+                  onClick={() => void review(action)}
+                  className={`h-control rounded-control px-4 text-small font-semibold disabled:opacity-50 ${
+                    action === 'continue' ? 'bg-brand text-white' : 'border border-line-strong text-ink'
+                  }`}
+                >
+                  {REVIEW_ACTION_LABELS[action].label}
+                </button>
+              ))}
+            </div>
+          )}
+          {noContinueReason(email.reviewReason) ? (
+            <p data-no-continue className="mt-2 text-meta text-ink-muted">{noContinueReason(email.reviewReason)}</p>
+          ) : null}
+          {reviewActionsFor(email.state, email.reviewReason).includes('continue') ? (
+            <p className="mt-2 text-meta text-ink-muted">{REVIEW_ACTION_LABELS.continue.hint}</p>
+          ) : null}
+          {refusal ? <p role="alert" className="mt-2 text-small text-danger">{refusal}</p> : null}
+        </section>
+      ) : null}
 
       {analysis?.security.injection.suspected ? (
         <section className="rounded-card border border-danger bg-danger-tint p-5">
@@ -178,7 +250,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
                 <span className="font-semibold text-danger">{match.why}</span>
                 <p className="mt-0.5 text-ink-muted">Found in the email:</p>
                 <p className="mt-0.5 rounded-control border border-line bg-surface p-2 font-mono text-ink">
-                  {match.evidence}
+                  <ExpandableText shown={match.evidence} full={match.context} />
                 </p>
               </li>
             ))}
@@ -217,7 +289,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
               <h3 className="text-eyebrow uppercase text-ink-muted">① Understand</h3>
               {analysis ? (
                 <span className="text-meta text-ink-muted">
-                  {analysis.model} · {analysis.promptVersion} · {analysis.latencyMs}ms
+                  {analysis.model} · {analysis.promptVersion} · {formatLatency(analysis.latencyMs)}
                   {analysis.attempt > 1 ? ` · attempt ${analysis.attempt}` : ''}
                 </span>
               ) : null}
@@ -233,8 +305,26 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
               <>
                 <dl className="mt-3 space-y-2">
                   <div>
+                    <dt className="text-meta uppercase text-ink-muted">Summary</dt>
+                    <dd className="text-small">
+                      {understanding.summary}
+                      {mentions?.some((m) => m.in.includes('summary')) ? (
+                        <span data-summary-marker title={mentionsDiscardedMarker(mentions) ?? undefined} className="ml-2 inline-flex rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal">
+                          mentions a discarded value
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="text-meta uppercase text-ink-muted">Intent</dt>
-                    <dd className="text-small">{understanding.intent}</dd>
+                    <dd className="text-small">
+                      {understanding.intent}
+                      {mentions?.some((m) => m.in.includes('intent')) ? (
+                        <span data-summary-marker title={mentionsDiscardedMarker(mentions) ?? undefined} className="ml-2 inline-flex rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal">
+                          mentions a discarded value
+                        </span>
+                      ) : null}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-meta uppercase text-ink-muted">Why this priority</dt>
@@ -312,9 +402,11 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
             <h3 className="text-eyebrow uppercase text-ink-muted">CRM match</h3>
             {resolution === null ? (
               <p className="mt-2 text-small text-ink-muted">
-                {stages.understand === 'complete'
-                  ? 'Not matched against the CRM yet.'
-                  : 'Waiting for the email to be analysed first.'}
+                {isPaused(email.state)
+                  ? PAUSED_FOR_PERSON
+                  : stages.understand === 'complete'
+                    ? 'Not matched against the CRM yet.'
+                    : 'Waiting for the email to be analysed first.'}
               </p>
             ) : (
               <>
@@ -350,9 +442,11 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
             <section className="rounded-card border border-line bg-surface p-5 shadow-resting">
               <h3 className="text-eyebrow uppercase text-ink-muted">② Decide</h3>
               <p className="mt-2 text-small text-ink-muted">
-                {stages.resolve === 'complete'
-                  ? 'No recommendation has been made for this email yet.'
-                  : 'Waiting for the email to be matched against the CRM first.'}
+                {isPaused(email.state)
+                  ? PAUSED_FOR_PERSON
+                  : stages.resolve === 'complete'
+                    ? 'No recommendation has been made for this email yet.'
+                    : 'Waiting for the email to be matched against the CRM first.'}
               </p>
             </section>
           )}
@@ -391,11 +485,12 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
                       : 'bg-canvas text-ink-muted'
                 }`}
               >
-                {event.actor}
+                {actorLabel(event.actor).label}
+                {event.actor === 'human' && event.actorId ? ` · ${event.actorId}` : ''}
               </span>
               <span className="text-ink">{event.summary}</span>
               {event.outcome !== 'ok' ? (
-                <span className="text-meta text-signal">({event.outcome})</span>
+                <span className="text-meta text-signal">({outcomeFor(event.eventType, event.outcome).label})</span>
               ) : null}
             </li>
           ))}

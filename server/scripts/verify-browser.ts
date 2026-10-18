@@ -216,6 +216,16 @@ try {
   // whole reason inside a rounded pill, which wrapped into a small oval with overlapping lines; no
   // unit test can see that, so the check is made on the real layout: every state chip must be one
   // line high, and its reason must sit outside it.
+  // The analyse button says how many emails it will read before it is clicked: each is a model request with a real model.
+  const analyseLabel = String(
+    await evaluate('[...document.querySelectorAll("button")].map((b) => b.textContent).find((text) => /analyse waiting/i.test(text)) ?? ""'),
+  );
+  if (!/analyse waiting emails \(10\)/i.test(analyseLabel)) fail(`The analyse button says "${analyseLabel}" instead of naming the ten emails it will read`);
+  console.log(`PASS  the analyse button names what it will read: "${analyseLabel}"`);
+  const subjectLinks = Number(await evaluate('document.querySelectorAll("tbody tr a[href^=\\"#/inbox/\\"]").length'));
+  if (subjectLinks < 20) fail(`Only ${subjectLinks} links in the Inbox rows: the subject is not a link as well as the sender`);
+  console.log('PASS  the subject is a link as well as the sender');
+
   for (const label of ['analyse waiting email', 'match to crm', 'decide']) {
     await evaluate(
       `[...document.querySelectorAll("button")].find((b) => b.textContent.toLowerCase().includes(${JSON.stringify(label)})).click()`,
@@ -233,6 +243,21 @@ try {
   const reasonInsideChip = await evaluate('!!document.querySelector("[data-state-chip] [data-state-reason]")');
   if (reasonInsideChip) fail('A review reason is drawn inside the state chip again');
   console.log(`PASS  every state chip is one line high (${tallest} px) and the reason sits under it`);
+
+  // The emails handed to a person are listed where a person looks for work, and each offers what the server allows: archive for
+  // all of them, "continue" only for the ambiguous one, and never for the one that tried to give the assistant orders.
+  await cdp.send('Page.navigate', { url: `http://localhost:${port}/#/approvals` });
+  await waitFor('!!document.querySelector("[data-needs-person-tab]")', 'The Approvals page has no "Needs a person" tab');
+  await evaluate('document.querySelector("[data-needs-person-tab]").click()');
+  await waitFor('document.querySelectorAll("[data-needs-person-list] section").length >= 3', 'The Needs a person list did not show the three emails handed to a person');
+  const continueButtons = Number(await evaluate('[...document.querySelectorAll("[data-needs-person-list] button")].filter((b) => /continue to crm matching/i.test(b.textContent)).length'));
+  if (continueButtons !== 1) fail(`${continueButtons} emails offer "Continue to CRM matching"; only the ambiguous one should`);
+  const archiveButtons = Number(await evaluate('[...document.querySelectorAll("[data-needs-person-list] button")].filter((b) => /^archive$/i.test(b.textContent.trim())).length'));
+  if (archiveButtons < 3) fail(`Only ${archiveButtons} emails offer Archive`);
+  console.log('PASS  Needs a person lists the three emails; Archive for each, Continue only for the ambiguous one');
+  await evaluate('[...document.querySelectorAll("[data-needs-person-list] button")].find((b) => /continue to crm matching/i.test(b.textContent)).click()');
+  await waitFor('document.body.innerText.includes("is now waiting for approval")', 'Continuing the ambiguous email did not end with its plan waiting for approval');
+  console.log('PASS  Continue on the ambiguous email ends with its plan waiting for approval');
 
   cdp.close();
   console.log('\nRESULT: the documented first run works in a real browser.');

@@ -13,6 +13,8 @@ import {
   revisionSuccessMessage,
 } from '../revision/approvalPresentation.ts';
 import { TIER_LABELS } from '../components/decision.tsx';
+import { NeedsPersonList } from '../components/needsPerson.tsx';
+import { countLabel } from '../inbox/copy.ts';
 
 // The approval queue (the specification, extended by approve-with-edits).
 //
@@ -54,6 +56,9 @@ type LoadState =
 export function Approvals(): ReactNode {
   const publicDemo = usePublicDemo();
   const [filter, setFilter] = useState<ApprovalState>('pending');
+  // A second view alongside the approval states: the emails handed to a person. It is not an approval state, so it is its own flag.
+  const [showNeedsPerson, setShowNeedsPerson] = useState(false);
+  const [needsPersonCount, setNeedsPersonCount] = useState<number | null>(null);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -75,6 +80,18 @@ export function Approvals(): ReactNode {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const loadNeedsPerson = useCallback(async () => {
+    try {
+      setNeedsPersonCount((await api.listEmails('needs_review')).emails.length);
+    } catch {
+      setNeedsPersonCount(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadNeedsPerson();
+  }, [loadNeedsPerson]);
 
   /** Expanding a row loads the full detail: the history and editability live there. */
   const open = async (row: ApprovalQueueRow): Promise<void> => {
@@ -128,12 +145,15 @@ export function Approvals(): ReactNode {
             <button
               key={value}
               type="button"
-              onClick={() => setFilter(value)}
-              aria-pressed={filter === value}
+              onClick={() => {
+                setFilter(value);
+                setShowNeedsPerson(false);
+              }}
+              aria-pressed={!showNeedsPerson && filter === value}
               className={[
                 'h-control rounded-control px-3 text-small font-semibold',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                filter === value ? 'bg-brand text-white' : 'border border-line-strong text-ink-muted',
+                !showNeedsPerson && filter === value ? 'bg-brand text-white' : 'border border-line-strong text-ink-muted',
               ].join(' ')}
             >
               {presentation.label}
@@ -143,6 +163,21 @@ export function Approvals(): ReactNode {
             </button>
           );
         })}
+
+        <button
+          type="button"
+          onClick={() => setShowNeedsPerson(true)}
+          aria-pressed={showNeedsPerson}
+          data-needs-person-tab
+          className={[
+            'h-control rounded-control px-3 text-small font-semibold',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+            showNeedsPerson ? 'bg-brand text-white' : 'border border-line-strong text-ink-muted',
+          ].join(' ')}
+        >
+          Needs a person
+          {needsPersonCount !== null ? <span className="ml-1.5 opacity-75">{needsPersonCount}</span> : null}
+        </button>
 
         <button
           type="button"
@@ -167,16 +202,18 @@ export function Approvals(): ReactNode {
         ) : null}
       </div>
 
-      {state.status === 'loading' ? <p className="text-small text-ink-muted">Loading…</p> : null}
+      {showNeedsPerson ? <NeedsPersonList readOnly={publicDemo} onChanged={() => void Promise.all([load(), loadNeedsPerson()])} /> : null}
 
-      {state.status === 'error' ? (
+      {showNeedsPerson ? null : state.status === 'loading' ? <p className="text-small text-ink-muted">Loading…</p> : null}
+
+      {!showNeedsPerson && state.status === 'error' ? (
         <div className="rounded-card border border-line bg-danger-tint p-4">
           <p className="text-small font-semibold text-danger">Could not load the queue</p>
           <p className="mt-1 text-small text-ink-muted">{state.message}</p>
         </div>
       ) : null}
 
-      {state.status === 'ready' && state.rows.length === 0 ? (
+      {!showNeedsPerson && state.status === 'ready' && state.rows.length === 0 ? (
         <div className="rounded-card border border-dashed border-line-strong bg-surface p-6">
           <p className="text-body">Nothing here.</p>
           {filter === 'pending' ? (
@@ -187,7 +224,7 @@ export function Approvals(): ReactNode {
         </div>
       ) : null}
 
-      {state.status === 'ready'
+      {!showNeedsPerson && state.status === 'ready'
         ? state.rows.map((row) => {
             const isOpen = expanded === row.approval.id;
             const presentation = presentApproval(row.approval.state);
@@ -276,7 +313,7 @@ export function Approvals(): ReactNode {
                       aria-expanded={isOpen}
                       className="text-meta text-brand underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     >
-                      {isOpen ? 'Hide' : 'Show'} what will happen ({row.decision.plan.actions.length} actions)
+                      {isOpen ? 'Hide' : 'Show'} what will happen ({countLabel(row.decision.plan.actions.length, 'action')})
                     </button>
 
                     {/* Approve and Reject are the only entry points to a

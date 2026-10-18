@@ -257,6 +257,10 @@ export type EmailSummary = {
     summary: string;
     injectionSuspected: boolean;
     droppedFieldCount: number;
+    /** The category the model gave, when code changed it. Null when the final category is the model's own. */
+    modelCategory: string | null;
+    /** The model's summary or intent still mentions a value the checks discarded. */
+    summaryMentionsDiscarded: boolean;
   } | null;
   /** Null until resolution has run — never a fabricated verdict. */
   resolution: { contact: ResolutionVerdict; company: ResolutionVerdict } | null;
@@ -267,6 +271,9 @@ export type EmailSummary = {
     requiresApproval: boolean;
     hasDraft: boolean;
     draftBlocked: boolean;
+    /** Whether the plan creates the contact / the company. A NO_MATCH that creates nothing is not a "new record". */
+    createsContact: boolean;
+    createsCompany: boolean;
   } | null;
 };
 
@@ -298,6 +305,8 @@ export type ValidationRecord = {
   droppedFields: Array<{ field: string; reason: string; claimedValue: string }>;
   coherenceAdjustments: Array<{ what: string; why: string; rule?: string }>;
   normalisations: Array<{ what: string; why: string }>;
+  /** Discarded values the model's summary or intent still names. */
+  summaryMentions?: Array<{ field: string; claimedValue: string; in: Array<'summary' | 'intent'> }>;
   attempts: number;
 };
 
@@ -314,7 +323,7 @@ export type SecurityRecord = {
   injection: {
     suspected: boolean;
     modelFlagged: boolean;
-    matches: Array<{ rule: string; severity: string; evidence: string; why: string }>;
+    matches: Array<{ rule: string; severity: string; evidence: string; context?: string; why: string }>;
   };
 };
 
@@ -472,5 +481,7 @@ export type AuditRow = {
   summary: string;
   entityType: string | null;
   entityId: string | null;
+  /** Which email this belongs to, by subject and sender. Null for events that belong to no email. */
+  email: { subject: string; fromName: string | null; fromEmail: string } | null;
   createdAt: string;
 };

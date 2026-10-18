@@ -153,7 +153,10 @@ test('both branches state the same guarantee', () => {
   // The catch never depended on the model, whether or not the model agreed.
   for (const flagged of [true, false]) {
     const defence = describeDefence(flagged);
-    assert.match(defence.detail, /does not depend on the AI noticing/i);
+    // The true guarantee, in both branches: the check runs on every email, separately from the AI, and overrides it.
+    assert.match(defence.detail, /runs on every email, separately from the AI/i);
+    assert.match(defence.detail, /overrides the AI's/i);
+    assert.doesNotMatch(defence.detail, /before/i, 'no claim about ordering');
     assert.equal(defence.headline, 'Caught by a security check that runs on every email');
   }
 

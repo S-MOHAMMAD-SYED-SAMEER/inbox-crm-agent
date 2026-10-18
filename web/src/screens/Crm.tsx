@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { api } from '../api/client.ts';
+import { outcomeFor } from '../inbox/copy.ts';
+import { routeToHash } from '../router.ts';
 import { FilterChip, RecordTable, SourceBadge } from '../components/recordTable.tsx';
 import {
   actorLabel,
@@ -7,7 +9,6 @@ import {
   formatAmount,
   formatDate,
   isOverdue,
-  outcomeLabel,
   stageLabel,
   taskStatusLabel,
 } from '../crm/presentation.ts';
@@ -204,6 +205,7 @@ export function Tasks(): ReactNode {
 
 const OUTCOME_CLASS: Record<string, string> = {
   ok: 'text-ink-muted',
+  held: 'text-signal',
   stopped: 'text-signal font-semibold',
   failed: 'text-danger font-semibold',
 };
@@ -232,7 +234,7 @@ export function AuditLog(): ReactNode {
       }
       renderRow={(event) => {
         const who = actorLabel(event.actor);
-        const outcome = outcomeLabel(event.outcome);
+        const outcome = outcomeFor(event.eventType, event.outcome);
         return (
           <>
             <td className={`${CELL} whitespace-nowrap text-ink-muted`}>
@@ -246,6 +248,18 @@ export function AuditLog(): ReactNode {
             <td className={CELL}>
               <span className="font-semibold text-ink">{eventLabel(event.eventType)}</span>
               <p className="mt-0.5 text-meta text-ink-muted">{event.summary}</p>
+              {event.emailId && event.email ? (
+                <p className="mt-0.5 text-meta">
+                  <span className="text-ink-muted">Email: </span>
+                  <a
+                    href={routeToHash({ name: 'inbox', id: event.emailId })}
+                    className="text-brand underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    {event.email.subject}
+                  </a>
+                  <span className="text-ink-muted"> · {event.email.fromName ?? event.email.fromEmail}</span>
+                </p>
+              ) : null}
             </td>
             <td className={`${CELL} whitespace-nowrap text-ink-muted`}>
               <span aria-hidden="true">{who.marker} </span>

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Decision } from '../api/types.ts';
+import { countLabel, sentenceCase } from '../inbox/copy.ts';
 
 // Decision presentation (stage ②).
 //
@@ -72,7 +73,7 @@ export function DecisionCard({ decision }: { decision: Decision }): ReactNode {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-eyebrow uppercase text-ink-muted">② Decide</h3>
         <span className="text-meta text-ink-muted" title={`Risk tier ${plan.riskTier}`}>
-          {plan.actions.length} action{plan.actions.length === 1 ? '' : 's'} · {TIER_LABELS[plan.riskTier]}
+          {countLabel(plan.actions.length, 'action')} · {TIER_LABELS[plan.riskTier]}
         </span>
       </div>
 
@@ -114,7 +115,7 @@ export function DecisionCard({ decision }: { decision: Decision }): ReactNode {
               <span className={entry.fired ? 'font-semibold text-brand' : 'text-ink-muted'}>
                 {entry.rule} {entry.fired ? 'fired' : 'did not fire'}
               </span>
-              <span className="text-ink-muted"> — {entry.because}</span>
+              <span className="text-ink-muted"> — {sentenceCase(entry.because)}</span>
             </li>
           ))}
         </ul>

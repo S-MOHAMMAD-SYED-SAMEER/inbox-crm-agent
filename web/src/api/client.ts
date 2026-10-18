@@ -286,6 +286,13 @@ export const api = {
       body: JSON.stringify({}),
     }),
 
+  /** What a person does with an email handed to them. The server decides what is allowed; the screen only offers it. */
+  reviewEmail: (id: string, action: 'archive' | 'continue'): Promise<EmailDetail> =>
+    request<EmailDetail>(`/emails/${encodeURIComponent(id)}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }),
+
   resolveMatch: (id: string, entityType: 'contact' | 'company', entityId: string | null): Promise<EmailDetail> =>
     request<EmailDetail>(`/emails/${encodeURIComponent(id)}/resolve-match`, {
       method: 'POST',
