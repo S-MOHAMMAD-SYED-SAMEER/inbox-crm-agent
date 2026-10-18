@@ -17,6 +17,7 @@ import {
   handleListApprovals,
   handleExpireApprovals,
   handleRevise,
+  handleReviewEmail,
   type EmailHandlerDeps,
 } from '../handlers/emails.ts';
 
@@ -150,6 +151,14 @@ export function createEmailRouter(deps: EmailHandlerDeps): Router {
     '/decisions/:id/revise',
     wrap(async (req, res) => {
       const result = await handleRevise(deps, req.params.id as string, req.body, operatorOf(req));
+      res.status(result.status).json(result.body);
+    }),
+  );
+
+  router.post(
+    '/emails/:id/review',
+    wrap(async (req, res) => {
+      const result = await handleReviewEmail(deps, req.params.id as string, req.body, operatorOf(req));
       res.status(result.status).json(result.body);
     }),
   );

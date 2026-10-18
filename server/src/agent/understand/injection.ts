@@ -107,11 +107,41 @@ const RULES: Rule[] = [
 /** Trimmed to keep an operator-facing banner readable and a log line bounded. */
 const MAX_EVIDENCE = 160;
 
-function evidenceFor(text: string, match: RegExpMatchArray): string {
+const MAX_CONTEXT = 600;
+
+/**
+ * A window of text around a match, cut at whole words. Where the window does not reach the start or the end of the text it
+ * says so with an ellipsis, so it can never read as if the sentence began or ended there.
+ */
+function windowAround(text: string, match: RegExpMatchArray, before: number, after: number, cap: number): string {
   const found = match[0] ?? '';
-  const start = Math.max(0, (match.index ?? 0) - 20);
-  const window = text.slice(start, (match.index ?? 0) + found.length + 20).trim();
-  return window.length > MAX_EVIDENCE ? `${window.slice(0, MAX_EVIDENCE)}…` : window;
+  const index = match.index ?? 0;
+  let start = Math.max(0, index - before);
+  let end = Math.min(text.length, index + found.length + after);
+  // Move inwards to a word boundary, but never into the match itself.
+  if (start > 0) {
+    const space = text.indexOf(' ', start);
+    start = space === -1 || space >= index ? start : space + 1;
+  }
+  if (end < text.length) {
+    const space = text.lastIndexOf(' ', end);
+    end = space <= index + found.length ? end : space;
+  }
+  let slice = text.slice(start, end).trim();
+  if (slice.length > cap) {
+    const cut = slice.lastIndexOf(' ', cap);
+    slice = slice.slice(0, cut > 0 ? cut : cap).trimEnd();
+    end = start + slice.length;
+  }
+  return `${start > 0 ? '…' : ''}${slice}${end < text.length ? '…' : ''}`;
+}
+
+function evidenceFor(text: string, match: RegExpMatchArray): string {
+  return windowAround(text, match, 20, 20, MAX_EVIDENCE);
+}
+
+function contextFor(text: string, match: RegExpMatchArray): string {
+  return windowAround(text, match, 200, 200, MAX_CONTEXT);
 }
 
 export function detectInjection(
@@ -131,6 +161,7 @@ export function detectInjection(
         rule: rule.name,
         severity: rule.severity,
         evidence: evidenceFor(normalised, match),
+        context: contextFor(normalised, match),
         why: rule.why,
       });
     }
@@ -168,6 +199,7 @@ export function detectInjection(
           rule: rule.name,
           severity: rule.severity,
           evidence: `(in hidden text) ${evidenceFor(hiddenText, match)}`,
+          context: contextFor(hiddenText, match),
           why: rule.why,
         });
       }

@@ -96,6 +96,12 @@ export async function decideEmail(
     openDealForContact = deals.filter((deal) => deal.stage !== 'won' && deal.stage !== 'lost')[0] ?? null;
   }
 
+  // A person who has looked at an ambiguous email and let it continue (see handleReviewEmail) has put that on the record; the
+  // only rule that reads it is R-20, which turns "no plan at all" into "an activity and a task for a person".
+  const humanChecked = (await repos.audit.listByEmail(email.id)).some(
+    (event) => event.eventType === 'human_review_recorded' && (event.payload as { action?: string }).action === 'continue',
+  );
+
   const ctx: DecisionContext = {
     email,
     understanding: analysis.understanding,
@@ -103,6 +109,7 @@ export async function decideEmail(
     company,
     openDeal,
     openDealForContact,
+    humanChecked,
     matchedContact,
     now: clock.nowIso(),
   };

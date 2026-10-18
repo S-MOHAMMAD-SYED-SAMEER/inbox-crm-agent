@@ -95,8 +95,8 @@ export function requiresApproval(input: ApprovalInput): ApprovalRequirement {
     reasons.push({
       code: 'consequential_action',
       message:
-        `This plan ${triggering.length === 1 ? 'contains an action' : 'contains actions'} that ` +
-        `always needs a person: ${triggering.join(', ')}.`,
+        `This plan ${triggering.length === 1 ? 'contains an action that always needs' : 'contains actions that always need'} ` +
+        `a person: ${triggering.join(', ')}.`,
     });
   }
 
