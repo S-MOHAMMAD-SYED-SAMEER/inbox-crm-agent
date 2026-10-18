@@ -161,10 +161,19 @@ function compactName(text: string): string {
  * Why a company is being proposed, in the words that are true. A company named in the message is "named"; one that exists here only
  * because the sender writes from its domain is said to be that, and a bare domain is not called a name.
  */
+function normalisedText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 function companyEvidence(ctx: DecisionContext, label: string): string {
   const named = ctx.understanding.extracted.companyName.value;
   const senderDomain = ctx.email.fromEmail.split('@')[1] ?? '';
   if (named === null) return `no existing company matched and the sender's domain is ${label}`;
+  // WHERE THE NAME WAS FOUND, not merely where it could have been. A name that is written in the email (its body, signature, subject or
+  // the sender's display name) is "named" by the email even when the sender's domain happens to spell the same thing. Only a name that
+  // is NOT written anywhere, and is there because the domain says so, is attributed to the domain.
+  const written = normalisedText([ctx.email.fromName ?? '', ctx.email.subject, ctx.email.bodyText].join(' '));
+  if (written.includes(normalisedText(named))) return `no existing company matched and the email names "${named}"`;
   const fromDomain = senderDomain.split('.').some((part) => part !== '' && compactName(part) === compactName(named));
   return fromDomain
     ? `no existing company matched, and the sender's domain (${senderDomain}) suggests "${named}"`

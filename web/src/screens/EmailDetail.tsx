@@ -12,7 +12,7 @@ import {
   PriorityChip,
   StateChip,
 } from '../components/understanding.tsx';
-import { ResolutionCard } from '../components/resolution.tsx';
+import { ChooseRecord, ResolutionCard } from '../components/resolution.tsx';
 import { describeDefence } from '../security/injectionPresentation.ts';
 import { DecisionCard } from '../components/decision.tsx';
 import { ExecutionCard } from '../components/execution.tsx';
@@ -21,11 +21,14 @@ import { reviewReasonLabel } from '../inbox/statePresentation.ts';
 import {
   PAUSED_FOR_PERSON,
   REVIEW_ACTION_LABELS,
+  canChooseRecord,
+  continueResultMessage,
   formatLatency,
   isPaused,
   mentionsDiscardedMarker,
   noContinueReason,
   outcomeFor,
+  pickResultMessage,
   reviewActionsFor,
   type ReviewAction,
 } from '../inbox/copy.ts';
@@ -75,6 +78,9 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   // *failed* load survived, because the error branch returns before reaching
   // the sixth hook.
   const [refusal, setRefusal] = useState<string | null>(null);
+  // What the last review or pick did. It stays until the next one replaces it, and it is not cleared by the reload that follows, so the
+  // result of Continue ("choose one") is still on screen when the person looks for it.
+  const [note, setNote] = useState<string | null>(null);
   const publicDemo = usePublicDemo();
   const guest = useGuest();
 
@@ -129,10 +135,14 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
 
   const chooseMatch = async (entityType: 'contact' | 'company', entityId: string | null): Promise<void> => {
     setBusy(true);
+    setRefusal(null);
     try {
-      setState({ status: 'ready', detail: await api.resolveMatch(id, entityType, entityId) });
+      const detail = await api.resolveMatch(id, entityType, entityId);
+      setState({ status: 'ready', detail });
+      setNote(pickResultMessage(detail.email.state, detail.email.reviewReason, entityId === null));
     } catch (err) {
-      setState({ status: 'error', message: err instanceof ApiError ? err.message : 'Something went wrong.' });
+      // A refusal is said where the choice is; it does not replace the page, and nothing changed.
+      setRefusal(err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
       setBusy(false);
     }
@@ -142,7 +152,9 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
     setBusy(true);
     setRefusal(null);
     try {
-      setState({ status: 'ready', detail: await api.reviewEmail(id, action) });
+      const detail = await api.reviewEmail(id, action);
+      setState({ status: 'ready', detail });
+      setNote(action === 'archive' ? 'Archived. Nothing in the CRM changed.' : continueResultMessage(detail.email.state, detail.email.reviewReason));
     } catch (err) {
       // A refusal from the server is shown where the buttons are, not by replacing the page.
       setRefusal(err instanceof ApiError ? err.message : 'Something went wrong.');
@@ -206,6 +218,12 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
         </div>
       </header>
 
+      {note ? (
+        <p data-result-note role="status" className="rounded-control border border-line bg-surface p-3 text-small text-ink">
+          {note}
+        </p>
+      ) : null}
+
       {isPaused(email.state) ? (
         <section data-needs-person className="rounded-card border border-signal bg-signal-tint p-5">
           <h3 className="text-small font-semibold text-signal">A person has to look at this email</h3>
@@ -236,6 +254,9 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
           ) : null}
           {reviewActionsFor(email.state, email.reviewReason).includes('continue') ? (
             <p className="mt-2 text-meta text-ink-muted">{REVIEW_ACTION_LABELS.continue.hint}</p>
+          ) : null}
+          {canChooseRecord(email.state, email.reviewReason) && resolution && !publicDemo ? (
+            <ChooseRecord resolution={resolution} busy={busy} onChoose={(entityType, entityId) => void chooseMatch(entityType, entityId)} />
           ) : null}
           {refusal ? <p role="alert" className="mt-2 text-small text-danger">{refusal}</p> : null}
         </section>
@@ -429,7 +450,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
                     title="Contact"
                     resolution={resolution.contact}
                     busy={busy}
-                    {...(stages.resolve === 'conflict'
+                    {...(stages.resolve === 'conflict' && !canChooseRecord(email.state, email.reviewReason)
                       ? { onChoose: (entityId: string | null) => void chooseMatch('contact', entityId) }
                       : {})}
                   />
@@ -437,7 +458,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
                     title="Company"
                     resolution={resolution.company}
                     busy={busy}
-                    {...(stages.resolve === 'conflict'
+                    {...(stages.resolve === 'conflict' && !canChooseRecord(email.state, email.reviewReason)
                       ? { onChoose: (entityId: string | null) => void chooseMatch('company', entityId) }
                       : {})}
                   />

@@ -410,3 +410,146 @@ test('R-20 attaches nothing to a CRM contact or company, even when the sender ma
   assert.equal(activities[0]?.companyId, null);
   await f.close();
 });
+
+// ======================================== V-2: choosing the record when more than one could be right
+
+async function conflictedEmail() {
+  const f = await pipelineUpToUnderstand();
+  const { handleResolvePending } = await import('../src/handlers/emails.ts');
+  await handleResolvePending(f.deps);
+  const e04 = await emailOf(f.repos, 'demo-e04');
+  assert.equal(e04.state, 'needs_review');
+  assert.equal(e04.reviewReason, 'match_conflict');
+  const detail = (await handleGetEmail(f.deps, e04.id)).body;
+  const candidates = detail.resolution?.company.candidates ?? [];
+  assert.ok(candidates.length >= 2, 'the two Harborview records are the candidates');
+  return { f, e04, candidates };
+}
+
+test('V-2: picking one of the candidates resolves the email to it, runs decide, and leaves the plan waiting for approval', async () => {
+  const { f, e04, candidates } = await conflictedEmail();
+  const picked = candidates[0];
+  assert.ok(picked);
+  const before = await crmCounts(f.repos);
+
+  const { handleResolveMatch } = await import('../src/handlers/emails.ts');
+  const { body } = await handleResolveMatch(f.deps, e04.id, { entityType: 'company', entityId: picked.entityId }, 'operator');
+
+  assert.equal(body.resolution?.company.selectedEntityId, picked.entityId);
+  assert.equal(body.resolution?.company.outcome, 'human_selected');
+  assert.equal(body.email.state, 'awaiting_approval', 'decide ran, and the plan waits for a person');
+  assert.ok(body.decision);
+  assert.equal(body.decision.plan.requiresApproval, true);
+  assert.deepEqual(await crmCounts(f.repos), before, 'choosing a record writes nothing to the CRM');
+  const pick = body.audit.find((event) => event.eventType === 'match_resolved_by_human');
+  assert.equal(pick?.actor, 'human');
+  assert.equal(pick?.actorId, 'operator', 'the pick names who made it');
+  await f.close();
+});
+
+test('V-2: "none of these, create new records" resolves the email and runs decide', async () => {
+  const { f, e04 } = await conflictedEmail();
+  const { handleResolveMatch } = await import('../src/handlers/emails.ts');
+  const { body } = await handleResolveMatch(f.deps, e04.id, { entityType: 'company', entityId: 'create_new' }, 'sameer');
+  assert.equal(body.resolution?.company.outcome, 'propose_create');
+  assert.equal(body.resolution?.company.verdict, 'NO_MATCH');
+  assert.equal(body.email.state, 'awaiting_approval');
+  const pick = body.audit.find((event) => event.eventType === 'match_resolved_by_human');
+  assert.equal(pick?.actorId, 'sameer');
+  await f.close();
+});
+
+test('V-2: a record that is not one of this email\'s candidates is refused (400), however real it is', async () => {
+  const { f, e04, candidates } = await conflictedEmail();
+  const { handleResolveMatch } = await import('../src/handlers/emails.ts');
+  const candidateIds = new Set(candidates.map((c) => c.entityId));
+  const strangers = (await f.repos.companies.list({ limit: 50 })).filter((company) => !candidateIds.has(company.id));
+  assert.ok(strangers.length > 0, 'the CRM has companies that are not candidates');
+
+  for (const id of [strangers[0]?.id as string, 'no-such-company']) {
+    const error = await rejects(() => handleResolveMatch(f.deps, e04.id, { entityType: 'company', entityId: id }, 'operator'));
+    assert.equal((error as AppError).status, 400, `${id} was accepted`);
+  }
+  // A contact id offered for the company.
+  const aContact = (await f.repos.contacts.list({ limit: 5 }))[0];
+  const wrongKind = await rejects(() => handleResolveMatch(f.deps, e04.id, { entityType: 'company', entityId: aContact?.id as string }, 'operator'));
+  assert.equal((wrongKind as AppError).status, 400);
+
+  // Nothing changed.
+  assert.equal((await emailOf(f.repos, 'demo-e04')).state, 'needs_review');
+  assert.equal((await f.repos.audit.listByEmail(e04.id)).some((event) => event.eventType === 'match_resolved_by_human'), false);
+  await f.close();
+});
+
+test('V-2: over HTTP, a foreign id is refused with a 4xx and a real candidate is accepted', async () => {
+  const { f, e04, candidates } = await conflictedEmail();
+  const server = await startAuthenticatedServer(f.db);
+  try {
+    const headers = { 'content-type': 'application/json', cookie: server.cookie, 'x-csrf-token': server.csrf };
+    const stranger = (await f.repos.companies.list({ limit: 50 })).find((company) => !candidates.some((c) => c.entityId === company.id));
+    const refused = await fetch(`${server.url}/api/emails/${e04.id}/resolve-match`, { method: 'POST', headers, body: JSON.stringify({ entityType: 'company', entityId: stranger?.id }) });
+    assert.equal(refused.status, 400);
+    const accepted = await fetch(`${server.url}/api/emails/${e04.id}/resolve-match`, { method: 'POST', headers, body: JSON.stringify({ entityType: 'company', entityId: candidates[0]?.entityId }) });
+    assert.equal(accepted.status, 200);
+    assert.equal(((await accepted.json()) as { email: { state: string } }).email.state, 'awaiting_approval');
+  } finally {
+    await server.stop();
+  }
+  await f.close();
+});
+
+// =================================== V-6: a company name is attributed to where it was really found
+
+test('V-6: a name written in the email is "named" by the email, even when the sender\'s domain spells it the same', async () => {
+  const { evaluateRules } = await import('../src/agent/decide/rules.ts');
+  const build = (bodyText: string, fromName: string | null) =>
+    ({
+      email: { subject: 'Rebuilding our site', fromEmail: 'tom@northlinestudio.invalid', fromName, bodyText, providerMessageId: 'x' },
+      understanding: {
+        category: 'service_inquiry', intent: 'x', priority: 'medium', priorityReason: 'x', confidence: 0.9, confidenceBand: 'high',
+        flags: { insufficientInformation: false, ambiguousIntent: false, possibleInjection: false },
+        extracted: { ...emptyExtraction(), companyName: { value: 'Northline Studio', confidence: 0.9, sourceSpan: 'Northline Studio' }, companyDomain: { value: 'northlinestudio.invalid', confidence: 0.9, sourceSpan: 'x' } },
+        questionAsked: null, summary: 'x',
+      },
+      contact: { entityType: 'contact', verdict: 'NO_MATCH', outcome: 'propose_create', candidates: [], selectedEntityId: null },
+      company: { entityType: 'company', verdict: 'NO_MATCH', outcome: 'propose_create', candidates: [], selectedEntityId: null },
+      openDeal: null, matchedContact: null, now: '2026-08-24T10:00:00.000Z',
+    }) as unknown as Parameters<typeof evaluateRules>[0];
+  const reason = (ctx: Parameters<typeof evaluateRules>[0]) => evaluateRules(ctx).trace.find((entry) => entry.rule === 'R-01')?.because;
+
+  // Tom's real email: signed "Northline Studio". The name is in the text, so the email names it.
+  assert.equal(
+    reason(build('Hello,\n\nOur website is about six years old.\n\nTom Reyes\nNorthline Studio', 'Tom Reyes')),
+    'no existing company matched and the email names "Northline Studio"',
+  );
+  // Case and spacing do not matter.
+  assert.equal(reason(build('regards,   NORTHLINE   studio', null)), 'no existing company matched and the email names "Northline Studio"');
+  // The name is nowhere in the text, only in the sender's domain: now, and only now, it is the domain that suggests it.
+  assert.equal(
+    reason(build('Hello,\n\nOur website is about six years old.\n\nTom Reyes', 'Tom Reyes')),
+    'no existing company matched, and the sender\'s domain (northlinestudio.invalid) suggests "Northline Studio"',
+  );
+});
+
+test('V-6: through the recorded reply for Tom (E-02), the email names the company, so the reason says so', async () => {
+  const fs = await import('node:fs');
+  const recorded = JSON.parse(fs.readFileSync(path.resolve(DEMO_DATA_DIR, '../replay/recorded-run.json'), 'utf8')) as {
+    replies: Array<{ fixtureId: string; purpose: string; toolInput: { extracted: { companyName: { value: string | null } } } }>;
+  };
+  const e02 = recorded.replies.find((r) => r.fixtureId === 'demo-e02' && r.purpose === 'understand');
+  assert.equal(e02?.toolInput.extracted.companyName.value, 'Northline Studio', 'the recorded reply names the company');
+  const emails = JSON.parse(fs.readFileSync(path.join(DEMO_DATA_DIR, 'emails.json'), 'utf8')) as Array<{ providerMessageId: string; bodyText: string }>;
+  assert.match(emails.find((e) => e.providerMessageId === 'demo-e02')?.bodyText ?? '', /Northline Studio/, 'and the email is signed with it');
+
+  // The demo's own scripted answer for Tom is the one that runs here; it names the same company.
+  const f = await pipelineUpToUnderstand();
+  const { handleResolvePending, handleDecidePending } = await import('../src/handlers/emails.ts');
+  await handleResolvePending(f.deps);
+  await handleDecidePending(f.deps);
+  const tom = await emailOf(f.repos, 'demo-e02');
+  const decision = (await handleGetEmail(f.deps, tom.id)).body.decision;
+  const r01 = decision?.plan.ruleTrace.find((entry) => entry.rule === 'R-01');
+  assert.equal(r01?.because, 'no existing company matched and the email names "Northline Studio"');
+  assert.doesNotMatch(decision?.plan.rationale ?? '', /suggests/);
+  await f.close();
+});

@@ -594,7 +594,9 @@ test('the resolve-match endpoint validates its input and records the operator', 
   const detail = await handleGetEmail(d, email.id);
   const candidateId = detail.body.resolution?.company.candidates[0]?.entityId as string;
   const settled = await handleResolveMatch(d, email.id, { entityType: 'company', entityId: candidateId }, 'sameer');
-  assert.equal(settled.body.email.state, 'deciding');
+  // Picking a record also runs decide (the approved behaviour): the plan is made, and it still waits for a person.
+  assert.equal(settled.body.email.state, 'awaiting_approval');
+  assert.equal(settled.body.decision?.plan.requiresApproval, true);
   await close();
 });
 

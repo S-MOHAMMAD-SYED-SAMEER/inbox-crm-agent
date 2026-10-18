@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, ApiError } from '../api/client.ts';
-import type { EmailSummary } from '../api/types.ts';
+import type { EmailDetail, EmailSummary } from '../api/types.ts';
+import { ChooseRecord } from './resolution.tsx';
 import { routeToHash } from '../router.ts';
 import { reviewReasonLabel } from '../inbox/statePresentation.ts';
-import { REVIEW_ACTION_LABELS, noContinueReason, reviewActionsFor, sentenceCase, type ReviewAction } from '../inbox/copy.ts';
+import {
+  CHOOSE_THE_RECORD,
+  REVIEW_ACTION_LABELS,
+  canChooseRecord,
+  continueResultMessage,
+  noContinueReason,
+  pickResultMessage,
+  reviewActionsFor,
+  sentenceCase,
+  type ReviewAction,
+} from '../inbox/copy.ts';
 
 // The emails the assistant handed to a person, listed where a person looks for work.
 //
@@ -25,6 +36,11 @@ export function NeedsPersonList({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // What the last action did to each email, kept beside that email. The one message above is replaced by the next action; this is not,
+  // so "Continued. CRM matching found more than one possible record; choose one." is still there when the person gets to the row.
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  // The email whose candidates are open, with what the server says about them.
+  const [choosing, setChoosing] = useState<{ id: string; detail: EmailDetail } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -44,16 +60,50 @@ export function NeedsPersonList({
     setNotice(null);
     try {
       const detail = await api.reviewEmail(email.id, action);
-      setNotice(
-        action === 'archive'
-          ? `Archived “${email.subject}”. Nothing in the CRM changed.`
-          : detail.email.state === 'awaiting_approval'
-            ? `“${email.subject}” was checked, matched and planned. The plan is now waiting for approval.`
-            : `“${email.subject}” was checked and continued. It is now ${detail.email.state.replace(/_/g, ' ')}.`,
-      );
+      if (action === 'archive') {
+        setNotice(`Archived “${email.subject}”. Nothing in the CRM changed.`);
+      } else {
+        const message = continueResultMessage(detail.email.state, detail.email.reviewReason);
+        setNotice(`“${email.subject}”: ${message}`);
+        setNotes((previous) => ({ ...previous, [email.id]: message }));
+        if (canChooseRecord(detail.email.state, detail.email.reviewReason)) setChoosing({ id: email.id, detail });
+      }
       await load();
       onChanged?.();
     } catch (err) {
+      setNotice(err instanceof ApiError ? err.message : 'Something went wrong.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const openChooser = async (email: EmailSummary): Promise<void> => {
+    if (choosing?.id === email.id) {
+      setChoosing(null);
+      return;
+    }
+    setBusy(`${email.id}:choose`);
+    try {
+      setChoosing({ id: email.id, detail: await api.getEmail(email.id) });
+    } catch (err) {
+      setNotice(err instanceof ApiError ? err.message : 'Something went wrong.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const choose = async (email: EmailSummary, entityType: 'contact' | 'company', entityId: string | null): Promise<void> => {
+    setBusy(`${email.id}:pick`);
+    try {
+      const detail = await api.resolveMatch(email.id, entityType, entityId);
+      const message = pickResultMessage(detail.email.state, detail.email.reviewReason, entityId === null);
+      setNotice(`“${email.subject}”: ${message}`);
+      setNotes((previous) => ({ ...previous, [email.id]: message }));
+      setChoosing(canChooseRecord(detail.email.state, detail.email.reviewReason) ? { id: email.id, detail } : null);
+      await load();
+      onChanged?.();
+    } catch (err) {
+      // A refusal (a record that is not one of this email's candidates) is said where the choice is, and nothing changed.
       setNotice(err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
       setBusy(null);
@@ -108,6 +158,18 @@ export function NeedsPersonList({
 
             {readOnly ? null : (
               <div className="mt-3 flex flex-wrap items-center gap-2">
+                {canChooseRecord(email.state, email.reviewReason) ? (
+                  <button
+                    type="button"
+                    data-choose-the-record
+                    disabled={busy !== null}
+                    aria-expanded={choosing?.id === email.id}
+                    onClick={() => void openChooser(email)}
+                    className="h-control rounded-control bg-brand px-3 text-meta font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+                  >
+                    {busy === `${email.id}:choose` ? 'Working…' : CHOOSE_THE_RECORD}
+                  </button>
+                ) : null}
                 {actions.map((action) => (
                   <button
                     key={action}
@@ -131,6 +193,18 @@ export function NeedsPersonList({
               </div>
             )}
             {why ? <p className="mt-2 text-meta text-ink-muted">{why}</p> : null}
+            {notes[email.id] ? (
+              <p data-row-note className="mt-2 text-small text-ink">
+                {notes[email.id]}
+              </p>
+            ) : null}
+            {!readOnly && choosing?.id === email.id && choosing.detail.resolution ? (
+              <ChooseRecord
+                resolution={choosing.detail.resolution}
+                busy={busy !== null}
+                onChoose={(entityType, entityId) => void choose(email, entityType, entityId)}
+              />
+            ) : null}
           </section>
         );
       })}

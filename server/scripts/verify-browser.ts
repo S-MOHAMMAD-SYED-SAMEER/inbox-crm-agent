@@ -186,6 +186,18 @@ try {
     fail(`${what} (waited ${timeoutMs / 1000} s). The page says: "${visible}"`);
   };
 
+  const viewport = (width: number, height: number, mobile: boolean) =>
+    cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+  const go = async (hash: string, ready: string, what: string) => {
+    await cdp.send('Page.navigate', { url: `http://localhost:${port}/${hash}` });
+    await waitFor(ready, what);
+  };
+  /** The page may not scroll sideways: the document is no wider than the window. */
+  const noSidewaysScroll = async (what: string, width: number) => {
+    const wide = Number(await evaluate('document.documentElement.scrollWidth'));
+    if (wide > width) fail(`${what}: the page scrolls sideways (${wide} px of content in a ${width} px window)`);
+  };
+
   // The URL the README tells a visitor to open.
   await cdp.send('Page.navigate', { url: `http://localhost:${port}/` });
   await waitFor('!!document.querySelector("input[type=password]")', 'The sign-in form did not appear');
@@ -256,12 +268,80 @@ try {
   if (archiveButtons < 3) fail(`Only ${archiveButtons} emails offer Archive`);
   console.log('PASS  Needs a person lists the three emails; Archive for each, Continue only for the ambiguous one');
   await evaluate('[...document.querySelectorAll("[data-needs-person-list] button")].find((b) => /continue to crm matching/i.test(b.textContent)).click()');
-  await waitFor('document.body.innerText.includes("is now waiting for approval")', 'Continuing the ambiguous email did not end with its plan waiting for approval');
-  console.log('PASS  Continue on the ambiguous email ends with its plan waiting for approval');
+  await waitFor(
+    'document.body.innerText.includes("Continued.") && document.body.innerText.includes("the plan is waiting for approval")',
+    'Continuing the ambiguous email did not say what it did and end with its plan waiting for approval',
+  );
+  console.log('PASS  Continue on the ambiguous email says what it did, and ends with its plan waiting for approval');
+
+  // The email that stopped on a match conflict: "Choose the record" lists the candidates and offers "None of these".
+  await waitFor('!!document.querySelector("[data-needs-person-list] [data-choose-the-record]")', 'The email stopped on a match conflict offers no "Choose the record"');
+  await evaluate('document.querySelector("[data-needs-person-list] [data-choose-the-record]").click()');
+  await waitFor('!!document.querySelector("[data-choose-record]")', '"Choose the record" showed no candidates');
+  const chooser = String(await evaluate('document.querySelector("[data-choose-record]").innerText'));
+  if (!/none of these/i.test(chooser)) fail('"Choose the record" offers no "None of these \u2014 create new records"');
+  if (!/choose this record/i.test(chooser)) fail('"Choose the record" offers no candidate to choose');
+  for (let pick = 0; pick < 3 && !String(await evaluate('document.body.innerText')).includes('The plan is waiting for approval'); pick += 1) {
+    await evaluate('[...document.querySelectorAll("[data-choose-record] button")].find((b) => /choose this record/i.test(b.textContent)).click()');
+    await sleep(1200);
+  }
+  await waitFor('document.body.innerText.includes("Record chosen. The plan is waiting for approval.")', 'Choosing a candidate did not leave a plan waiting for approval');
+  console.log('PASS  Choose the record: the candidates are listed with "None of these"; choosing one leaves a plan waiting for approval');
+
+  // V-3 the Inbox table at 1280 and 1440, V-4 the phone, V-1 the owner's status cards: all in the real layout.
+  await go('#/overview', '/sending replies/i.test(document.body.innerText) && /language model/i.test(document.body.innerText)', 'The Overview did not load');
+  const ownerCards = String(await evaluate('document.body.innerText.replace(/\\s+/g, " ")'));
+  if (!ownerCards.includes('Every screen and every action requires a signed-in operator')) fail('The owner Overview no longer says that sign-in is required');
+  if (/Guest demo\. No sign-in/.test(ownerCards)) fail('The owner Overview shows the guest wording');
+  console.log('PASS  the owner Overview keeps its own status cards');
+
+  await viewport(1280, 900, false);
+  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The Inbox did not load at 1280 px');
+  const layout = (await evaluate(`(() => {
+    const table = document.querySelector('table');
+    const card = table.parentElement;
+    const heads = [...table.querySelectorAll('thead th')].map((th) => ({ text: th.textContent.trim(), width: th.getBoundingClientRect().width, shown: getComputedStyle(th).display !== 'none' }));
+    const pills = [...table.querySelectorAll('.rounded-pill')].filter((el) => el.getBoundingClientRect().width > 0).map((el) => el.getBoundingClientRect().height);
+    return { tableWidth: table.scrollWidth, cardWidth: card.clientWidth, heads, tallestPill: Math.max(...pills) };
+  })()`)) as { tableWidth: number; cardWidth: number; heads: Array<{ text: string; width: number; shown: boolean }>; tallestPill: number };
+  if (layout.tableWidth > layout.cardWidth) fail(`At 1280 px the table is ${layout.tableWidth} px wide inside a ${layout.cardWidth} px card: it scrolls sideways (${layout.heads.filter((h) => h.shown).map((h) => `${h.text} ${Math.round(h.width)}`).join(', ')})`);
+  await noSidewaysScroll('The Inbox at 1280 px', 1280);
+  const head = (name: string) => layout.heads.find((h) => h.text === name);
+  if ((head('Subject')?.width ?? 0) < 260) fail(`At 1280 px the Subject column is ${head('Subject')?.width} px wide (260 px at least)`);
+  if ((head('From')?.width ?? 999) > 175) fail(`At 1280 px the From column is ${head('From')?.width} px wide (it should be narrow)`);
+  if (head('Confidence')?.shown) fail('At 1280 px Confidence is still a column of its own: it should be folded into Read as');
+  if (layout.tallestPill > 30) fail(`At 1280 px a pill is ${layout.tallestPill} px tall: its text wraps`);
+  const foldedConfidence = Number(await evaluate('[...document.querySelectorAll("tbody tr")].filter((tr) => /\\b(high|medium|low)\\s+0\\.\\d\\d/i.test(tr.cells[2].innerText)).length'));
+  if (foldedConfidence < 5) fail(`At 1280 px only ${foldedConfidence} rows show the confidence inside Read as`);
+  const fullAddress = Number(await evaluate('[...document.querySelectorAll("tbody tr td:first-child p[title]")].filter((p) => p.title.includes("@")).length'));
+  if (fullAddress < 5) fail('The From cell does not carry the full address on hover');
+  console.log(`PASS  the Inbox at 1280 px: no sideways scroll, Subject ${Math.round(head('Subject')?.width ?? 0)} px, From ${Math.round(head('From')?.width ?? 0)} px, Confidence folded into Read as, pills on one line`);
+  await viewport(1440, 900, false);
+  await sleep(300);
+  const wide = (await evaluate(`[...document.querySelectorAll('thead th')].map((th) => th.textContent.trim() + ':' + (getComputedStyle(th).display !== 'none'))`)) as string[];
+  if (!wide.includes('Confidence:true')) fail('At 1440 px Confidence is not its own column');
+  await noSidewaysScroll('The Inbox at 1440 px', 1440);
+  console.log('PASS  at 1440 px Confidence is its own column again, with no sideways scroll');
+
+  await viewport(375, 800, true);
+  for (const route of ['overview', 'inbox', 'approvals', 'deals', 'audit']) {
+    await go(`#/${route}`, 'document.body.innerText.length > 200', `The ${route} page did not load at 375 px`);
+    await sleep(500);
+    await noSidewaysScroll(`The ${route} page at 375 px`, 375);
+  }
+  const navShown = await evaluate('getComputedStyle(document.querySelector("#sections")).display !== "none"');
+  if (navShown) fail('At 375 px the navigation list is still open: it should be behind a menu button');
+  await evaluate('document.querySelector("[data-menu-button]").click()');
+  await waitFor('getComputedStyle(document.querySelector("#sections")).display !== "none"', 'The menu button did not open the navigation');
+  await evaluate('[...document.querySelectorAll("#sections a")].find((a) => /^Deals$/.test(a.textContent.trim())).click()');
+  await waitFor('getComputedStyle(document.querySelector("#sections")).display === "none"', 'Choosing a section did not close the menu');
+  console.log('PASS  at 375 px the navigation is behind a menu button, opens, and closes when a section is chosen; no page scrolls sideways');
+  await viewport(1280, 900, false);
 
   // ---- the guest demo, in the same real browser, as a different visitor (cookies cleared) --------------------------------------------------
   // "Try the demo" -> ingest -> analyse -> match -> decide -> approve one plan -> "Start over" -> back at the start.
   await cdp.send('Network.clearBrowserCookies');
+  await viewport(1280, 900, false);
   await cdp.send('Page.navigate', { url: `http://localhost:${port}/#/inbox` });
   await waitFor('!!document.querySelector("[data-try-demo]")', 'The sign-in page does not offer "Try the demo"');
   const entryText = String(await evaluate('document.querySelector("[data-guest-entry]").innerText'));
@@ -285,21 +365,101 @@ try {
   await waitFor('document.body.innerText.includes("Waiting for approval")', 'A guest running the pipeline reached no plan waiting for approval');
   console.log('PASS  a guest can ingest, analyse, match and decide the ten emails');
 
+  // V-1: the guest's Overview says what is true of the guest.
+  await go('#/overview', '/language model/i.test(document.body.innerText) && /sending replies/i.test(document.body.innerText)', "The guest's Overview did not load");
+  const guestCards = String(await evaluate('document.body.innerText.replace(/\\s+/g, " ")'));
+  for (const sentence of [
+    'Replay of a recorded real run of gemini-3.5-flash-lite (2026-10-17). No live model calls.',
+    'Guest demo. No sign-in, private sandbox.',
+    'Always off in the guest demo.',
+  ]) {
+    if (!guestCards.includes(sentence)) fail(`The guest Overview does not say: "${sentence}"`);
+  }
+  for (const untrue of ['Live model calls, with every reply', 'requires a signed-in operator', 'until sending is turned on']) {
+    if (guestCards.includes(untrue)) fail(`The guest Overview still says: "${untrue}"`);
+  }
+  console.log('PASS  the guest Overview says it is a replay, that there is no sign-in, and that sending is always off');
+
+  // V-2 as a guest: Continue on the ambiguous email (E-04) finds two Harborview records. The result is shown, and the guest chooses.
+  await go('#/approvals', '!!document.querySelector("[data-needs-person-tab]")', 'The guest has no "Needs a person" tab');
+  await evaluate('document.querySelector("[data-needs-person-tab]").click()');
+  await waitFor('document.querySelectorAll("[data-needs-person-list] section").length >= 1', 'The guest has nothing under "Needs a person"');
+  // E-04 (Mark Doyle, Harborview Group) is the one whose matching also finds the existing Harborview Digital.
+  await evaluate(
+    '[...document.querySelectorAll("[data-needs-person-list] section")].find((row) => /Reporting work for Harborview/.test(row.innerText)).querySelectorAll("button").forEach((b) => { if (/continue to crm matching/i.test(b.textContent)) b.click(); })',
+  );
+  await waitFor(
+    '!!document.querySelector("[data-row-note]") && document.querySelector("[data-row-note]").innerText.includes("choose one")',
+    'After Continue on the ambiguous email the guest was not told that matching found more than one possible record',
+  );
+  console.log('PASS  as a guest, Continue on E-04 says: "Continued. CRM matching found more than one possible record; choose one."');
+  await waitFor('!!document.querySelector("[data-choose-record]")', 'The guest was not shown the candidates to choose from');
+  const guestChoices = String(await evaluate('document.querySelector("[data-choose-record]").innerText'));
+  if (!/Harborview/.test(guestChoices)) fail('The candidates for E-04 do not name Harborview');
+  for (let pick = 0; pick < 3 && !String(await evaluate('document.body.innerText')).includes('The plan is waiting for approval'); pick += 1) {
+    await evaluate('[...document.querySelectorAll("[data-choose-record] button")].find((b) => /choose this record/i.test(b.textContent)).click()');
+    await sleep(1200);
+  }
+  await waitFor('document.body.innerText.includes("Record chosen. The plan is waiting for approval.")', 'The guest choosing a record did not leave a plan waiting for approval');
+  console.log('PASS  as a guest, choosing one of the Harborview records leaves a plan waiting for approval');
+
+  // Out of the Approvals page and back in, so it opens on the plans waiting for approval rather than on the list it was left on.
+  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The guest Inbox did not load');
   await cdp.send('Page.navigate', { url: `http://localhost:${port}/#/approvals` });
   await waitFor('[...document.querySelectorAll("button")].some((b) => /approve and carry out/i.test(b.textContent))', 'The guest has no plan to approve');
+  const guestApprovals = String(await evaluate('document.body.innerText'));
+  if (/\d+h \d+m left/.test(guestApprovals)) fail('A guest approval still shows an owner-style "23h 59m left" timer');
+  if (!/Demo ends in/.test(guestApprovals)) fail('A guest approval shows no sandbox time left');
+  console.log('PASS  a guest approval shows how long the demo has left, not a 24-hour timer');
   await evaluate('[...document.querySelectorAll("button")].find((b) => /approve and carry out/i.test(b.textContent)).click()');
-  await waitFor('document.body.innerText.includes("Approved and carried out")', 'Approving a plan as a guest did not carry it out');
+  await waitFor('/Approved and carried out \\d+ actions?\\./.test(document.body.innerText)', 'Approving a plan as a guest did not carry it out');
+  if (/action\(s\)/.test(String(await evaluate('document.body.innerText')))) fail('The approval message still says "action(s)"');
   console.log('PASS  a guest can approve a plan and it is carried out (in the sandbox; nothing is sent)');
 
+  // V-5: Start over asks first. Cancelling changes nothing.
   await evaluate('document.querySelector("[data-guest-start-over]").click()');
+  await waitFor('!!document.querySelector("[data-guest-confirm]")', 'Start over did not ask first');
+  if (!String(await evaluate('document.querySelector("[data-guest-confirm]").innerText')).includes('Start over? Your changes in this demo will be lost.')) fail('The Start over question is not the agreed one');
+  await evaluate('document.querySelector("[data-guest-confirm-no]").click()');
+  await waitFor('!document.querySelector("[data-guest-confirm]")', 'Cancel did not close the Start over question');
+  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'Cancelling Start over lost the emails');
+  console.log('PASS  Start over asks "Start over? Your changes in this demo will be lost."; Cancel keeps everything');
+
+  // V-4 as a guest on a phone: one compact line, the full text behind Details, both controls reachable, nothing scrolls sideways.
+  await viewport(375, 800, true);
+  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10 && !!document.querySelector("[data-guest-banner]")', 'The guest Inbox did not load at 375 px');
+  await sleep(500);
+  const phone = (await evaluate(`(() => {
+    const b = document.querySelector('[data-guest-banner]').getBoundingClientRect();
+    const reach = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.right <= window.innerWidth; };
+    const menu = document.querySelector('[data-menu-button]').getBoundingClientRect();
+    return { bannerHeight: b.height, startOver: reach('[data-guest-start-over]'), leave: reach('[data-guest-leave]'), details: reach('[data-guest-details]'), menuTop: menu.top, text: document.querySelector('[data-guest-banner]').innerText };
+  })()`)) as { bannerHeight: number; startOver: boolean; leave: boolean; details: boolean; menuTop: number; text: string };
+  if (phone.bannerHeight > 64) fail(`At 375 px the guest banner is ${Math.round(phone.bannerHeight)} px tall: it should be one compact line`);
+  if (!(phone.startOver && phone.leave && phone.details)) fail('At 375 px Start over, Leave or Details is not reachable on screen');
+  if (phone.menuTop > 140) fail(`At 375 px the page starts ${Math.round(phone.menuTop)} px down: the banner and navigation still fill the first screen`);
+  if (phone.text.includes('Model answers are replayed')) fail('At 375 px the full banner text is shown without asking for Details');
+  await evaluate('document.querySelector("[data-guest-details]").click()');
+  await waitFor('document.querySelector("[data-guest-details-text]")?.innerText.includes("Model answers are replayed from a recorded real run")', 'Details did not show the full banner text');
+  await noSidewaysScroll('The guest Inbox at 375 px', 375);
+  console.log(`PASS  at 375 px the guest banner is one line (${Math.round(phone.bannerHeight)} px), the full text is behind Details, Start over and Leave are reachable`);
+  await viewport(1280, 900, false);
+  await go('#/inbox', '!!document.querySelector("[data-guest-banner]")', 'The guest Inbox did not come back at 1280 px');
+
+  await evaluate('document.querySelector("[data-guest-start-over]").click()');
+  await waitFor('!!document.querySelector("[data-guest-confirm-yes]")', 'Start over did not ask first');
+  await evaluate('document.querySelector("[data-guest-confirm-yes]").click()');
   await sleep(1200);
   await waitFor('!!document.querySelector("[data-guest-banner]")', 'After "Start over" the guest banner is gone');
   await waitFor('document.body.innerText.includes("No email yet")', 'After "Start over" the inbox is not back at the start');
   console.log('PASS  "Start over" puts the sandbox back at the beginning');
 
+  await go('#/approvals', '!!document.querySelector("[data-needs-person-tab]")', 'The guest Approvals page did not load before leaving');
   await evaluate('document.querySelector("[data-guest-leave]").click()');
   await waitFor('!!document.querySelector("[data-try-demo]") && !document.querySelector("[data-guest-banner]")', 'Leaving the demo did not return to the sign-in page');
-  console.log('PASS  leaving the demo returns to the sign-in page');
+  const here = String(await evaluate('location.pathname + location.hash'));
+  if (here !== '/') fail(`After leaving the demo the address is "${here}" instead of "/"`);
+  console.log('PASS  leaving the demo returns to the sign-in page at "/" (the #/approvals deep link is gone)');
 
   cdp.close();
   console.log('\nRESULT: the documented first run works in a real browser.');

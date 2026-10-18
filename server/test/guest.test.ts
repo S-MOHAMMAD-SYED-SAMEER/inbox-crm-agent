@@ -812,3 +812,62 @@ test('the guest demo cannot call a model: not even asked, with a provider that f
     await app.stop();
   }
 });
+
+// ============================================================ V-2: choosing the record, as a guest
+
+test('a guest can choose the record for the conflicted email (E-04); it is recorded as the guest, and only candidates of its own sandbox are accepted', async () => {
+  const app = await start();
+  try {
+    const a = new Browser(app.url, '203.0.113.31');
+    const b = new Browser(app.url, '203.0.113.32');
+    await a.tryTheDemo();
+    await b.tryTheDemo();
+    const emailsA = await runFullFlow(a);
+    const emailsB = await runFullFlow(b);
+
+    // E-04 (Mark Doyle) needs a person until A continues it; the match conflict is the reason.
+    const e04a = byMessage(emailsA, 'Reporting work for Harborview');
+    const e04b = byMessage(emailsB, 'Reporting work for Harborview');
+    assert.ok(e04a && e04b);
+    // The email is ambiguous, so a person continues it first; that is what brings the match conflict up.
+    for (const [browser, email] of [[a, e04a], [b, e04b]] as const) {
+      const continued = await browser.call(`/api/emails/${email.id}/review`, { method: 'POST', body: { action: 'continue' } });
+      assert.equal(continued.status, 200, JSON.stringify(continued.body));
+    }
+    const detailA = (await a.call(`/api/emails/${e04a.id}`)).body;
+    const detailB = (await b.call(`/api/emails/${e04b.id}`)).body;
+    const candidatesA = detailA.resolution?.company.candidates ?? [];
+    const candidatesB = detailB.resolution?.company.candidates ?? [];
+    // If the email has not stopped at a conflict in this run, there is nothing to choose; the assertion says so plainly.
+    assert.ok(candidatesA.length >= 2, 'the guest sees the Harborview candidates');
+
+    // B's candidate ids are not A's: a sandbox's ids are its own.
+    const foreign = candidatesB.find((c: any) => !candidatesA.some((x: any) => x.entityId === c.entityId));
+    if (foreign) {
+      const refused = await a.call(`/api/emails/${e04a.id}/resolve-match`, { method: 'POST', body: { entityType: 'company', entityId: foreign.entityId } });
+      assert.ok(refused.status === 400 || refused.status === 403 || refused.status === 404, `foreign id gave ${refused.status}`);
+    }
+    // A made-up id too.
+    const made = await a.call(`/api/emails/${e04a.id}/resolve-match`, { method: 'POST', body: { entityType: 'company', entityId: 'not-a-record' } });
+    assert.equal(made.status, 400);
+    assert.equal((await a.call(`/api/emails/${e04a.id}`)).body.email.state, detailA.email.state, 'a refusal changes nothing');
+
+    // A real candidate works, is recorded as the guest, and leaves a plan waiting for approval.
+    const picked = await a.call(`/api/emails/${e04a.id}/resolve-match`, {
+      method: 'POST',
+      body: { entityType: 'company', entityId: candidatesA[0].entityId },
+    });
+    assert.equal(picked.status, 200, JSON.stringify(picked.body));
+    const pick = picked.body.audit.find((event: any) => event.eventType === 'match_resolved_by_human');
+    assert.equal(pick?.actorId, 'guest');
+    assert.equal(picked.body.email.state === 'awaiting_approval' || picked.body.email.state === 'needs_review', true);
+
+    // B's copy of the same email is untouched, and so is the owner's world.
+    const afterB = (await b.call(`/api/emails/${e04b.id}`)).body;
+    assert.equal(afterB.audit.some((event: any) => event.eventType === 'match_resolved_by_human'), false);
+    assert.equal(afterB.email.state, detailB.email.state);
+    assert.equal(app.ownerProviderCalls.count, 0);
+  } finally {
+    await app.stop();
+  }
+});

@@ -1,4 +1,5 @@
 import type { Health } from '../api/types.ts';
+import type { GuestInfo } from '../auth/guest.ts';
 
 // How system status is described on the Overview screen.
 //
@@ -73,33 +74,45 @@ function text(adapters: Health['adapters'], key: string): string {
  *
  * Ordered by what a person asks first. Outbound sending leads because it is the
  * one that changes what they think the system can do to their customers.
+ *
+ * `guest` is the guest's session, or null for the owner. The health payload describes the SERVER (it may have a real key and sending
+ * on); a guest is not looking at the server's configuration but at a private sandbox that replays a recording, so for a guest the
+ * three cards that would otherwise describe the server say what is true of the demo. The owner's cards are exactly as they were.
  */
-export function systemFacts(health: Health): StatusFact[] {
+export function systemFacts(health: Health, guest: GuestInfo | null = null): StatusFact[] {
   const { adapters } = health;
   const facts: StatusFact[] = [];
 
   // 1. The safety fact. "Off" is the reassuring answer here, so the tone is
   //    deliberately not `bad` — nothing is wrong, a lock is closed.
   const sending = bool(adapters, 'outboundSendEnabled');
-  facts.push({
-    label: 'Sending replies',
-    value: sending ? 'On' : 'Off',
-    detail: sending
-      ? 'Approved replies are delivered to the recipient.'
-      : 'Replies are written and held. Nothing reaches a customer until sending is turned on.',
-    tone: sending ? 'neutral' : 'good',
-  });
+  facts.push(
+    guest
+      ? { label: 'Sending replies', value: 'Off', detail: 'Always off in the guest demo.', tone: 'good' }
+      : {
+          label: 'Sending replies',
+          value: sending ? 'On' : 'Off',
+          detail: sending
+            ? 'Approved replies are delivered to the recipient.'
+            : 'Replies are written and held. Nothing reaches a customer until sending is turned on.',
+          tone: sending ? 'neutral' : 'good',
+        },
+  );
 
   // 2. Whether the door is locked.
   const auth = bool(adapters, 'authConfigured');
-  facts.push({
-    label: 'Sign-in',
-    value: auth ? 'Required' : 'Not configured',
-    detail: auth
-      ? 'Every screen and every action requires a signed-in operator.'
-      : 'No operator password is set, so the API is open. Not suitable for real data.',
-    tone: auth ? 'good' : 'bad',
-  });
+  facts.push(
+    guest
+      ? { label: 'Sign-in', value: 'Not needed', detail: 'Guest demo. No sign-in, private sandbox.', tone: 'good' }
+      : {
+          label: 'Sign-in',
+          value: auth ? 'Required' : 'Not configured',
+          detail: auth
+            ? 'Every screen and every action requires a signed-in operator.'
+            : 'No operator password is set, so the API is open. Not suitable for real data.',
+          tone: auth ? 'good' : 'bad',
+        },
+  );
 
   // 3. Where the email comes from. "Demo inbox" is the honest answer and also
   //    the one a client needs, because it explains why the same ten messages
@@ -132,6 +145,15 @@ export function systemFacts(health: Health): StatusFact[] {
   //    no live model is being called, because that is true and someone will ask.
   const provider = text(adapters, 'llmProvider');
   const configured = bool(adapters, 'llmConfigured');
+  if (guest) {
+    facts.push({
+      label: 'Language model',
+      value: 'Recorded replay',
+      detail: `Replay of a recorded real run of ${guest.model} (${guest.recordedAt}). No live model calls.`,
+      tone: 'neutral',
+    });
+    return facts;
+  }
   facts.push({
     label: 'Language model',
     value: provider === 'mock' ? 'Demo mode' : provider === 'anthropic' ? 'Claude' : provider || 'Not configured',

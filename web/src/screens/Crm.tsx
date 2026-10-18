@@ -6,6 +6,7 @@ import { routeToHash } from '../router.ts';
 import { FilterChip, RecordTable, SourceBadge } from '../components/recordTable.tsx';
 import {
   actorLabel,
+  budgetQuote,
   eventLabel,
   formatAmount,
   formatDate,
@@ -77,7 +78,7 @@ export function Deals(): ReactNode {
           </td>
           <td className={`${CELL} text-ink-muted`}>
             {formatAmount(deal.amountMinor, deal.currency)}
-            {deal.budgetNote ? <p className="text-meta">“{deal.budgetNote}”</p> : null}
+            {budgetQuote(deal.budgetNote) ? <p className="text-meta">“{budgetQuote(deal.budgetNote)}”</p> : null}
           </td>
           <td className={CELL}>
             <SourceBadge source={deal.source} />

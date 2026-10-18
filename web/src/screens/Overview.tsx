@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { api, ApiError } from '../api/client.ts';
+import { useGuest } from '../auth/guestContext.tsx';
 import { connectionStatus, systemFacts, type StatusFact } from '../system/statusPresentation.ts';
 import type { Health } from '../api/types.ts';
 
@@ -37,6 +38,7 @@ type LoadState =
   | { status: 'error'; message: string };
 
 export function Overview(): ReactNode {
+  const guest = useGuest();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export function Overview(): ReactNode {
             </dl>
 
             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-              {systemFacts(state.health).map((fact) => (
+              {systemFacts(state.health, guest).map((fact) => (
                 <Fact key={fact.label} fact={fact} />
               ))}
             </dl>

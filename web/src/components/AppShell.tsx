@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ROUTES, routeToHash, type Route, type RouteName } from '../router.ts';
 import { NOT_IN_GUEST_DEMO, type GuestInfo } from '../auth/guest.ts';
 import { GuestBanner } from './guestBanner.tsx';
@@ -85,6 +85,12 @@ export function AppShell({
   onLeaveGuest,
 }: AppShellProps): ReactNode {
   const current = NAV.find((item) => item.route === route.name);
+  // Below 768px the sections are behind a menu button: the list used to fill the first screen, with the page itself below the fold.
+  // From 768px the sidebar is as it always was. The menu closes when a section is chosen.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [route.name]);
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
@@ -98,8 +104,26 @@ export function AppShell({
       </a>
 
       <div className="mx-auto flex max-w-[1400px] flex-col md:flex-row">
-        <nav aria-label="Sections" className="shrink-0 border-line md:min-h-screen md:w-60 md:border-r">
-          <div className="px-5 py-6">
+        <div data-mobile-bar className="flex items-center justify-between gap-3 border-b border-line px-4 py-2 md:hidden">
+          <p className="min-w-0 truncate text-small font-semibold">{current?.label ?? 'Overview'}</p>
+          <button
+            type="button"
+            data-menu-button
+            aria-expanded={menuOpen}
+            aria-controls="sections"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="h-control shrink-0 rounded-control border border-line-strong px-3 text-meta font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            {menuOpen ? 'Close menu' : 'Menu'}
+          </button>
+        </div>
+
+        <nav
+          id="sections"
+          aria-label="Sections"
+          className={`${menuOpen ? 'block' : 'hidden'} shrink-0 border-b border-line md:block md:min-h-screen md:w-60 md:border-b-0 md:border-r`}
+        >
+          <div className="hidden px-5 py-6 md:block">
             <p className="text-eyebrow uppercase text-ink-muted">AI Business Automation</p>
             <p className="mt-1 text-subhead">Inbox-to-CRM Agent</p>
           </div>
@@ -148,7 +172,7 @@ export function AppShell({
           ))}
         </nav>
 
-        <main id="main" className="min-w-0 flex-1 px-5 py-6 md:px-8 md:py-8">
+        <main id="main" className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-8">
           <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-section">{current?.label ?? 'Overview'}</h1>
