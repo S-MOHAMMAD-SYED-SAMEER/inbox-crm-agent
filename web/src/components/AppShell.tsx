@@ -121,7 +121,7 @@ export function AppShell({
         <nav
           id="sections"
           aria-label="Sections"
-          className={`${menuOpen ? 'block' : 'hidden'} shrink-0 border-b border-line md:block md:min-h-screen md:w-60 md:border-b-0 md:border-r`}
+          className={`${menuOpen ? 'block' : 'hidden'} shrink-0 border-b border-line md:block md:min-h-screen md:w-52 md:border-b-0 md:border-r min-[1440px]:w-60`}
         >
           <div className="hidden px-5 py-6 md:block">
             <p className="text-eyebrow uppercase text-ink-muted">AI Business Automation</p>
@@ -172,7 +172,7 @@ export function AppShell({
           ))}
         </nav>
 
-        <main id="main" className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-8">
+        <main id="main" className="min-w-0 flex-1 px-4 py-5 md:px-6 md:py-8 min-[1440px]:px-8">
           <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-section">{current?.label ?? 'Overview'}</h1>

@@ -12,6 +12,7 @@ import {
   PAUSED_FOR_PERSON,
   analyseButtonLabel,
   analyseCostNote,
+  countLabel,
   isPaused,
   mentionsDiscardedMarker,
 } from '../inbox/copy.ts';
@@ -240,8 +241,11 @@ export function Inbox(): ReactNode {
                           </span>
                         ) : null}
                         {email.analysis.droppedFieldCount > 0 ? (
-                          <span className="whitespace-nowrap rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal">
-                            {email.analysis.droppedFieldCount} field(s) discarded
+                          <span
+                            title={`${countLabel(email.analysis.droppedFieldCount, 'field')} the checks discarded`}
+                            className="whitespace-nowrap rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal"
+                          >
+                            {email.analysis.droppedFieldCount} discarded
                           </span>
                         ) : null}
                       </div>
@@ -252,14 +256,14 @@ export function Inbox(): ReactNode {
                   <td className="px-2 py-3 align-top">
                     {email.resolution ? (
                       <div className="flex flex-col gap-1">
-                        <span className="flex items-center gap-1.5 text-meta text-ink-muted">
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta text-ink-muted">
                           contact{' '}
                           <VerdictChip
                             verdict={email.resolution.contact}
                             plannedToCreate={email.decision ? email.decision.createsContact : null}
                           />
                         </span>
-                        <span className="flex items-center gap-1.5 text-meta text-ink-muted">
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-meta text-ink-muted">
                           company{' '}
                           <VerdictChip
                             verdict={email.resolution.company}

@@ -295,33 +295,47 @@ try {
   if (/Guest demo\. No sign-in/.test(ownerCards)) fail('The owner Overview shows the guest wording');
   console.log('PASS  the owner Overview keeps its own status cards');
 
-  await viewport(1280, 900, false);
-  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The Inbox did not load at 1280 px');
-  const layout = (await evaluate(`(() => {
-    const table = document.querySelector('table');
-    const card = table.parentElement;
-    const heads = [...table.querySelectorAll('thead th')].map((th) => ({ text: th.textContent.trim(), width: th.getBoundingClientRect().width, shown: getComputedStyle(th).display !== 'none' }));
-    const pills = [...table.querySelectorAll('.rounded-pill')].filter((el) => el.getBoundingClientRect().width > 0).map((el) => el.getBoundingClientRect().height);
-    return { tableWidth: table.scrollWidth, cardWidth: card.clientWidth, heads, tallestPill: Math.max(...pills) };
-  })()`)) as { tableWidth: number; cardWidth: number; heads: Array<{ text: string; width: number; shown: boolean }>; tallestPill: number };
-  if (layout.tableWidth > layout.cardWidth) fail(`At 1280 px the table is ${layout.tableWidth} px wide inside a ${layout.cardWidth} px card: it scrolls sideways (${layout.heads.filter((h) => h.shown).map((h) => `${h.text} ${Math.round(h.width)}`).join(', ')})`);
-  await noSidewaysScroll('The Inbox at 1280 px', 1280);
-  const head = (name: string) => layout.heads.find((h) => h.text === name);
-  if ((head('Subject')?.width ?? 0) < 260) fail(`At 1280 px the Subject column is ${head('Subject')?.width} px wide (260 px at least)`);
-  if ((head('From')?.width ?? 999) > 175) fail(`At 1280 px the From column is ${head('From')?.width} px wide (it should be narrow)`);
-  if (head('Confidence')?.shown) fail('At 1280 px Confidence is still a column of its own: it should be folded into Read as');
-  if (layout.tallestPill > 30) fail(`At 1280 px a pill is ${layout.tallestPill} px tall: its text wraps`);
-  const foldedConfidence = Number(await evaluate('[...document.querySelectorAll("tbody tr")].filter((tr) => /\\b(high|medium|low)\\s+0\\.\\d\\d/i.test(tr.cells[2].innerText)).length'));
-  if (foldedConfidence < 5) fail(`At 1280 px only ${foldedConfidence} rows show the confidence inside Read as`);
-  const fullAddress = Number(await evaluate('[...document.querySelectorAll("tbody tr td:first-child p[title]")].filter((p) => p.title.includes("@")).length'));
-  if (fullAddress < 5) fail('The From cell does not carry the full address on hover');
-  console.log(`PASS  the Inbox at 1280 px: no sideways scroll, Subject ${Math.round(head('Subject')?.width ?? 0)} px, From ${Math.round(head('From')?.width ?? 0)} px, Confidence folded into Read as, pills on one line`);
-  await viewport(1440, 900, false);
-  await sleep(300);
-  const wide = (await evaluate(`[...document.querySelectorAll('thead th')].map((th) => th.textContent.trim() + ':' + (getComputedStyle(th).display !== 'none'))`)) as string[];
-  if (!wide.includes('Confidence:true')) fail('At 1440 px Confidence is not its own column');
-  await noSidewaysScroll('The Inbox at 1440 px', 1440);
-  console.log('PASS  at 1440 px Confidence is its own column again, with no sideways scroll');
+  // The table is measured twice: in the page's own font, and in a wide fallback (what a machine without that font draws, such as the
+  // Linux machine CI runs on). A layout that fits only in the narrower font would pass here and fail there.
+  for (const [fontName, fontCss] of [
+    ['the page font', ''],
+    ['a wide fallback font', '* { font-family: Verdana, "DejaVu Sans", sans-serif !important; }'],
+  ] as const) {
+    await viewport(1280, 900, false);
+    await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The Inbox did not load at 1280 px');
+    await evaluate(`(() => { document.getElementById('stress-font')?.remove(); const style = document.createElement('style'); style.id = 'stress-font'; style.textContent = ${JSON.stringify(fontCss)}; document.head.appendChild(style); })()`);
+    await sleep(300);
+    const layout = (await evaluate(`(() => {
+      const table = document.querySelector('table');
+      const card = table.parentElement;
+      const heads = [...table.querySelectorAll('thead th')].map((th) => ({ text: th.textContent.trim(), width: th.getBoundingClientRect().width, shown: getComputedStyle(th).display !== 'none' }));
+      const pills = [...table.querySelectorAll('.rounded-pill')].filter((el) => el.getBoundingClientRect().width > 0).map((el) => el.getBoundingClientRect().height);
+      return { tableWidth: table.scrollWidth, cardWidth: card.clientWidth, heads, tallestPill: Math.max(...pills) };
+    })()`)) as { tableWidth: number; cardWidth: number; heads: Array<{ text: string; width: number; shown: boolean }>; tallestPill: number };
+    const widths = layout.heads.filter((h) => h.shown).map((h) => `${h.text} ${Math.round(h.width)}`).join(', ');
+    if (layout.tableWidth > layout.cardWidth) fail(`At 1280 px, in ${fontName}, the table is ${layout.tableWidth} px wide inside a ${layout.cardWidth} px card: it scrolls sideways (${widths})`);
+    await noSidewaysScroll(`The Inbox at 1280 px in ${fontName}`, 1280);
+    const head = (name: string) => layout.heads.find((h) => h.text === name);
+    if ((head('Subject')?.width ?? 0) < 260) fail(`At 1280 px, in ${fontName}, the Subject column is ${head('Subject')?.width} px wide (260 px at least)`);
+    if ((head('From')?.width ?? 999) > 175) fail(`At 1280 px, in ${fontName}, the From column is ${head('From')?.width} px wide (it should be narrow)`);
+    if (head('Confidence')?.shown) fail('At 1280 px Confidence is still a column of its own: it should be folded into Read as');
+    if (layout.tallestPill > 30) fail(`At 1280 px, in ${fontName}, a pill is ${layout.tallestPill} px tall: its text wraps`);
+    const foldedConfidence = Number(await evaluate('[...document.querySelectorAll("tbody tr")].filter((tr) => /\\b(high|medium|low)\\s+0\\.\\d\\d/i.test(tr.cells[2].innerText)).length'));
+    if (foldedConfidence < 5) fail(`At 1280 px only ${foldedConfidence} rows show the confidence inside Read as`);
+    const fullAddress = Number(await evaluate('[...document.querySelectorAll("tbody tr td:first-child p[title]")].filter((p) => p.title.includes("@")).length'));
+    if (fullAddress < 5) fail('The From cell does not carry the full address on hover');
+    console.log(`PASS  the Inbox at 1280 px in ${fontName}: no sideways scroll (${Math.round(layout.tableWidth)} of ${layout.cardWidth} px), Subject ${Math.round(head('Subject')?.width ?? 0)} px, From ${Math.round(head('From')?.width ?? 0)} px, Confidence folded into Read as, pills on one line`);
+
+    await viewport(1440, 900, false);
+    await sleep(300);
+    const wide = (await evaluate(`[...document.querySelectorAll('thead th')].map((th) => th.textContent.trim() + ':' + (getComputedStyle(th).display !== 'none'))`)) as string[];
+    if (!wide.includes('Confidence:true')) fail('At 1440 px Confidence is not its own column');
+    await noSidewaysScroll(`The Inbox at 1440 px in ${fontName}`, 1440);
+    const wideLayout = (await evaluate(`(() => { const table = document.querySelector('table'); return { table: table.scrollWidth, card: table.parentElement.clientWidth }; })()`)) as { table: number; card: number };
+    if (wideLayout.table > wideLayout.card) fail(`At 1440 px, in ${fontName}, the table (${wideLayout.table} px) is wider than its card (${wideLayout.card} px)`);
+    console.log(`PASS  at 1440 px in ${fontName} Confidence is its own column again, with no sideways scroll`);
+    await evaluate("document.getElementById('stress-font')?.remove()");
+  }
 
   await viewport(375, 800, true);
   for (const route of ['overview', 'inbox', 'approvals', 'deals', 'audit']) {
