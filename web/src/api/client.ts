@@ -178,6 +178,18 @@ export const api = {
       body: JSON.stringify({ password }),
     }),
 
+  /** Starts a guest demo session: a private sandbox, no password. Refused for a signed-in owner. */
+  startGuest: (): Promise<{ role: 'guest' }> =>
+    request<{ role: 'guest' }>('/auth/guest', { method: 'POST', body: JSON.stringify({}) }),
+
+  /** "Start over": the guest's sandbox goes back to the seed. */
+  resetGuest: (): Promise<{ reset: boolean }> =>
+    request<{ reset: boolean }>('/guest/reset', { method: 'POST', body: JSON.stringify({}) }),
+
+  /** Leaves the guest demo, deleting the sandbox. Never touches an owner's session. */
+  leaveGuest: (): Promise<{ left: boolean }> =>
+    request<{ left: boolean }>('/guest/leave', { method: 'POST', body: JSON.stringify({}) }),
+
   /** Signs out. CSRF-protected like any other state change. */
   logout: (): Promise<{ signedOut: boolean }> =>
     request<{ signedOut: boolean }>('/auth/logout', { method: 'POST', body: JSON.stringify({}) }),

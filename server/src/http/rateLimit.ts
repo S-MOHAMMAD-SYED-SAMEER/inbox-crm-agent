@@ -119,6 +119,11 @@ export const RATE_LIMITS = Object.freeze({
   expensive: { limit: 20, windowMs: 60_000 },
   mutation: { limit: 120, windowMs: 60_000 },
   /**
+   * A guest's reads. An owner's reads are unlimited because the population is one operator; a guest is anyone on the internet, so each guest
+   * session is limited as its own caller. 300 a minute is five a second: far above a person using the dashboard, far below a loop.
+   */
+  guestRead: { limit: 300, windowMs: 60_000 },
+  /**
    * Anonymous reads of the public demo.
    *
    * Reads are otherwise unlimited on purpose — see `classify` — and that was
@@ -153,6 +158,8 @@ export type ClassifyContext = {
   publicReadsEnabled?: boolean;
   /** Whether this request carries a live session. */
   authenticated?: boolean;
+  /** Whether this request is a guest's. A guest's reads are limited. */
+  guest?: boolean;
 };
 
 export function classify(
@@ -184,6 +191,8 @@ export function classify(
       if (isPublicDemoRead(method, path)) return 'publicRead';
     }
 
+    if (context.guest === true) return 'guestRead';
+
     // Everything else stays as it was: reads are cheap, and limiting them would
     // make a busy dashboard look like an attack.
     return null;
@@ -203,13 +212,16 @@ export function classify(
  */
 export function keyFor(req: Request): string {
   if (req.session) return `session:${req.session.tokenHash}`;
+  // A guest is limited as its own caller, not as a share of its network address.
+  if (req.guest) return `guest:${req.guest.sandbox.id}`;
   return `ip:${req.ip ?? req.socket.remoteAddress ?? 'unknown'}`;
 }
 
 export type RateLimitDeps = {
   limiter?: FixedWindowLimiter;
   clock?: Clock;
-  limits?: Record<RateLimitClass, RateLimitRule>;
+  /** Overrides for some classes; the rest keep their defaults. */
+  limits?: Partial<Record<RateLimitClass, RateLimitRule>>;
   /**
    * Whether the public demo window is open.
    *
@@ -222,7 +234,7 @@ export type RateLimitDeps = {
 
 export function rateLimit(deps: RateLimitDeps = {}) {
   const limiter = deps.limiter ?? new FixedWindowLimiter(deps.clock);
-  const limits = deps.limits ?? RATE_LIMITS;
+  const limits: Record<RateLimitClass, RateLimitRule> = { ...RATE_LIMITS, ...deps.limits };
   const publicReadsEnabled = deps.publicReadsEnabled === true;
   let sinceLastPrune = 0;
 
@@ -232,6 +244,7 @@ export function rateLimit(deps: RateLimitDeps = {}) {
     const rateClass = classify(req.method, req.path, {
       publicReadsEnabled,
       authenticated: req.session !== undefined,
+      guest: req.guest !== undefined,
     });
     if (rateClass === null) {
       next();

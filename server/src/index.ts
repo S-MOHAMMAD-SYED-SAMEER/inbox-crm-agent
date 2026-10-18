@@ -25,6 +25,13 @@ async function main(): Promise<void> {
 
   const app = createApp({ db, logger: createLogger('http', { level: config.logLevel }) });
 
+  // Guest sandboxes are swept on a timer, and once now (there are none, but the sweep is the same code a restart would run).
+  const guests = app.locals.guestManager as import('./guest/manager.ts').GuestManager | null | undefined;
+  if (guests) {
+    await guests.sweep();
+    guests.startSweeper();
+  }
+
   const server = app.listen(config.port, () => {
     log.info(`Listening on port ${config.port}`, {
       database: db.driver,
@@ -36,7 +43,7 @@ async function main(): Promise<void> {
   const shutdown = (signal: string): void => {
     log.info(`Received ${signal}, shutting down.`);
     server.close(() => {
-      void db.close().finally(() => process.exit(0));
+      void (guests ? guests.closeAll() : Promise.resolve()).then(() => db.close()).finally(() => process.exit(0));
     });
   };
 

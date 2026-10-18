@@ -41,7 +41,10 @@ export const CSRF_HEADER = 'x-csrf-token';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /** Paths that cannot carry a CSRF token because they precede the session. */
-const EXEMPT_PATHS = new Set(['/auth/login']);
+// `/auth/guest` starts a guest session and carries no token because there is no session yet. It is exempt here too so that a browser
+// already signed in as the owner gets a plain refusal from the route (409, no cookie set) rather than a CSRF error: the route does
+// nothing for an owner, so there is nothing for a forged request to gain.
+const EXEMPT_PATHS = new Set(['/auth/login', '/auth/guest']);
 
 export function isSafeMethod(method: string): boolean {
   return SAFE_METHODS.has(method.toUpperCase());

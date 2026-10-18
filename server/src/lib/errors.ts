@@ -22,6 +22,7 @@ export const ERROR_CODES = [
   'INVALID_STATE',
   'PROVIDER_UNAVAILABLE',
   'RATE_LIMITED',
+  'SERVICE_BUSY',
   'INTERNAL_ERROR',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -38,6 +39,7 @@ const STATUS_BY_CODE: Readonly<Record<ErrorCode, number>> = Object.freeze({
   INVALID_STATE: 409,
   PROVIDER_UNAVAILABLE: 502,
   RATE_LIMITED: 429,
+  SERVICE_BUSY: 503,
   INTERNAL_ERROR: 500,
 });
 

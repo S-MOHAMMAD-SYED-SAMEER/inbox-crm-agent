@@ -259,6 +259,48 @@ try {
   await waitFor('document.body.innerText.includes("is now waiting for approval")', 'Continuing the ambiguous email did not end with its plan waiting for approval');
   console.log('PASS  Continue on the ambiguous email ends with its plan waiting for approval');
 
+  // ---- the guest demo, in the same real browser, as a different visitor (cookies cleared) --------------------------------------------------
+  // "Try the demo" -> ingest -> analyse -> match -> decide -> approve one plan -> "Start over" -> back at the start.
+  await cdp.send('Network.clearBrowserCookies');
+  await cdp.send('Page.navigate', { url: `http://localhost:${port}/#/inbox` });
+  await waitFor('!!document.querySelector("[data-try-demo]")', 'The sign-in page does not offer "Try the demo"');
+  const entryText = String(await evaluate('document.querySelector("[data-guest-entry]").innerText'));
+  if (!/no model is called/i.test(entryText)) fail('The guest entry does not say that no model is called');
+  await evaluate('document.querySelector("[data-try-demo]").click()');
+  await waitFor('!!document.querySelector("[data-guest-banner]")', 'Starting the guest demo did not show the guest banner');
+  const banner = String(await evaluate('document.querySelector("[data-guest-banner]").innerText'));
+  if (!banner.includes('Model answers are replayed from a recorded real run of gemini-3.5-flash-lite (2026-10-17, 1 of 3 runs)')) fail(`The banner says: ${banner}`);
+  if (!/Resets in \d+ min/.test(banner)) fail('The banner shows no time left');
+  const disabledOwnerOnly = Number(await evaluate('document.querySelectorAll("[data-owner-only]").length'));
+  if (disabledOwnerOnly < 2) fail('The owner-only sections are not shown disabled');
+  console.log('PASS  "Try the demo" starts a guest session; the banner names the recorded run and the time left; owner-only sections are disabled');
+
+  await waitFor('[...document.querySelectorAll("button")].some((b) => /ingest new email/i.test(b.textContent))', 'The guest Inbox did not load');
+  await evaluate('[...document.querySelectorAll("button")].find((b) => /ingest new email/i.test(b.textContent)).click()');
+  await waitFor('document.querySelectorAll("a[href^=\\"#/inbox/\\"]").length >= 10', 'A guest ingesting did not show the ten emails');
+  for (const label of ['analyse waiting email', 'match to crm', 'decide']) {
+    await evaluate(`[...document.querySelectorAll("button")].find((b) => b.textContent.toLowerCase().includes(${JSON.stringify(label)})).click()`);
+    await sleep(1500);
+  }
+  await waitFor('document.body.innerText.includes("Waiting for approval")', 'A guest running the pipeline reached no plan waiting for approval');
+  console.log('PASS  a guest can ingest, analyse, match and decide the ten emails');
+
+  await cdp.send('Page.navigate', { url: `http://localhost:${port}/#/approvals` });
+  await waitFor('[...document.querySelectorAll("button")].some((b) => /approve and carry out/i.test(b.textContent))', 'The guest has no plan to approve');
+  await evaluate('[...document.querySelectorAll("button")].find((b) => /approve and carry out/i.test(b.textContent)).click()');
+  await waitFor('document.body.innerText.includes("Approved and carried out")', 'Approving a plan as a guest did not carry it out');
+  console.log('PASS  a guest can approve a plan and it is carried out (in the sandbox; nothing is sent)');
+
+  await evaluate('document.querySelector("[data-guest-start-over]").click()');
+  await sleep(1200);
+  await waitFor('!!document.querySelector("[data-guest-banner]")', 'After "Start over" the guest banner is gone');
+  await waitFor('document.body.innerText.includes("No email yet")', 'After "Start over" the inbox is not back at the start');
+  console.log('PASS  "Start over" puts the sandbox back at the beginning');
+
+  await evaluate('document.querySelector("[data-guest-leave]").click()');
+  await waitFor('!!document.querySelector("[data-try-demo]") && !document.querySelector("[data-guest-banner]")', 'Leaving the demo did not return to the sign-in page');
+  console.log('PASS  leaving the demo returns to the sign-in page');
+
   cdp.close();
   console.log('\nRESULT: the documented first run works in a real browser.');
 } catch (error) {

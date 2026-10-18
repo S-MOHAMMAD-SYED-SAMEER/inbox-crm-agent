@@ -50,6 +50,7 @@ const TINY: Record<RateLimitClass, RateLimitRule> = {
   // Present so this record stays exhaustive; these tests do not open the demo
   // window, so nothing here is ever classed `publicRead`.
   publicRead: { limit: 5, windowMs: 60_000 },
+  guestRead: { limit: 6, windowMs: 60_000 },
 };
 
 type Server = {

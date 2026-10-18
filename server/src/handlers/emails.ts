@@ -30,6 +30,7 @@ import type { ApprovalRecord, ApprovalState, ExecutionRecord, OutboxRecord } fro
 import type { Repositories } from '../db/repositories/index.ts';
 import type { EmailSource } from '../adapters/email/types.ts';
 import type { LlmProvider } from '../adapters/llm/types.ts';
+import type { OutboundSender } from '../adapters/outbound/index.ts';
 import type { Logger } from '../lib/logger.ts';
 import { systemClock, type Clock } from '../lib/clock.ts';
 import type { AnalysisRecord } from '../domain/understanding.ts';
@@ -53,6 +54,8 @@ export type EmailHandlerDeps = {
   source: EmailSource;
   provider: LlmProvider;
   logger?: Logger;
+  /** How an approved reply is delivered. Absent means whatever the server is configured for. A guest sandbox always supplies the refusing one. */
+  sender?: OutboundSender;
 };
 
 export type HandlerResult<T> = { status: number; body: T };

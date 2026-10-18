@@ -1,0 +1,831 @@
+{
+  "kind": "recorded-model-run",
+  "provenance": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "temperature": 1,
+    "recordedAt": "2026-10-17",
+    "run": "1 of 3 (the first of three repeats of the ten-email evaluation)",
+    "sourceReport": "docs/results/2026-10-17-real-eval-gemini-gemini-3.5-flash-lite-run1.json",
+    "promptVersions": {
+      "understand": "understand.v2",
+      "draft": "draft.v1"
+    },
+    "note": "Real replies from a real run, replayed unchanged. The code around the model (validation, the follow-up check, the injection detector, the rules and the draft checks) runs live on each one."
+  },
+  "replies": [
+    {
+      "fixtureId": "demo-e01",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "confidence": 0.9,
+        "category": "pricing_request",
+        "extracted": {
+          "companyName": {
+            "sourceSpan": "Shopify store",
+            "value": "Shopify store",
+            "confidence": 0.8
+          },
+          "timeline": {
+            "value": null,
+            "confidence": 1,
+            "sourceSpan": "null"
+          },
+          "contactName": {
+            "confidence": 1,
+            "sourceSpan": "Sarah Williams",
+            "value": "Sarah Williams"
+          },
+          "requirementSummary": {
+            "sourceSpan": "adding an AI chatbot that can answer product and shipping questions.",
+            "value": "adding an AI chatbot that can answer product and shipping questions",
+            "confidence": 0.9
+          },
+          "contactPhone": {
+            "value": null,
+            "confidence": 1,
+            "sourceSpan": "null"
+          },
+          "serviceInterest": {
+            "sourceSpan": "AI chatbot",
+            "confidence": 0.9,
+            "value": "AI chatbot"
+          },
+          "companyDomain": {
+            "sourceSpan": "acmecommerce.invalid",
+            "confidence": 0.8,
+            "value": "acmecommerce.invalid"
+          },
+          "jobTitle": {
+            "sourceSpan": "null",
+            "value": null,
+            "confidence": 1
+          },
+          "budget": {
+            "confidence": 1,
+            "value": null,
+            "sourceSpan": "null"
+          },
+          "contactEmail": {
+            "sourceSpan": "sarah@acmecommerce.invalid",
+            "value": "sarah@acmecommerce.invalid",
+            "confidence": 1
+          },
+          "urgencyCues": {
+            "value": null,
+            "confidence": 1,
+            "sourceSpan": "null"
+          }
+        },
+        "questionAsked": "Could you tell us roughly how much this would cost?",
+        "priorityReason": "Clear inbound pricing inquiry from a prospective customer with a specific project idea.",
+        "flags": {
+          "insufficientInformation": false,
+          "ambiguousIntent": false,
+          "possibleInjection": false
+        },
+        "summary": "Inquiry from Sarah Williams at Acme Commerce asking for rough pricing on an AI chatbot for their Shopify store.",
+        "intent": "Sarah Williams is asking for a rough cost estimate for adding an AI chatbot to their Shopify store.",
+        "priority": "medium"
+      },
+      "latencyMs": 2120,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e01:draft",
+      "purpose": "draft",
+      "promptVersion": "draft.v1",
+      "toolInput": {
+        "subject": "Re: Shopify AI chatbot project",
+        "body": "Hi Sarah,\n\nThanks for reaching out about adding an AI chatbot to your Shopify store. \n\nOur AI Customer Support & Sales Recovery service can help answer product and shipping questions for your customers. Pricing depends on the specific scope and integration requirements for your store. \n\nCould you share a bit more about your customer volume and the types of queries you need the chatbot to handle? \n\nAI Business Automation"
+      },
+      "latencyMs": 1147,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e02",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "priority": "medium",
+        "questionAsked": "What would the process look like working with you?",
+        "flags": {
+          "insufficientInformation": false,
+          "possibleInjection": false,
+          "ambiguousIntent": false
+        },
+        "category": "service_inquiry",
+        "intent": "The sender wants to know what the process looks like for working together to rebuild their website.",
+        "priorityReason": "A prospective customer is asking about the process for a website rebuild project with a defined timeline and budget.",
+        "extracted": {
+          "companyDomain": {
+            "sourceSpan": "northlinestudio.invalid",
+            "confidence": 1,
+            "value": "northlinestudio.invalid"
+          },
+          "budget": {
+            "sourceSpan": "reasonable budget in mind",
+            "confidence": 0.5,
+            "value": "reasonable budget in mind"
+          },
+          "serviceInterest": {
+            "confidence": 1,
+            "sourceSpan": "rebuilding it properly this year",
+            "value": "rebuilding it properly"
+          },
+          "contactName": {
+            "sourceSpan": "Tom Reyes",
+            "confidence": 1,
+            "value": "Tom Reyes"
+          },
+          "requirementSummary": {
+            "confidence": 1,
+            "value": "Our website is about six years old and converts badly on mobile. We are looking at rebuilding it properly this year",
+            "sourceSpan": "Our website is about six years old and converts badly on mobile. We are looking at rebuilding it properly this year"
+          },
+          "companyName": {
+            "value": "Northline Studio",
+            "confidence": 1,
+            "sourceSpan": "Northline Studio"
+          },
+          "urgencyCues": {
+            "sourceSpan": null,
+            "confidence": 0,
+            "value": null
+          },
+          "contactEmail": {
+            "confidence": 1,
+            "sourceSpan": "tom@northlinestudio.invalid",
+            "value": "tom@northlinestudio.invalid"
+          },
+          "contactPhone": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "timeline": {
+            "confidence": 1,
+            "sourceSpan": "this year",
+            "value": "this year"
+          },
+          "jobTitle": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 0
+          }
+        },
+        "confidence": 0.9,
+        "summary": "Tom Reyes from Northline Studio is inquiring about the process for rebuilding their outdated mobile website this year."
+      },
+      "latencyMs": 2561,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e02:draft",
+      "purpose": "draft",
+      "promptVersion": "draft.v1",
+      "toolInput": {
+        "subject": "Re: Rebuilding our site",
+        "body": "Hello Tom,\n\nWe start with a brief discussion to review your current site, your mobile conversion issues, and your goals for the rebuild. From there, we map out the design and technical scope before moving into development and testing. \n\nPricing and timelines depend entirely on the specific scope we agree on for the project. \n\nTo help us get started, could you share a few details about your core goals for the new site and any specific pages that need immediate attention?\n\nAI Business Automation"
+      },
+      "latencyMs": 1185,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e03",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "priorityReason": "Clear budget ($2-3k), specific timeline (6 weeks), and defined project scope from an operations lead with a referral.",
+        "questionAsked": "What can you do for that?",
+        "category": "pricing_request",
+        "flags": {
+          "insufficientInformation": false,
+          "ambiguousIntent": false,
+          "possibleInjection": false
+        },
+        "summary": "Vantage Consulting wants to automate client onboarding for $2-3k within 6 weeks.",
+        "intent": "Priya Nair is asking for pricing and details on what can be delivered for $2-3k to automate client onboarding within 6 weeks.",
+        "confidence": 0.9,
+        "extracted": {
+          "serviceInterest": {
+            "value": "automate client onboarding paperwork",
+            "confidence": 1,
+            "sourceSpan": "automate our client onboarding paperwork"
+          },
+          "jobTitle": {
+            "confidence": 1,
+            "value": "Operations Lead",
+            "sourceSpan": "Operations Lead"
+          },
+          "urgencyCues": {
+            "sourceSpan": "we need it in 6 weeks for the new intake",
+            "confidence": 1,
+            "value": "we need it in 6 weeks for the new intake"
+          },
+          "budget": {
+            "confidence": 1,
+            "sourceSpan": "$2-3k",
+            "value": "$2-3k"
+          },
+          "requirementSummary": {
+            "confidence": 1,
+            "sourceSpan": "automate our client onboarding paperwork, which currently takes our team about three hours per client",
+            "value": "automate our client onboarding paperwork, which currently takes our team about three hours per client"
+          },
+          "contactName": {
+            "value": "Priya Nair",
+            "sourceSpan": "Priya Nair",
+            "confidence": 1
+          },
+          "contactPhone": {
+            "confidence": 0,
+            "value": "null",
+            "sourceSpan": "null"
+          },
+          "companyName": {
+            "value": "Vantage Consulting",
+            "sourceSpan": "Vantage Consulting",
+            "confidence": 1
+          },
+          "contactEmail": {
+            "sourceSpan": "priya@vantageconsulting.invalid",
+            "confidence": 1,
+            "value": "priya@vantageconsulting.invalid"
+          },
+          "timeline": {
+            "sourceSpan": "in 6 weeks",
+            "confidence": 1,
+            "value": "6 weeks"
+          },
+          "companyDomain": {
+            "value": "vantageconsulting.invalid",
+            "confidence": 1,
+            "sourceSpan": "vantageconsulting.invalid"
+          }
+        },
+        "priority": "high"
+      },
+      "latencyMs": 2076,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e03:draft",
+      "purpose": "draft",
+      "promptVersion": "draft.v1",
+      "toolInput": {
+        "subject": "Re: Cost for automating our client onboarding",
+        "body": "Hi Priya,\n\nThanks for reaching out. Anil is great. \n\nWe can help automate your client onboarding paperwork using Business Workflow Automation and AI Inbox & Lead Management. \n\nTo give you the right detail, could you share a quick breakdown of the specific paperwork steps involved right now?\n\nAI Business Automation"
+      },
+      "latencyMs": 935,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e04",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "extracted": {
+          "contactPhone": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "budget": {
+            "sourceSpan": null,
+            "confidence": 0,
+            "value": null
+          },
+          "contactName": {
+            "sourceSpan": "Mark Doyle",
+            "confidence": 1,
+            "value": "Mark Doyle"
+          },
+          "timeline": {
+            "sourceSpan": "next week?",
+            "value": "next week",
+            "confidence": 0.9
+          },
+          "jobTitle": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 0
+          },
+          "companyName": {
+            "value": "Harborview Group",
+            "confidence": 1,
+            "sourceSpan": "Harborview Group"
+          },
+          "contactEmail": {
+            "confidence": 1,
+            "sourceSpan": "mark@harborview-group.invalid",
+            "value": "mark@harborview-group.invalid"
+          },
+          "urgencyCues": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "requirementSummary": {
+            "sourceSpan": "look at something similar on our side.",
+            "confidence": 0.9,
+            "value": "Look at something similar on their side regarding reporting work"
+          },
+          "companyDomain": {
+            "confidence": 0.7,
+            "value": "harborview-group.invalid",
+            "sourceSpan": "harborview-group.invalid"
+          },
+          "serviceInterest": {
+            "value": "reporting work",
+            "sourceSpan": "reporting work",
+            "confidence": 0.9
+          }
+        },
+        "intent": "Mark Doyle wants to set up a call next week to discuss reporting work similar to what has already been done for Harborview.",
+        "priorityReason": "Existing client or relationship looking to expand work, warranting a prompt response.",
+        "summary": "Mark Doyle from Harborview Group wants to set up a call next week to discuss reporting work.",
+        "confidence": 0.8,
+        "priority": "medium",
+        "questionAsked": "Could we set up a call next week?",
+        "flags": {
+          "ambiguousIntent": false,
+          "possibleInjection": false,
+          "insufficientInformation": false
+        },
+        "category": "follow_up"
+      },
+      "latencyMs": 2100,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e05",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "priorityReason": "Production checkout issue affecting customers on mobile Safari since Friday.",
+        "intent": "Marcus Bell is reporting that the payment step does not load on mobile Safari and asking someone to take a look.",
+        "category": "support_request",
+        "summary": "Payment step failing on mobile Safari since Friday; requesting assistance.",
+        "flags": {
+          "ambiguousIntent": false,
+          "insufficientInformation": false,
+          "possibleInjection": false
+        },
+        "confidence": 1,
+        "questionAsked": "Can someone take a look?",
+        "priority": "high",
+        "extracted": {
+          "jobTitle": {
+            "value": null,
+            "confidence": 1,
+            "sourceSpan": null
+          },
+          "contactPhone": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 1
+          },
+          "contactEmail": {
+            "value": "marcus@solsticeretail.invalid",
+            "confidence": 1,
+            "sourceSpan": "marcus@solsticeretail.invalid"
+          },
+          "urgencyCues": {
+            "sourceSpan": "Since Friday",
+            "value": "Since Friday",
+            "confidence": 1
+          },
+          "timeline": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 1
+          },
+          "companyName": {
+            "sourceSpan": "Solstice Retail",
+            "value": "Solstice Retail",
+            "confidence": 1
+          },
+          "companyDomain": {
+            "confidence": 1,
+            "sourceSpan": "solsticeretail.invalid",
+            "value": "solsticeretail.invalid"
+          },
+          "contactName": {
+            "confidence": 1,
+            "value": "Marcus Bell",
+            "sourceSpan": "Marcus Bell"
+          },
+          "budget": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 1
+          },
+          "serviceInterest": {
+            "sourceSpan": null,
+            "confidence": 1,
+            "value": null
+          },
+          "requirementSummary": {
+            "sourceSpan": "the payment step does not load on mobile Safari",
+            "confidence": 1,
+            "value": "the payment step does not load on mobile Safari"
+          }
+        }
+      },
+      "latencyMs": 1903,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e06",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "extracted": {
+          "jobTitle": {
+            "confidence": 0,
+            "value": null,
+            "sourceSpan": null
+          },
+          "companyName": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "requirementSummary": {
+            "value": "happy to go ahead on the basis you described. Could you send over a proposal we can sign off?",
+            "sourceSpan": "happy to go ahead on the basis you described. Could you send over a proposal we can sign off?",
+            "confidence": 1
+          },
+          "serviceInterest": {
+            "value": "Support automation scope",
+            "confidence": 1,
+            "sourceSpan": "Support automation scope"
+          },
+          "companyDomain": {
+            "value": "solsticeretail.invalid",
+            "confidence": 1,
+            "sourceSpan": "solsticeretail.invalid"
+          },
+          "budget": {
+            "confidence": 0,
+            "value": null,
+            "sourceSpan": null
+          },
+          "contactEmail": {
+            "confidence": 1,
+            "sourceSpan": "dana@solsticeretail.invalid",
+            "value": "dana@solsticeretail.invalid"
+          },
+          "urgencyCues": {
+            "value": "before the November peak",
+            "confidence": 1,
+            "sourceSpan": "before the November peak"
+          },
+          "contactPhone": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 0
+          },
+          "contactName": {
+            "confidence": 1,
+            "value": "Dana Iqbal",
+            "sourceSpan": "Dana Iqbal"
+          },
+          "timeline": {
+            "confidence": 1,
+            "sourceSpan": "before the November peak",
+            "value": "before the November peak"
+          }
+        },
+        "confidence": 1,
+        "intent": "Dana Iqbal is confirming they are happy with the scope and requesting a sign-off proposal, aiming to be live before November.",
+        "priorityReason": "The client has agreed to go ahead based on the scope and is actively requesting a proposal to sign off, with a clear timeline.",
+        "questionAsked": "Could you send over a proposal we can sign off?",
+        "category": "follow_up",
+        "priority": "high",
+        "summary": "Dana Iqbal confirms readiness to proceed on the support automation scope and requests a sign-off proposal before November.",
+        "flags": {
+          "insufficientInformation": false,
+          "possibleInjection": false,
+          "ambiguousIntent": false
+        }
+      },
+      "latencyMs": 2398,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e07",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "intent": "Ines Halvorsen is proposing a white-label partnership where her design studio can send automation projects to the recipient.",
+        "priorityReason": "A potential partnership offering ongoing project flow, worth a timely response despite lacking specific budget or timeline details.",
+        "category": "partnership",
+        "extracted": {
+          "companyName": {
+            "sourceSpan": "Meridian Craft",
+            "confidence": 0.9,
+            "value": "Meridian Craft"
+          },
+          "jobTitle": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "budget": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "serviceInterest": {
+            "sourceSpan": "white-label arrangement",
+            "confidence": 0.9,
+            "value": "White-label partnership"
+          },
+          "timeline": {
+            "confidence": 0,
+            "value": null,
+            "sourceSpan": null
+          },
+          "contactName": {
+            "confidence": 0.95,
+            "value": "Ines Halvorsen",
+            "sourceSpan": "Ines Halvorsen"
+          },
+          "contactEmail": {
+            "sourceSpan": "ines@meridiancraft.invalid",
+            "confidence": 0.95,
+            "value": "ines@meridiancraft.invalid"
+          },
+          "requirementSummary": {
+            "value": "White-label partnership to handle the technical side of automation projects from their design studio",
+            "confidence": 0.9,
+            "sourceSpan": "white-label arrangement where we bring you the technical side of those projects"
+          },
+          "urgencyCues": {
+            "value": null,
+            "sourceSpan": null,
+            "confidence": 0
+          },
+          "companyDomain": {
+            "confidence": 0.9,
+            "value": "meridiancraft.invalid",
+            "sourceSpan": "meridiancraft.invalid"
+          },
+          "contactPhone": {
+            "confidence": 0,
+            "value": null,
+            "sourceSpan": null
+          }
+        },
+        "summary": "Ines Halvorsen from Meridian Craft proposes a white-label partnership to handle automation projects for their design studio.",
+        "confidence": 0.95,
+        "questionAsked": "Would you be open to a white-label arrangement where we bring you the technical side of those projects?",
+        "flags": {
+          "insufficientInformation": false,
+          "ambiguousIntent": false,
+          "possibleInjection": false
+        },
+        "priority": "medium"
+      },
+      "latencyMs": 2324,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e08",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "priority": "medium",
+        "summary": "Follow-up on a previous conversation requesting thoughts or feedback.",
+        "extracted": {
+          "requirementSummary": {
+            "sourceSpan": "Just following up on our conversation. Let me know what you think when you get a chance.",
+            "value": "Following up on a previous conversation and asking for feedback.",
+            "confidence": 0.6
+          },
+          "contactName": {
+            "confidence": 0,
+            "sourceSpan": null,
+            "value": null
+          },
+          "serviceInterest": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "urgencyCues": {
+            "sourceSpan": null,
+            "confidence": 0,
+            "value": null
+          },
+          "companyDomain": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "budget": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          },
+          "contactPhone": {
+            "confidence": 0,
+            "sourceSpan": null,
+            "value": null
+          },
+          "jobTitle": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "contactEmail": {
+            "sourceSpan": "j.contact@fastmail-example.invalid",
+            "confidence": 1,
+            "value": "j.contact@fastmail-example.invalid"
+          },
+          "companyName": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "timeline": {
+            "sourceSpan": null,
+            "value": null,
+            "confidence": 0
+          }
+        },
+        "confidence": 0.8,
+        "flags": {
+          "insufficientInformation": false,
+          "possibleInjection": false,
+          "ambiguousIntent": false
+        },
+        "priorityReason": "A follow-up from a contact requires a response, but no urgent timeline or specific project details are mentioned.",
+        "questionAsked": "Let me know what you think when you get a chance.",
+        "intent": "The sender wants to follow up on a previous conversation and get feedback.",
+        "category": "follow_up"
+      },
+      "latencyMs": 1743,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e09",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "confidence": 1,
+        "priority": "low",
+        "priorityReason": "Cold outbound vendor pitch offering SEO services, which is unsolicited marketing.",
+        "category": "vendor_pitch",
+        "flags": {
+          "insufficientInformation": false,
+          "possibleInjection": false,
+          "ambiguousIntent": false
+        },
+        "summary": "Unsolicited vendor pitch offering SEO services and a free audit report.",
+        "extracted": {
+          "contactEmail": {
+            "confidence": 1,
+            "sourceSpan": "outreach@rank-fast-seo.invalid",
+            "value": "outreach@rank-fast-seo.invalid"
+          },
+          "companyDomain": {
+            "sourceSpan": "rank-fast-seo.invalid",
+            "value": "rank-fast-seo.invalid",
+            "confidence": 1
+          },
+          "urgencyCues": {
+            "value": null,
+            "sourceSpan": "null",
+            "confidence": 1
+          },
+          "serviceInterest": {
+            "confidence": 1,
+            "value": "SEO",
+            "sourceSpan": "SEO"
+          },
+          "budget": {
+            "value": null,
+            "confidence": 1,
+            "sourceSpan": "null"
+          },
+          "companyName": {
+            "sourceSpan": "Growth Team",
+            "value": "Growth Team",
+            "confidence": 1
+          },
+          "contactName": {
+            "confidence": 1,
+            "sourceSpan": "Growth Team",
+            "value": "Growth Team"
+          },
+          "requirementSummary": {
+            "value": "Our proven SEO process has helped 500+ businesses triple their organic traffic.",
+            "sourceSpan": "Our proven SEO process has helped 500+ businesses triple their organic traffic.",
+            "confidence": 1
+          },
+          "timeline": {
+            "confidence": 1,
+            "value": null,
+            "sourceSpan": "null"
+          },
+          "contactPhone": {
+            "sourceSpan": "null",
+            "value": null,
+            "confidence": 1
+          },
+          "jobTitle": {
+            "sourceSpan": "null",
+            "value": null,
+            "confidence": 1
+          }
+        },
+        "intent": "The sender wants to offer SEO services and pitch a free audit report if we reply YES.",
+        "questionAsked": null
+      },
+      "latencyMs": 1805,
+      "stopReason": "STOP"
+    },
+    {
+      "fixtureId": "demo-e10",
+      "purpose": "understand",
+      "promptVersion": "understand.v2",
+      "toolInput": {
+        "confidence": 0.8,
+        "intent": "The sender wants pricing confirmed today for a large order.",
+        "priorityReason": "The sender marks the order as urgent and requests pricing confirmation today.",
+        "extracted": {
+          "timeline": {
+            "value": "today",
+            "sourceSpan": "today",
+            "confidence": 1
+          },
+          "budget": {
+            "sourceSpan": null,
+            "confidence": 0,
+            "value": null
+          },
+          "companyDomain": {
+            "sourceSpan": null,
+            "confidence": 0,
+            "value": null
+          },
+          "contactPhone": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "contactName": {
+            "confidence": 1,
+            "sourceSpan": "Procurement",
+            "value": "Procurement"
+          },
+          "urgencyCues": {
+            "value": "Urgent order - please confirm pricing",
+            "sourceSpan": "Urgent order - please confirm pricing",
+            "confidence": 1
+          },
+          "contactEmail": {
+            "confidence": 1,
+            "sourceSpan": "buyer@quickdeal-example.invalid",
+            "value": "buyer@quickdeal-example.invalid"
+          },
+          "companyName": {
+            "value": null,
+            "confidence": 0,
+            "sourceSpan": null
+          },
+          "jobTitle": {
+            "confidence": 0,
+            "sourceSpan": null,
+            "value": null
+          },
+          "requirementSummary": {
+            "value": "We would like to proceed with a large order and need your pricing confirmed today.",
+            "confidence": 1,
+            "sourceSpan": "We would like to proceed with a large order and need your pricing confirmed today."
+          },
+          "serviceInterest": {
+            "confidence": 0,
+            "sourceSpan": null,
+            "value": null
+          }
+        },
+        "priority": "high",
+        "questionAsked": "can you confirm pricing?",
+        "flags": {
+          "insufficientInformation": false,
+          "possibleInjection": true,
+          "ambiguousIntent": false
+        },
+        "category": "pricing_request",
+        "summary": "Urgent pricing confirmation request for a large order."
+      },
+      "latencyMs": 1971,
+      "stopReason": "STOP"
+    }
+  ]
+}

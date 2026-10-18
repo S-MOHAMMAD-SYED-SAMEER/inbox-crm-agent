@@ -80,7 +80,8 @@ export type LlmResponse = {
 };
 
 export type LlmProvider = {
-  readonly name: LlmProviderName;
+  /** `replay` is the guest demo's provider: it plays back a recorded run and makes no call. It is never selectable by configuration. */
+  readonly name: LlmProviderName | 'replay';
   /** False when the provider needs a key it does not have. Never exposes the key itself. */
   readonly configured: boolean;
   complete(request: LlmRequest): Promise<LlmResponse>;

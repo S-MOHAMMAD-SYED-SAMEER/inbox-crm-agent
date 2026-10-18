@@ -531,7 +531,7 @@ const categoryRules: Rule[] = [
 // R-20 is the one rule added for the operator's "continue" action on an ambiguous email. Without it a person who checked such an
 // email and let it continue would get an empty plan and the email would be handed back to them, which is the dead end the action
 // exists to remove. It plans the smallest honest thing: record that the email arrived, and open a task for a person to deal
-// with it. It creates no company, contact or deal, and it never replies. The plan still needs approval because the reading is
+// with it. It creates no company, contact or deal, files nothing against any existing one, and it never replies. The plan still needs approval because the reading is
 // still ambiguous.
 const humanCheckedRules: Rule[] = [
   {
@@ -547,7 +547,26 @@ const humanCheckedRules: Rule[] = [
       return {
         fired: true,
         because: 'a person checked this ambiguous email and let it continue, so it is logged and given a task for a person',
-        actions: [activityAction(ctx), taskAction(ctx, `Look at this email: ${ctx.email.subject}`, ctx.understanding.intent)],
+        // Attached to the EMAIL ONLY. The reading is still ambiguous, so nothing here is filed against a CRM contact or company, not
+        // even one the sender happens to match: the activity is linked to this email and to nothing else, and the task names no record.
+        actions: [
+          {
+            type: 'log_activity',
+            payload: { type: 'email_in', subject: ctx.email.subject, body: ctx.understanding.summary, contact: null, company: null },
+          },
+          {
+            type: 'create_task',
+            payload: {
+              title: `Look at this email: ${ctx.email.subject}`,
+              description: ctx.understanding.intent,
+              dueAt: dueAt(ctx.now, ctx.understanding.priority),
+              priority: ctx.understanding.priority,
+              contact: null,
+              company: null,
+              deal: null,
+            },
+          },
+        ],
       };
     },
   },

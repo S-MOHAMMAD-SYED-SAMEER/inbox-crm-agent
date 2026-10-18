@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { usePublicDemo } from '../auth/publicDemo.tsx';
+import { useGuest } from '../auth/guestContext.tsx';
+import { GUEST_REANALYSE, actorWho } from '../auth/guest.ts';
 import { api, ApiError } from '../api/client.ts';
 import type { EmailDetail as EmailDetailPayload } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -16,7 +18,6 @@ import { DecisionCard } from '../components/decision.tsx';
 import { ExecutionCard } from '../components/execution.tsx';
 import { ExpandableText } from '../components/expandable.tsx';
 import { reviewReasonLabel } from '../inbox/statePresentation.ts';
-import { actorLabel } from '../crm/presentation.ts';
 import {
   PAUSED_FOR_PERSON,
   REVIEW_ACTION_LABELS,
@@ -75,6 +76,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
   // the sixth hook.
   const [refusal, setRefusal] = useState<string | null>(null);
   const publicDemo = usePublicDemo();
+  const guest = useGuest();
 
   const load = useCallback(async () => {
     try {
@@ -172,7 +174,15 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
           disabled={busy}
           className="h-control rounded-control border border-line-strong px-4 text-small font-semibold disabled:opacity-50"
         >
-          {busy ? 'Working…' : analysis ? 'Analyse again (1 model request)' : 'Analyse (1 model request)'}
+          {busy
+            ? 'Working…'
+            : guest
+              ? analysis
+                ? GUEST_REANALYSE
+                : 'Analyse (uses the recorded answer)'
+              : analysis
+                ? 'Analyse again (1 model request)'
+                : 'Analyse (1 model request)'}
         </button>
       </div>
 
@@ -485,8 +495,7 @@ export function EmailDetail({ id }: { id: string }): ReactNode {
                       : 'bg-canvas text-ink-muted'
                 }`}
               >
-                {actorLabel(event.actor).label}
-                {event.actor === 'human' && event.actorId ? ` · ${event.actorId}` : ''}
+                {actorWho(event.actor, event.actorId)}
               </span>
               <span className="text-ink">{event.summary}</span>
               {event.outcome !== 'ok' ? (

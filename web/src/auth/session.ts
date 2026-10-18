@@ -45,10 +45,13 @@ export function readCookie(cookieString: string, name: string): string | null {
   return null;
 }
 
-/** The current CSRF token, or null when there is no session. */
+/** The guest demo's own CSRF cookie. A guest never has the owner's, and the owner's is never replaced by it. */
+export const GUEST_CSRF_COOKIE = 'inbox_guest_csrf';
+
+/** The current CSRF token, or null when there is no session. An owner's token wins if a browser somehow holds both. */
 export function currentCsrfToken(): string | null {
   if (typeof document === 'undefined') return null;
-  return readCookie(document.cookie, CSRF_COOKIE);
+  return readCookie(document.cookie, CSRF_COOKIE) ?? readCookie(document.cookie, GUEST_CSRF_COOKIE);
 }
 
 /**
@@ -63,12 +66,19 @@ export function needsCsrf(method: string | undefined): boolean {
   return verb !== 'GET' && verb !== 'HEAD' && verb !== 'OPTIONS';
 }
 
+import type { GuestInfo } from './guest.ts';
+
 /** What `GET /api/auth/session` returns. */
 export type SessionResponse = {
   authenticated: boolean;
   operator: string | null;
   expiresAt: string | null;
   csrfToken: string | null;
+  /** `owner` for the signed-in operator, `guest` for the demo, null for nobody. */
+  role?: 'owner' | 'guest' | null;
+  /** Whether the server offers the guest demo to a visitor. */
+  guestDemoEnabled?: boolean;
+  guest?: GuestInfo;
 };
 
 export type SessionState =
@@ -85,7 +95,8 @@ export type SessionState =
    * mutating control is hidden because the server would refuse it anyway.
    */
   | { status: 'public-demo' }
-  | { status: 'authenticated'; operator: string; expiresAt: string | null };
+  /** `role` and `guest` are present only for a guest. Their absence is the owner. */
+  | { status: 'authenticated'; operator: string; expiresAt: string | null; role?: 'guest'; guest?: GuestInfo };
 
 /**
  * Turns the server's answer into application state.
@@ -103,10 +114,16 @@ export function sessionFromResponse(body: unknown): SessionState {
     return { status: 'anonymous' };
   }
 
+  const expiresAt = typeof response.expiresAt === 'string' ? response.expiresAt : null;
+  // A guest is a guest only if the server says so and describes the session. A body that claims the role without the description is
+  // read as the owner's shape, never as a half-guest.
+  if (response.role === 'guest' && response.guest && typeof response.guest.expiresAt === 'string') {
+    return { status: 'authenticated', operator: response.operator, expiresAt, role: 'guest', guest: response.guest };
+  }
   return {
     status: 'authenticated',
     operator: response.operator,
-    expiresAt: typeof response.expiresAt === 'string' ? response.expiresAt : null,
+    expiresAt,
   };
 }
 
