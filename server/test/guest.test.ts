@@ -871,3 +871,112 @@ test('a guest can choose the record for the conflicted email (E-04); it is recor
     await app.stop();
   }
 });
+
+// ============================================================ W-1: the pick is used by the plan (R-20)
+
+test('W-1: for E-04, an existing pick, "create new" and no pick each produce the right plan, with no deal and no reply in any of them', async () => {
+  const app = await start();
+  try {
+    const continueAndRead = async (browser: Browser, subject: string) => {
+      const emails = await runFullFlow(browser);
+      const email = byMessage(emails, subject);
+      assert.ok(email, subject);
+      const continued = await browser.call(`/api/emails/${email.id}/review`, { method: 'POST', body: { action: 'continue' } });
+      assert.equal(continued.status, 200, JSON.stringify(continued.body));
+      return { email, continued: continued.body };
+    };
+    const forbidden = ['create_deal', 'send_email', 'update_deal_stage', 'link_contact_to_company'];
+    const typesOf = (plan: any): string[] => plan.actions.map((a: any) => a.type);
+
+    // ---- an existing record picked: the activity and the task are attached to it, and nothing is created
+    const a = new Browser(app.url, '203.0.113.51');
+    await a.tryTheDemo();
+    const { email: e04a, continued: afterContinueA } = await continueAndRead(a, 'Reporting work for Harborview');
+    assert.equal(afterContinueA.email.reviewReason, 'match_conflict');
+    const candidatesA = afterContinueA.resolution.company.candidates;
+    assert.ok(candidatesA.length >= 2);
+    app.clock.advance(1000); // the pick is a later run than the conflict it answers (the test clock is otherwise frozen)
+    const pickedA = await a.call(`/api/emails/${e04a.id}/resolve-match`, { method: 'POST', body: { entityType: 'company', entityId: candidatesA[0].entityId } });
+    assert.equal(pickedA.status, 200, JSON.stringify(pickedA.body));
+    const planA = pickedA.body.decision.plan;
+    assert.deepEqual(typesOf(planA).sort(), ['create_task', 'log_activity']);
+    const activityA = planA.actions.find((x: any) => x.type === 'log_activity').payload;
+    const taskA = planA.actions.find((x: any) => x.type === 'create_task').payload;
+    for (const payload of [activityA, taskA]) {
+      assert.deepEqual(payload.company, { kind: 'existing', id: candidatesA[0].entityId }, 'attached to the company that was picked');
+      assert.equal(payload.contact, null, 'the contact was not part of the choice');
+    }
+    assert.equal(taskA.deal, null);
+    assert.equal(planA.requiresApproval, true);
+    for (const type of forbidden) assert.equal(typesOf(planA).includes(type), false, `${type} in the plan`);
+    const traceA = planA.ruleTrace.find((entry: any) => entry.rule === 'R-20');
+    assert.match(traceA.because, /attached to the company they picked/);
+
+    // ---- "create new records": the company and the contact are created from verified fields, and both are attached to them
+    const b = new Browser(app.url, '203.0.113.52');
+    await b.tryTheDemo();
+    const { email: e04b, continued: afterContinueB } = await continueAndRead(b, 'Reporting work for Harborview');
+    assert.equal(afterContinueB.email.reviewReason, 'match_conflict');
+    app.clock.advance(1000);
+    const pickedB = await b.call(`/api/emails/${e04b.id}/resolve-match`, { method: 'POST', body: { entityType: 'company', entityId: 'create_new' } });
+    assert.equal(pickedB.status, 200, JSON.stringify(pickedB.body));
+    const planB = pickedB.body.decision.plan;
+    assert.deepEqual(typesOf(planB).sort(), ['create_company', 'create_contact', 'create_task', 'log_activity']);
+    const activityB = planB.actions.find((x: any) => x.type === 'log_activity').payload;
+    const taskB = planB.actions.find((x: any) => x.type === 'create_task').payload;
+    for (const payload of [activityB, taskB]) {
+      assert.deepEqual(payload.company, { kind: 'new', ref: 'company' });
+      assert.deepEqual(payload.contact, { kind: 'new', ref: 'contact' });
+    }
+    assert.equal(planB.requiresApproval, true);
+    for (const type of forbidden) assert.equal(typesOf(planB).includes(type), false, `${type} in the plan`);
+
+    // The created records use only what passed the verbatim check (the stored understanding, after the check) and the email's headers.
+    const detailB = (await b.call(`/api/emails/${e04b.id}`)).body;
+    const extracted = detailB.analysis.understanding.extracted;
+    const company = planB.actions.find((x: any) => x.type === 'create_company').payload;
+    const contact = planB.actions.find((x: any) => x.type === 'create_contact').payload;
+    assert.equal(company.name, extracted.companyName.value ?? extracted.companyDomain.value);
+    assert.equal(company.domain, extracted.companyDomain.value);
+    assert.equal(contact.fullName, extracted.contactName.value ?? detailB.email.fromName ?? detailB.email.fromEmail);
+    assert.equal(contact.email, detailB.email.fromEmail);
+    assert.equal(contact.jobTitle, extracted.jobTitle.value);
+    assert.equal(contact.phone, extracted.contactPhone.value);
+    assert.deepEqual(contact.company, { kind: 'new', ref: 'company' }, 'the new contact belongs to the new company');
+    // Nothing is in the CRM yet: it is a plan, and it waits for approval.
+    assert.equal(detailB.approval.state, 'pending');
+
+    // Approved, it does what it says: the records exist, and the task and the activity belong to them. Still no deal, still nothing sent.
+    const dealsBefore = (await b.call('/api/deals')).body.deals.length;
+    const approvedB = await b.call(`/api/decisions/${pickedB.body.decision.id}/approve`, { method: 'POST' });
+    assert.equal(approvedB.status, 200, JSON.stringify(approvedB.body));
+    assert.equal(approvedB.body.ok, true);
+    const createdCompany = (await b.call('/api/companies')).body.companies.find((row: any) => row.name === company.name);
+    const createdContact = (await b.call('/api/contacts')).body.contacts.find((row: any) => row.email === contact.email);
+    assert.ok(createdCompany && createdContact, 'the company and the contact were created');
+    assert.equal(createdContact.companyId, createdCompany.id);
+    const createdTask = (await b.call('/api/tasks')).body.tasks.find((row: any) => String(row.title).startsWith('Look at this email'));
+    assert.equal(createdTask.companyId, createdCompany.id);
+    assert.equal(createdTask.contactId, createdContact.id);
+    assert.equal((await b.call('/api/deals')).body.deals.length, dealsBefore, 'no deal');
+    assert.equal(approvedB.body.outboxStatus ?? null, null, 'no reply');
+
+    // ---- no pick (no conflict to answer): unchanged, attached to the email only
+    const c = new Browser(app.url, '203.0.113.53');
+    await c.tryTheDemo();
+    const { continued: afterContinueC } = await continueAndRead(c, 'Following up');
+    assert.equal(afterContinueC.email.state, 'awaiting_approval');
+    const planC = afterContinueC.decision.plan;
+    assert.deepEqual(typesOf(planC).sort(), ['create_task', 'log_activity']);
+    for (const action of planC.actions) {
+      assert.equal(action.payload.contact, null, `${action.type} contact`);
+      assert.equal(action.payload.company, null, `${action.type} company`);
+    }
+    for (const type of forbidden) assert.equal(typesOf(planC).includes(type), false, `${type} in the plan`);
+    assert.equal(planC.requiresApproval, true);
+    assert.doesNotMatch(planC.ruleTrace.find((entry: any) => entry.rule === 'R-20').because, /attached to/);
+    assert.equal(app.ownerProviderCalls.count, 0);
+  } finally {
+    await app.stop();
+  }
+});
