@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { EntityResolution, ResolutionVerdict } from '../api/types.ts';
+import { crmMatchLabel } from '../inbox/copy.ts';
 
 // Resolution presentation.
 //
@@ -8,9 +9,15 @@ import type { EntityResolution, ResolutionVerdict } from '../api/types.ts';
 // its own. So a conflict renders as a choice with both candidates and their
 // evidence side by side, rather than as an error.
 
-export function VerdictChip({ verdict }: { verdict: ResolutionVerdict }): ReactNode {
-  const label =
-    verdict === 'MATCH' ? 'Matched' : verdict === 'MATCH_CONFLICT' ? 'Needs a decision' : 'New record';
+export function VerdictChip({
+  verdict,
+  plannedToCreate = null,
+}: {
+  verdict: ResolutionVerdict;
+  /** Once a plan exists: whether it creates this record. "New record" is only said when it does. */
+  plannedToCreate?: boolean | null;
+}): ReactNode {
+  const label = crmMatchLabel(verdict, plannedToCreate);
   const tone =
     verdict === 'MATCH'
       ? 'bg-success-tint text-success'

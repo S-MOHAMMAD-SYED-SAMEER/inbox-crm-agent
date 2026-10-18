@@ -104,7 +104,12 @@ export type EmailSummary = {
     summary: string;
     injectionSuspected: boolean;
     droppedFieldCount: number;
+    /** The category the model gave, when code changed it; null when the final category is the model's own. */
+    modelCategory: string | null;
+    /** The model's summary or intent still mentions a value the validator discarded. */
+    summaryMentionsDiscarded: boolean;
   } | null;
+
   /** Null until resolution has run — never a fabricated verdict. */
   resolution: { contact: string; company: string } | null;
   /** Null until a decision exists. Never a placeholder recommendation. */
@@ -114,6 +119,9 @@ export type EmailSummary = {
     requiresApproval: boolean;
     hasDraft: boolean;
     draftBlocked: boolean;
+    /** Whether the plan creates a contact / a company. A NO_MATCH that creates nothing is shown as "no match", not "new record". */
+    createsContact: boolean;
+    createsCompany: boolean;
   } | null;
 };
 
@@ -140,6 +148,8 @@ function toSummary(
           summary: analysis.understanding.summary,
           injectionSuspected: analysis.security.injection.suspected,
           droppedFieldCount: analysis.validation.droppedFields.length,
+          modelCategory: modelCategoryIfChanged(analysis),
+          summaryMentionsDiscarded: (analysis.validation.summaryMentions?.length ?? 0) > 0,
         }
       : null,
     resolution: resolution ?? null,
@@ -150,10 +160,19 @@ function toSummary(
           requiresApproval: decision.plan.requiresApproval,
           hasDraft: decision.plan.draft !== null,
           draftBlocked: (decision.plan.draft?.blockedBy.length ?? 0) > 0,
+          createsContact: decision.plan.actions.some((action) => action.type === 'create_contact'),
+          createsCompany: decision.plan.actions.some((action) => action.type === 'create_company'),
         }
       : null,
   };
 }
+
+/** The model's own category, only when the stored (final) one differs: that is the case where code changed it. */
+function modelCategoryIfChanged(analysis: AnalysisRecord): string | null {
+  const given = (analysis.modelOutput as { category?: unknown } | null)?.category;
+  return typeof given === 'string' && given !== analysis.understanding.category ? given : null;
+}
+
 
 /** The verdict pair for a list row, or null when resolution has not run. */
 async function resolutionSummary(
@@ -931,6 +950,96 @@ export async function handleUnderstandPending(
 }
 
 export { AppError, ValidationError };
+
+// ------------------------------------------------------------------- review
+
+/**
+ * What a person may do with an email that was handed to them (state `needs_review`).
+ *
+ *   archive    drop it. No CRM change, ever.
+ *   continue   "a person has checked this": the email goes on to CRM matching and then planning as normal, and the plan
+ *              still needs approval. Allowed only when the reason was an ambiguous reading. An email suspected of carrying
+ *              instructions can be archived and nothing else: there is no path from "the email tried to give the agent
+ *              orders" to "carry on", and this is where that is enforced, in the server, not in what the screen shows.
+ *
+ * Every action writes an audit entry naming who did it.
+ */
+export const REVIEW_ACTIONS = ['archive', 'continue'] as const;
+export type ReviewAction = (typeof REVIEW_ACTIONS)[number];
+
+/** The reasons for which "continue" is offered. Everything else, injection above all, is archive-only. */
+export const CONTINUABLE_REASONS = ['ambiguous_intent'] as const;
+
+export function reviewActionsFor(email: Pick<EmailRecord, 'state' | 'reviewReason'>): ReviewAction[] {
+  if (email.state !== 'needs_review') return [];
+  return (CONTINUABLE_REASONS as readonly string[]).includes(email.reviewReason ?? '') ? ['archive', 'continue'] : ['archive'];
+}
+
+export async function handleReviewEmail(
+  deps: EmailHandlerDeps & { clock?: Clock },
+  id: string,
+  input: unknown,
+  operator: string,
+): Promise<HandlerResult<EmailDetail>> {
+  const problems = new ProblemCollector();
+  const body = requireObject(input ?? {}, 'body', problems);
+  const action = requireOneOf(body.action, 'action', REVIEW_ACTIONS, problems);
+  problems.throwIfAny();
+
+  const email = await deps.repos.emails.getById(id);
+  if (!email) throw new NotFoundError('Email');
+
+  if (email.state !== 'needs_review') {
+    throw new AppError('INVALID_STATE', `This email is not waiting for a person (it is ${email.state.replace(/_/g, ' ')}).`);
+  }
+  if (!reviewActionsFor(email).includes(action)) {
+    throw new AppError(
+      'FORBIDDEN',
+      email.reviewReason === 'possible_injection'
+        ? 'An email suspected of carrying instructions can only be archived. It cannot be continued.'
+        : `This email cannot be continued: it was handed to a person for a reason (${(email.reviewReason ?? 'unknown').replace(/_/g, ' ')}) that is not an ambiguous reading.`,
+    );
+  }
+
+  const wasReason = email.reviewReason;
+  if (action === 'archive') {
+    const moved = await deps.repos.emails.setState(email.id, 'archived', { expectedFrom: 'needs_review', reviewReason: null });
+    if (moved === null) throw new AppError('INVALID_STATE', 'This email changed while you were looking at it. Reload and try again.');
+    await deps.repos.audit.append({
+      correlationId: email.correlationId,
+      emailId: email.id,
+      stage: 'system',
+      eventType: 'human_review_recorded',
+      actor: 'human',
+      actorId: operator,
+      outcome: 'ok',
+      summary: `${operator} archived this email. No CRM record was created or changed.`,
+      payload: { action: 'archive', reason: wasReason },
+    });
+    return handleGetEmail(deps, id);
+  }
+
+  // continue: the check is recorded first, so it is on the record before anything is matched or planned.
+  const moved = await deps.repos.emails.setState(email.id, 'resolving', { expectedFrom: 'needs_review', reviewReason: null });
+  if (moved === null) throw new AppError('INVALID_STATE', 'This email changed while you were looking at it. Reload and try again.');
+  await deps.repos.audit.append({
+    correlationId: email.correlationId,
+    emailId: email.id,
+    stage: 'system',
+    eventType: 'human_review_recorded',
+    actor: 'human',
+    actorId: operator,
+    outcome: 'ok',
+    summary: `${operator} checked this email and let it continue to CRM matching. The plan will still need approval.`,
+    payload: { action: 'continue', reason: wasReason },
+  });
+
+  const resolved = await resolveEmail(moved, deps);
+  if (resolved.state === 'deciding') {
+    await decideEmail(resolved.email, { ...deps, ...(deps.clock ? { clock: deps.clock } : {}) });
+  }
+  return handleGetEmail(deps, id);
+}
 
 /**
  * Creates a revision of a plan from a human's edits.

@@ -70,6 +70,12 @@ export const AUDIT_EVENT_TYPES = [
   'outbound_send_failed',
   'outbound_send_blocked',
   'human_reclassified',
+  // code changing the model's category (the model's reading is logged first, under its own name), and a summary that still
+  // mentions a value the validator discarded.
+  'category_changed_by_code',
+  'summary_mentions_discarded_value',
+  // a person's decision on an email that was handed to them: archive it, or let it continue to CRM matching.
+  'human_review_recorded',
   'state_changed',
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPES)[number];

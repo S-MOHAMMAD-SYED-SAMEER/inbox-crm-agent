@@ -6,6 +6,13 @@ import { routeToHash } from '../router.ts';
 import { CategoryChip, ConfidenceBadge, PriorityChip, StateChip } from '../components/understanding.tsx';
 import { VerdictChip } from '../components/resolution.tsx';
 import { describeDecideBatch } from '../inbox/batchReport.ts';
+import {
+  PAUSED_FOR_PERSON,
+  analyseButtonLabel,
+  analyseCostNote,
+  isPaused,
+  mentionsDiscardedMarker,
+} from '../inbox/copy.ts';
 
 // The Inbox list (scope).
 //
@@ -57,6 +64,9 @@ export function Inbox(): ReactNode {
     }
   };
 
+  // Each waiting email is one model request, and the button reads all of them: say how many before it is clicked.
+  const waiting = state.status === 'ready' ? state.emails.filter((email) => email.state === 'received').length : 0;
+
   return (
     <div className="space-y-5">
       {/* Every control here drives the pipeline, so none of them is offered in
@@ -79,7 +89,8 @@ export function Inbox(): ReactNode {
 
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || waiting === 0}
+          title={analyseCostNote(waiting) ?? 'Nothing is waiting to be read.'}
           onClick={() =>
             run('understand', async () => {
               const result = await api.understandPending();
@@ -88,7 +99,7 @@ export function Inbox(): ReactNode {
           }
           className="h-control rounded-control border border-line-strong px-4 text-small font-semibold text-ink disabled:opacity-50"
         >
-          {busy === 'understand' ? 'Analysing…' : 'Analyse waiting email'}
+          {busy === 'understand' ? 'Analysing…' : analyseButtonLabel(waiting)}
         </button>
 
         <button
@@ -127,6 +138,12 @@ export function Inbox(): ReactNode {
       </div>
       )}
 
+      {publicDemo || analyseCostNote(waiting) === null ? null : (
+        <p data-analyse-cost className="text-meta text-ink-muted">
+          {analyseCostNote(waiting)}
+        </p>
+      )}
+
       {state.status === 'loading' ? <p className="text-small text-ink-muted">Loading…</p> : null}
 
       {state.status === 'error' ? (
@@ -142,7 +159,7 @@ export function Inbox(): ReactNode {
           <p className="mt-1 text-small text-ink-muted">
             {publicDemo
               ? 'This demo has not been populated yet. Nothing can be started from a read-only view.'
-              : 'Use “Ingest new email” to pull the demo messages in, then “Analyse waiting email”.'}
+              : 'Use “Ingest new email” to pull the demo messages in, then “Analyse waiting emails”.'}
           </p>
         </div>
       ) : null}
@@ -174,9 +191,25 @@ export function Inbox(): ReactNode {
                     <p className="text-meta text-ink-muted">{email.fromEmail}</p>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <p className="text-small text-ink">{email.subject}</p>
+                    <a
+                      href={routeToHash({ name: 'inbox', id: email.id })}
+                      className="text-small text-ink underline-offset-2 hover:text-brand hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      {email.subject}
+                    </a>
                     {email.analysis ? (
-                      <p className="mt-0.5 text-meta text-ink-muted">{email.analysis.summary}</p>
+                      <>
+                        <p className="mt-0.5 text-meta text-ink-muted">{email.analysis.summary}</p>
+                        {email.analysis.summaryMentionsDiscarded ? (
+                          <span
+                            data-summary-marker
+                            title={mentionsDiscardedMarker([{ claimedValue: 'a value the checks discarded' }]) ?? undefined}
+                            className="mt-1 inline-flex rounded-pill bg-signal-tint px-2 py-0.5 text-meta text-signal"
+                          >
+                            mentions a discarded value
+                          </span>
+                        ) : null}
+                      </>
                     ) : (
                       <p className="mt-0.5 text-meta text-ink-muted">Not analysed yet.</p>
                     )}
@@ -205,12 +238,22 @@ export function Inbox(): ReactNode {
                     {email.resolution ? (
                       <div className="flex flex-col gap-1">
                         <span className="flex items-center gap-1.5 text-meta text-ink-muted">
-                          contact <VerdictChip verdict={email.resolution.contact} />
+                          contact{' '}
+                          <VerdictChip
+                            verdict={email.resolution.contact}
+                            plannedToCreate={email.decision ? email.decision.createsContact : null}
+                          />
                         </span>
                         <span className="flex items-center gap-1.5 text-meta text-ink-muted">
-                          company <VerdictChip verdict={email.resolution.company} />
+                          company{' '}
+                          <VerdictChip
+                            verdict={email.resolution.company}
+                            plannedToCreate={email.decision ? email.decision.createsCompany : null}
+                          />
                         </span>
                       </div>
+                    ) : isPaused(email.state) ? (
+                      <span data-paused className="text-meta text-ink-muted">{PAUSED_FOR_PERSON}</span>
                     ) : (
                       <span className="text-meta text-ink-muted">not matched yet</span>
                     )}
@@ -237,6 +280,8 @@ export function Inbox(): ReactNode {
                           </span>
                         ) : null}
                       </div>
+                    ) : isPaused(email.state) ? (
+                      <span data-paused className="text-meta text-ink-muted">{PAUSED_FOR_PERSON}</span>
                     ) : (
                       <span className="text-meta text-ink-muted">not decided yet</span>
                     )}
@@ -246,6 +291,7 @@ export function Inbox(): ReactNode {
                       <ConfidenceBadge
                         band={email.analysis.confidenceBand}
                         confidence={email.analysis.confidence}
+                        modelCategory={email.analysis.modelCategory}
                       />
                     ) : (
                       <span className="text-meta text-ink-muted">—</span>

@@ -141,6 +141,9 @@ const EVENT_LABELS: Readonly<Record<string, string>> = Object.freeze({
   outbound_send_failed: 'Delivery failed',
   outbound_send_blocked: 'Delivery blocked',
   human_reclassified: 'Reclassified by a person',
+  human_review_recorded: 'Decided by a person',
+  category_changed_by_code: 'Category changed by a rule',
+  summary_mentions_discarded_value: 'Summary mentions a discarded detail',
   state_changed: 'Status changed',
 });
 

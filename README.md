@@ -28,7 +28,11 @@ npm run demo
 Run that from the repository root. It installs the dependencies, builds the dashboard, resets a local
 SQLite database to the seeded demo CRM, and starts the app. When it prints `Open http://localhost:3100`,
 open that address and sign in with the password printed in the terminal (made fresh for each run,
-local only). Then use **Inbox → Ingest → Understand → Resolve → Decide**.
+local only). Then use **Inbox → Ingest → Understand → Resolve → Decide**. The analyse button says how many emails it will read
+before you click it. An email the assistant hands to a person shows under **Approvals → Needs a person**: it can always be
+archived (no CRM change), and an ambiguous one can be let through to CRM matching, after which its plan still needs
+approval. One that may be trying to give the assistant instructions can only be archived. Every one of those actions is
+written to the audit log with who did it.
 
 One terminal is enough: the server serves the dashboard on the same address as the API. It runs on
 synthetic data with the deterministic mock LLM provider, so **no API key is needed**, and nothing is
@@ -148,15 +152,15 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                858 tests
+  test/                880 tests
 web/
   src/router.ts        ~60-line hash router, unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
   src/screens/         Overview · Inbox · email detail · Approvals + placeholders for the rest
-  test/                149 tests
+  test/                162 tests
 ```
 
-1007 tests total (858 server + 149 web), all currently passing.
+1042 tests total (880 server + 162 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
@@ -270,7 +274,7 @@ and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Han
 **Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
 (a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
 **55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
-sessions, and real parallel connections racing for one claim). **The 858-test unit suite itself still runs
+sessions, and real parallel connections racing for one claim). **The 880-test unit suite itself still runs
 only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
 network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
 

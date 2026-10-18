@@ -81,6 +81,8 @@ export type DecisionContext = {
    * Read by R-19, which stops a returning contact from getting a second deal.
    */
   openDealForContact?: Deal | null;
+  /** A person looked at this email after it was handed to them and let it continue (the audit log says so). Read only by R-18 and R-20. */
+  humanChecked?: boolean;
   /** The contact record when the contact resolved to a MATCH. Needed by R-03. */
   matchedContact: Contact | null;
   /** Decision time, from the injectable clock — never `new Date()`. */
@@ -139,6 +141,34 @@ function willCreateCompany(ctx: DecisionContext): boolean {
 
 function willCreateContact(ctx: DecisionContext): boolean {
   return ctx.contact.verdict === 'NO_MATCH' && producesCrmRecords(ctx);
+}
+
+/** The category in words a person reads ("vendor pitch", not the stored name). */
+function humanCategory(ctx: DecisionContext): string {
+  const words = ctx.understanding.category.replace(/_/g, ' ');
+  return /^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`;
+}
+
+function plainCategory(ctx: DecisionContext): string {
+  return ctx.understanding.category.replace(/_/g, ' ');
+}
+
+function compactName(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Why a company is being proposed, in the words that are true. A company named in the message is "named"; one that exists here only
+ * because the sender writes from its domain is said to be that, and a bare domain is not called a name.
+ */
+function companyEvidence(ctx: DecisionContext, label: string): string {
+  const named = ctx.understanding.extracted.companyName.value;
+  const senderDomain = ctx.email.fromEmail.split('@')[1] ?? '';
+  if (named === null) return `no existing company matched and the sender's domain is ${label}`;
+  const fromDomain = senderDomain.split('.').some((part) => part !== '' && compactName(part) === compactName(named));
+  return fromDomain
+    ? `no existing company matched, and the sender's domain (${senderDomain}) suggests "${named}"`
+    : `no existing company matched and the email names "${named}"`;
 }
 
 function dueAt(now: string, priority: 'high' | 'medium' | 'low'): string {
@@ -230,7 +260,7 @@ const entityRules: Rule[] = [
       }
       return {
         fired: true,
-        because: `no existing company matched and the email names "${label}"`,
+        because: companyEvidence(ctx, label),
         actions: [
           {
             type: 'create_company',
@@ -311,10 +341,10 @@ const categoryRules: Rule[] = [
     id: 'R-10',
     description: 'Noise is archived without creating any CRM record.',
     evaluate(ctx) {
-      if (!isNoise(ctx)) return { fired: false, because: `the category is ${ctx.understanding.category}` };
+      if (!isNoise(ctx)) return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       return {
         fired: true,
-        because: `read as ${ctx.understanding.category}, which never becomes a lead`,
+        because: `${humanCategory(ctx)} email never becomes a lead, so it is archived and no CRM record is created`,
         actions: [
           {
             type: 'archive_email',
@@ -329,7 +359,7 @@ const categoryRules: Rule[] = [
     description: 'A support request becomes a logged activity and a support task, with no reply drafted.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'support_request') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       return {
         fired: true,
@@ -350,7 +380,7 @@ const categoryRules: Rule[] = [
     description: 'A follow-up on an open deal advances that deal a stage and opens a task for a person to deal with what they asked.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'follow_up') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       if (ctx.openDeal === null) {
         return { fired: false, because: 'there is no open deal on the matched company' };
@@ -383,7 +413,7 @@ const categoryRules: Rule[] = [
     description: 'A follow-up with no open deal becomes an activity and a task.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'follow_up') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       if (ctx.openDeal !== null && STAGE_ADVANCE[ctx.openDeal.stage] !== undefined) {
         return { fired: false, because: 'R-12 is advancing the open deal instead' };
@@ -400,7 +430,7 @@ const categoryRules: Rule[] = [
     description: 'A pricing request becomes a qualifying deal, a task and a drafted reply.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'pricing_request') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       // DOCUMENTED CHOICE: the specification specifies the deal's amount and timeline for
       // E-03 but not its stage. `qualifying` is used because someone stating a
@@ -422,7 +452,7 @@ const categoryRules: Rule[] = [
     description: 'A sales inquiry becomes a new lead, a follow-up task and a discovery reply.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'sales_inquiry') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       return {
         fired: true,
@@ -441,7 +471,7 @@ const categoryRules: Rule[] = [
     description: 'A service inquiry becomes a qualifying deal, a task and a scoping reply.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'service_inquiry') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       return {
         fired: true,
@@ -460,7 +490,7 @@ const categoryRules: Rule[] = [
     description: 'A partnership approach is recorded as a note, with no deal and no auto-reply.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'partnership') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       }
       return {
         fired: true,
@@ -481,10 +511,13 @@ const categoryRules: Rule[] = [
   },
   {
     id: 'R-18',
-    description: 'An ambiguous email produces no plan at all.',
+    description: 'An ambiguous email produces no plan at all, until a person has checked it (then R-20).',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'ambiguous') {
-        return { fired: false, because: `the category is ${ctx.understanding.category}` };
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
+      }
+      if (ctx.humanChecked === true) {
+        return { fired: false, because: 'a person has checked this email, so R-20 applies instead' };
       }
       return {
         fired: true,
@@ -495,7 +528,32 @@ const categoryRules: Rule[] = [
   },
 ];
 
-export const RULES: readonly Rule[] = [...entityRules, ...categoryRules];
+// R-20 is the one rule added for the operator's "continue" action on an ambiguous email. Without it a person who checked such an
+// email and let it continue would get an empty plan and the email would be handed back to them, which is the dead end the action
+// exists to remove. It plans the smallest honest thing: record that the email arrived, and open a task for a person to deal
+// with it. It creates no company, contact or deal, and it never replies. The plan still needs approval because the reading is
+// still ambiguous.
+const humanCheckedRules: Rule[] = [
+  {
+    id: 'R-20',
+    description: 'An ambiguous email that a person has checked becomes an activity and a task for a person, never a CRM record or a reply.',
+    evaluate(ctx) {
+      if (ctx.understanding.category !== 'ambiguous') {
+        return { fired: false, because: `the category is ${plainCategory(ctx)}` };
+      }
+      if (ctx.humanChecked !== true) {
+        return { fired: false, because: 'no person has checked this email yet, so R-18 applies' };
+      }
+      return {
+        fired: true,
+        because: 'a person checked this ambiguous email and let it continue, so it is logged and given a task for a person',
+        actions: [activityAction(ctx), taskAction(ctx, `Look at this email: ${ctx.email.subject}`, ctx.understanding.intent)],
+      };
+    },
+  },
+];
+
+export const RULES: readonly Rule[] = [...entityRules, ...categoryRules, ...humanCheckedRules];
 
 const NEW_DEAL_RULES = ['R-14', 'R-15', 'R-16'];
 
@@ -570,6 +628,12 @@ export function evaluateRules(ctx: DecisionContext): RuleEvaluation {
   return { actions: orderActions(applyExistingDealRule(ctx, actions, trace)), trace };
 }
 
+/** A reason as a sentence: a capital first letter and a full stop. The stored text is lower case so it can follow "because". */
+export function sentence(reason: string): string {
+  const trimmed = reason.trim().replace(/[.]+$/, '');
+  return trimmed === '' ? '' : `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}.`;
+}
+
 /** The operator-facing sentence for a plan. */
 export function buildRationale(ctx: DecisionContext, evaluation: RuleEvaluation): string {
   const fired = evaluation.trace.filter((entry) => entry.fired);
@@ -577,11 +641,12 @@ export function buildRationale(ctx: DecisionContext, evaluation: RuleEvaluation)
     return `No action is recommended: ${fired[fired.length - 1]?.because ?? 'no rule applied to this email'}.`;
   }
 
-  const category = ctx.understanding.category.replace(/_/g, ' ');
-  const reasons = fired.map((entry) => entry.because);
+  // One sentence for the reading, then one sentence per reason, each starting with a capital letter and ending in a full stop.
+  // The reading is stated once; the reasons never repeat it.
+  const sentences = fired.map((entry) => sentence(entry.because));
   return (
-    `Read as a ${category} (${ctx.understanding.confidenceBand} confidence). ` +
-    `${reasons.join('; ')}. ` +
+    `Read as ${humanCategory(ctx)} (${ctx.understanding.confidenceBand} confidence). ` +
+    `${sentences.join(' ')} ` +
     `Rules fired: ${fired.map((entry) => entry.rule).join(', ')}.`
   );
 }

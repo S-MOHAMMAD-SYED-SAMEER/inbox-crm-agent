@@ -121,6 +121,11 @@ export type ValidationRecord = {
   coherenceAdjustments: Array<{ what: string; why: string; rule?: string }>;
   /** Values normalised without changing meaning, e.g. an over-long summary. */
   normalisations: Array<{ what: string; why: string }>;
+  /**
+   * Discarded values that the model's own summary or intent still mentions. The model's text is never rewritten; this says
+   * which text to distrust. Absent when there are none.
+   */
+  summaryMentions?: Array<{ field: ExtractedField; claimedValue: string; in: Array<'summary' | 'intent'> }>;
   attempts: number;
 };
 
@@ -141,8 +146,10 @@ export type SanitisationRecord = {
 export type InjectionMatch = {
   rule: string;
   severity: 'high' | 'medium';
-  /** The offending text, trimmed. Shown to the operator so they can judge it. */
+  /** The offending text, trimmed to whole words with an ellipsis where it was cut. Shown to the operator so they can judge it. */
   evidence: string;
+  /** The same place with more around it (still bounded), for "show more". Absent in records written before it existed. */
+  context?: string;
   why: string;
 };
 

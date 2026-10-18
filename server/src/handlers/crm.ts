@@ -30,7 +30,7 @@ import type { HandlerResult } from './emails.ts';
 // React component. Each handler fetches the related sets once and maps them —
 // three queries for a screen, whatever the row count.
 
-export type CrmDeps = Pick<Repositories, 'companies' | 'contacts' | 'deals' | 'tasks' | 'activities' | 'audit'>;
+export type CrmDeps = Pick<Repositories, 'companies' | 'contacts' | 'deals' | 'tasks' | 'activities' | 'audit' | 'emails'>;
 
 /**
  * A whole number from a query string.
@@ -255,6 +255,8 @@ export type AuditRow = {
   summary: string;
   entityType: string | null;
   entityId: string | null;
+  /** Which email this belongs to, by subject and sender only (never the body). Null for events that belong to no email. */
+  email: { subject: string; fromName: string | null; fromEmail: string } | null;
   createdAt: string;
 };
 
@@ -275,6 +277,14 @@ export async function handleListAudit(
     ...(outcome ? { outcome } : {}),
   });
 
+  // One lookup per distinct email, so five identical "A plan is ready" rows can say which email each belongs to.
+  const emailIds = [...new Set(events.flatMap((event) => (event.emailId ? [event.emailId] : [])))];
+  const known = new Map<string, { subject: string; fromName: string | null; fromEmail: string }>();
+  for (const id of emailIds) {
+    const email = await deps.emails.getById(id);
+    if (email) known.set(id, { subject: email.subject, fromName: email.fromName, fromEmail: email.fromEmail });
+  }
+
   return {
     status: 200,
     body: {
@@ -291,6 +301,7 @@ export async function handleListAudit(
         summary: event.summary,
         entityType: event.entityType,
         entityId: event.entityId,
+        email: event.emailId ? (known.get(event.emailId) ?? null) : null,
         createdAt: event.createdAt,
       })),
       total: await deps.audit.count(),

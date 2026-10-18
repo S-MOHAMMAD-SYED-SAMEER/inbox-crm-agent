@@ -205,8 +205,14 @@ export async function understandEmail(
   // guess. So the category is changed to ambiguous and the email goes to a person. Code decides this, not the
   // prompt: a model can be talked into or out of calling something a follow-up, but whether we know the sender is
   // a fact in our own records.
+  const modelReading = understanding;
   const reading = await withFollowUpContextCheck(repos, email, understanding, validation);
   understanding = reading;
+
+  // The model's summary and intent are its own words and are shown as written, but a value the validator discarded must not
+  // reach the screen unmarked by that route. Record which discarded values the text still mentions.
+  const mentions = discardedValuesMentioned(understanding, validation);
+  if (mentions.length > 0) validation.summaryMentions = mentions;
 
   // --- deterministic security pass -----------------------------------------
 
@@ -235,6 +241,9 @@ export async function understandEmail(
     attempt,
   });
 
+  // The model's reading is logged under the model's name, exactly as it gave it. If the code then changed the category, that is
+  // a second entry under the system's name: a decision made by code is never recorded as the AI's.
+  const changedByCode = modelReading.category !== effective.category;
   await repos.audit.append({
     correlationId: email.correlationId,
     emailId: email.id,
@@ -243,12 +252,12 @@ export async function understandEmail(
     actor: 'ai',
     actorId: modelName,
     outcome: 'ok',
-    summary: `Read as ${effective.category.replace(/_/g, ' ')} (${effective.confidenceBand} confidence, ${effective.confidence.toFixed(2)}).`,
+    summary: `Read as ${modelReading.category.replace(/_/g, ' ')} (${modelReading.confidenceBand} confidence, ${modelReading.confidence.toFixed(2)}).`,
     payload: {
-      category: effective.category,
-      priority: effective.priority,
-      confidence: effective.confidence,
-      confidenceBand: effective.confidenceBand,
+      category: modelReading.category,
+      priority: modelReading.priority,
+      confidence: modelReading.confidence,
+      confidenceBand: modelReading.confidenceBand,
       promptVersion: UNDERSTAND_PROMPT_VERSION,
       // The input is recorded as a digest, not as text: it proves *that* the
       // same email produced this reading without copying the message into a
@@ -262,6 +271,37 @@ export async function understandEmail(
     entityType: 'analysis',
     entityId: analysis.id,
   });
+
+  if (changedByCode) {
+    const change = validation.coherenceAdjustments.find((adjustment) => adjustment.rule !== undefined);
+    await repos.audit.append({
+      correlationId: email.correlationId,
+      emailId: email.id,
+      stage: 'understand',
+      eventType: 'category_changed_by_code',
+      actor: 'system',
+      outcome: 'ok',
+      summary: `Changed the category from ${modelReading.category.replace(/_/g, ' ')} to ${effective.category.replace(/_/g, ' ')}: ${change?.why ?? 'a rule in the code applied'}.`,
+      payload: { from: modelReading.category, to: effective.category, rule: change?.rule ?? null },
+      entityType: 'analysis',
+      entityId: analysis.id,
+    });
+  }
+
+  if (validation.summaryMentions && validation.summaryMentions.length > 0) {
+    await repos.audit.append({
+      correlationId: email.correlationId,
+      emailId: email.id,
+      stage: 'understand',
+      eventType: 'summary_mentions_discarded_value',
+      actor: 'system',
+      outcome: 'ok',
+      summary: `The model's own summary or intent still mentions a value that was discarded (${validation.summaryMentions.map((m) => `${m.field}: "${m.claimedValue}"`).join('; ')}). Its text is shown as written, with a marker.`,
+      payload: { mentions: validation.summaryMentions },
+      entityType: 'analysis',
+      entityId: analysis.id,
+    });
+  }
 
   const extractedCount = Object.values(effective.extracted).filter((field) => field.value !== null).length;
   await repos.audit.append({
@@ -382,6 +422,29 @@ function decideReviewReason(understanding: Understanding, security: SecurityReco
 }
 
 export const FOLLOW_UP_WITHOUT_CONTEXT = 'follow_up_without_context';
+
+function normalisedForMention(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Discarded values that the model's summary or intent still names. A value shorter than three characters is too short to mean
+ * anything by appearing, and the text "null" is not a value.
+ */
+export function discardedValuesMentioned(understanding: Understanding, validation: ValidationRecord): NonNullable<ValidationRecord['summaryMentions']> {
+  const summary = normalisedForMention(understanding.summary);
+  const intent = normalisedForMention(understanding.intent);
+  const found: NonNullable<ValidationRecord['summaryMentions']> = [];
+  for (const dropped of validation.droppedFields) {
+    const value = normalisedForMention(dropped.claimedValue);
+    if (value.length < 3 || value === 'null') continue;
+    const where: Array<'summary' | 'intent'> = [];
+    if (summary.includes(value)) where.push('summary');
+    if (intent.includes(value)) where.push('intent');
+    if (where.length > 0) found.push({ field: dropped.field, claimedValue: dropped.claimedValue, in: where });
+  }
+  return found;
+}
 
 /** What we already know about this sender: a thread, a contact with this address, or a company on this domain. */
 export async function senderContext(repos: Repositories, email: EmailRecord): Promise<{ known: boolean; because: string | null }> {

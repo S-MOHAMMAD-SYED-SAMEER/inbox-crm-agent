@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ProposedAction } from '../api/types.ts';
+import { cutAtWord, formatMoment } from '../inbox/copy.ts';
+import { ExpandableText } from './expandable.tsx';
 
 // The approval diff.
 //
@@ -27,7 +29,7 @@ const ACTION_LABELS: Record<string, string> = {
   send_email: 'Queue reply',
 };
 
-type Change = { before: string; after: string };
+type Change = { before: string; after: string; /** The whole text, when `after` was cut. */ full?: string };
 
 /** What this action changes, in the CRM's own terms. */
 function describe(action: ProposedAction): Change {
@@ -65,12 +67,13 @@ function describe(action: ProposedAction): Change {
     case 'create_task':
       return {
         before: 'no follow-up scheduled',
-        after: `"${text(payload.title)}"${payload.dueAt ? ` due ${new Date(text(payload.dueAt)).toLocaleString()}` : ''}`,
+        after: `"${text(payload.title)}"${payload.dueAt ? ` due ${formatMoment(text(payload.dueAt))}` : ''}`,
       };
     case 'log_activity':
       return { before: 'not on the timeline', after: `timeline entry: "${text(payload.subject)}"` };
     case 'add_note':
-      return { before: 'no note', after: text(payload.body).slice(0, 90) };
+      // Cut at a whole word with an ellipsis, never mid-word; the full note is on the plan itself.
+      return { before: 'no note', after: cutAtWord(text(payload.body), 90).shown, full: text(payload.body) };
     case 'archive_email':
       return { before: 'in the inbox', after: 'archived, with no CRM record' };
     case 'send_email':
@@ -104,7 +107,9 @@ export function PlanDiff({ actions }: { actions: ProposedAction[] }): ReactNode 
                   {ACTION_LABELS[action.type] ?? action.type}
                 </td>
                 <td className="py-2 pr-3 text-meta text-ink-muted">{change.before}</td>
-                <td className="py-2 text-meta text-ink">{change.after}</td>
+                <td className="py-2 text-meta text-ink">
+                  <ExpandableText shown={change.after} full={change.full} />
+                </td>
               </tr>
             );
           })}

@@ -198,9 +198,10 @@ approval, asking to hide it from the operator. Each quotes the text it found.
 
 **Then the headline underneath:**
 
-> "Caught by a security check that runs on every email — *before* the AI is asked
-> for its opinion. So it does not depend on the AI noticing. Here, the AI
-> *didn't* notice. It was caught anyway."
+> "Caught by a security check that runs on every email, separately from the AI,
+> and its verdict overrides the AI's. So it does not depend on the AI noticing.
+> In the scripted demo the AI is made to miss it, and it was caught anyway. (A
+> real model flagged it as well, in every real run.)"
 
 > "Nothing was executed. No CRM record. It went to a person."
 
