@@ -53,6 +53,23 @@ the batches rather than scripting them. The Anthropic provider is **implemented,
 
 <!-- DEMO_VIDEO: 60–90s screen recording of the app running locally goes here -->
 
+## Screenshots
+
+All taken from one recorded run of the real app on the real model (`gemini-3.5-flash-lite`), on invented data. Nothing was edited.
+
+| | |
+|---|---|
+| ![Sign-in page with "Try the demo — no sign-in"](docs/screenshots/hero.png) | ![Ten invented emails after the model has read them](docs/screenshots/inbox-analysed.png) |
+| The sign-in page. The owner signs in; anyone else can try the demo. | The ten emails after the model read them: category, priority, confidence. |
+| ![An email with the extracted fields; hovering one lights up the sentence it came from](docs/screenshots/extraction-provenance.png) | ![A proposed plan as a before and after table, with the reply held](docs/screenshots/approval-plan-and-draft.png) |
+| Hover a field and the sentence it came from lights up. | The plan, before anything happens. The reply is queued "held, not sent". |
+| ![Emails handed to a person, each with its reason](docs/screenshots/needs-a-person.png) | ![An email that hides an instruction for the AI](docs/screenshots/injection-panel.png) |
+| Unclear or suspicious emails go to a person, with the reason. | An email that tries to give the assistant orders is treated as data. |
+| ![The guest demo with its banner](docs/screenshots/guest-banner.png) | ![The audit timeline for one email](docs/screenshots/operator-trace.png) |
+| The guest demo: private sandbox, replayed answers, nothing sent. | Who did what, when, and why: the audit timeline of one email. |
+
+The results card from the video is [docs/screenshots/results.png](docs/screenshots/results.png) (figures from [docs/results/](./docs/results/RESULTS_SUMMARY.md), with their caveats); phone views are `mobile-390.png`, `mobile-390-menu.png` and `guest-banner-mobile-390.png` in the same folder.
+
 ## Try it: two ways in
 
 **As the owner** (the person running it): sign in with the password printed in the terminal. You get your own data, and with
@@ -166,15 +183,15 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                903 tests
+  test/                918 tests
 web/
   src/router.ts        ~60-line hash router, unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
   src/screens/         Overview · Inbox · email detail · Approvals + placeholders for the rest
-  test/                171 tests
+  test/                185 tests
 ```
 
-1074 tests total (903 server + 171 web), all currently passing.
+1103 tests total (918 server + 185 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
@@ -288,7 +305,7 @@ and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Han
 **Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
 (a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
 **55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
-sessions, and real parallel connections racing for one claim). **The 903-test unit suite itself still runs
+sessions, and real parallel connections racing for one claim). **The 918-test unit suite itself still runs
 only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
 network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
 
