@@ -53,7 +53,7 @@ the batches rather than scripting them. The Anthropic provider is **implemented,
 
 **Hosting your own copy** is optional and covered in [docs/HOSTING.md](./docs/HOSTING.md). Nothing is hosted for you.
 
-<!-- DEMO_VIDEO: 60–90s screen recording of the app running locally goes here -->
+https://github.com/user-attachments/assets/35721368-c06c-4af2-8849-6390167e99bb
 
 ## Screenshots
 
