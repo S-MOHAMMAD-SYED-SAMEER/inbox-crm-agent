@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { api } from '../api/client.ts';
 import { outcomeFor } from '../inbox/copy.ts';
+import { actorWho } from '../auth/guest.ts';
 import { routeToHash } from '../router.ts';
 import { FilterChip, RecordTable, SourceBadge } from '../components/recordTable.tsx';
 import {
@@ -263,8 +264,7 @@ export function AuditLog(): ReactNode {
             </td>
             <td className={`${CELL} whitespace-nowrap text-ink-muted`}>
               <span aria-hidden="true">{who.marker} </span>
-              {who.label}
-              {event.actorId ? <p className="text-meta">{event.actorId}</p> : null}
+              {actorWho(event.actor, event.actorId)}
             </td>
             <td className={`${CELL} whitespace-nowrap ${OUTCOME_CLASS[outcome.tone] ?? OUTCOME_CLASS.ok}`}>
               {outcome.label}

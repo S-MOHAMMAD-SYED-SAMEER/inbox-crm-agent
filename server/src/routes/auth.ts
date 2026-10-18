@@ -76,8 +76,23 @@ export function createAuthRouter(deps: AuthDeps): Router {
   // Safe to call unauthenticated: it answers "no" rather than 401, which is what
   // lets the front end decide between a sign-in screen and the app.
   router.get('/auth/session', (req: Request, res: Response) => {
+    const guestDemoEnabled = deps.guest?.enabled === true;
+    // A guest is "signed in" as the guest, with its own token and the time left. An owner session, if present, is what is reported.
+    if (req.guest && !req.session && deps.guest) {
+      const info = deps.guest.info(req.guest.sandbox);
+      res.status(200).json({
+        authenticated: true,
+        operator: 'guest',
+        role: 'guest',
+        expiresAt: info.expiresAt,
+        csrfToken: req.guest.csrfToken,
+        guestDemoEnabled,
+        guest: info,
+      });
+      return;
+    }
     const result = handleSession(req.session ?? null);
-    res.status(result.status).json(result.body);
+    res.status(result.status).json({ ...result.body, role: req.session ? 'owner' : null, guestDemoEnabled });
   });
 
   return router;

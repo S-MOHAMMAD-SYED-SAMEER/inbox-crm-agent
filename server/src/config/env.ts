@@ -171,6 +171,14 @@ export type AppConfig = {
    * to set it behaves exactly as it did before this flag existed.
    */
   demoPublicReadonly: boolean;
+  /**
+   * Whether visitors may try the demo without signing in, each in a private sandbox that is deleted when they leave, answering from a
+   * recorded model run. On by default because it is safe by design: a guest reaches no real data, no model and no sending. Set
+   * GUEST_DEMO=false to turn it off.
+   */
+  guestDemo: boolean;
+  /** The recorded model run the guest demo replays. */
+  replayRecordingPath: string;
   migrationsDir: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 };
@@ -334,6 +342,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConfigResult {
       demoDataDir: readString('DEMO_DATA_DIR', path.join(SERVER_ROOT, 'data', 'demo')),
       // Off unless an operator turns it on, by name, in the environment.
       demoPublicReadonly: readBool('DEMO_PUBLIC_READONLY', false),
+      guestDemo: readBool('GUEST_DEMO', true),
+      replayRecordingPath: readString('REPLAY_RECORDING_PATH', path.join(SERVER_ROOT, 'data', 'replay', 'recorded-run.json')),
       migrationsDir: readString('MIGRATIONS_DIR', path.join(SERVER_ROOT, 'migrations')),
       // Zero by default, deliberately. See the field's documentation: trusting
       // a forwarding header nobody is writing hands every client the ability to
@@ -381,5 +391,6 @@ export function configSummary(cfg: AppConfig = config): Record<string, string | 
     // Surfaced so an operator can see from outside whether the public demo
     // window is open, without having to read the deployment environment.
     demoPublicReadonly: cfg.demoPublicReadonly,
+    guestDemo: cfg.guestDemo,
   };
 }

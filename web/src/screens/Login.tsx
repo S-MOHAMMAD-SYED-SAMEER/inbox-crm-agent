@@ -25,7 +25,29 @@ import { api, ApiError } from '../api/client.ts';
 // "server has no password configured" would tell someone guessing which half of
 // the problem to work on.
 
-export function Login({ onSignedIn }: { onSignedIn(): void }): ReactNode {
+export function Login({
+  onSignedIn,
+  guestDemoEnabled = false,
+  onTryDemo,
+}: {
+  onSignedIn(): void;
+  /** Whether to offer the guest demo. Only ever true for a visitor: this screen is not shown to a signed-in owner. */
+  guestDemoEnabled?: boolean;
+  /** Starts a guest session. Resolves to an error message, or null on success. */
+  onTryDemo?: () => Promise<string | null>;
+}): ReactNode {
+  const [starting, setStarting] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+
+  const tryDemo = async (): Promise<void> => {
+    if (starting || !onTryDemo) return;
+    setStarting(true);
+    setDemoError(null);
+    const problem = await onTryDemo();
+    if (problem) setDemoError(problem);
+    setStarting(false);
+  };
+
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +126,28 @@ export function Login({ onSignedIn }: { onSignedIn(): void }): ReactNode {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        {guestDemoEnabled && onTryDemo ? (
+          <div className="mt-4 rounded-card border border-line bg-surface p-5 shadow-resting" data-guest-entry>
+            <p className="text-small font-semibold text-ink">Just looking?</p>
+            <p className="mt-1 text-meta text-ink-muted">
+              Run the whole flow yourself, with no sign-in. You get a private copy of the demo that is deleted when you leave. Answers are
+              replayed from a recorded real run, so no model is called and nothing is ever sent.
+            </p>
+            <button
+              type="button"
+              data-try-demo
+              disabled={starting}
+              onClick={() => void tryDemo()}
+              className="mt-3 h-control w-full rounded-control border border-line-strong px-4 text-small font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50"
+            >
+              {starting ? 'Starting…' : 'Try the demo — no sign-in'}
+            </button>
+            <div aria-live="polite">
+              {demoError ? <p role="alert" className="mt-2 rounded-control bg-danger-tint px-3 py-2 text-small text-danger">{demoError}</p> : null}
+            </div>
+          </div>
+        ) : null}
 
         <p className="mt-4 text-meta text-ink-muted">
           The password is checked on the server and never stored in this browser.

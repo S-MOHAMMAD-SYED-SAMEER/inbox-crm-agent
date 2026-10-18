@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { ROUTES, routeToHash, type Route, type RouteName } from '../router.ts';
+import { NOT_IN_GUEST_DEMO, type GuestInfo } from '../auth/guest.ts';
+import { GuestBanner } from './guestBanner.tsx';
 
 // The application shell: sidebar navigation, header, content slot.
 //
@@ -31,6 +33,9 @@ const NAV: NavItem[] = [
   { route: 'settings', label: 'Settings', hint: 'Adapters and configuration', group: 'system' },
 ];
 
+/** Sections that configure the server. A guest sees them, disabled: it can change nothing outside its own sandbox. */
+const OWNER_ONLY = new Set<RouteName>(['automation', 'settings']);
+
 const GROUP_LABELS: Record<NavItem['group'], string> = {
   work: 'Work',
   crm: 'CRM',
@@ -58,6 +63,10 @@ type AppShellProps = {
    * refuses a mutation, and it refuses whether or not this prop is right.
    */
   publicDemo?: boolean;
+  /** Present for a guest: the banner is drawn, owner-only sections read as unavailable, and the controls are the guest's. */
+  guest?: GuestInfo | null;
+  onStartOver?(): void;
+  onLeaveGuest?(): void;
   /** A recoverable problem worth telling the operator about. */
   notice: string | null;
   onDismissNotice(): void;
@@ -71,11 +80,16 @@ export function AppShell({
   notice,
   onDismissNotice,
   publicDemo = false,
+  guest = null,
+  onStartOver,
+  onLeaveGuest,
 }: AppShellProps): ReactNode {
   const current = NAV.find((item) => item.route === route.name);
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
+      {guest ? <GuestBanner info={guest} busy={false} onStartOver={() => onStartOver?.()} onLeave={() => onLeaveGuest?.()} /> : null}
+
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:px-4 focus:py-2 focus:shadow-hover"
@@ -96,6 +110,22 @@ export function AppShell({
               <ul>
                 {NAV.filter((item) => item.group === group).map((item) => {
                   const active = item.route === route.name;
+                  // Owner-only sections are shown, not hidden, so a guest can see what the product has: disabled, with the reason.
+                  if (guest && OWNER_ONLY.has(item.route)) {
+                    return (
+                      <li key={item.route}>
+                        <span
+                          aria-disabled="true"
+                          title={NOT_IN_GUEST_DEMO}
+                          data-owner-only
+                          className="block cursor-not-allowed rounded-control px-2 py-1.5 text-small text-ink-muted opacity-60"
+                        >
+                          {item.label}
+                          <span className="block text-meta">{NOT_IN_GUEST_DEMO}</span>
+                        </span>
+                      </li>
+                    );
+                  }
                   return (
                     <li key={item.route}>
                       <a
@@ -128,6 +158,8 @@ export function AppShell({
             <div className="flex flex-wrap items-center gap-2">
               {publicDemo ? (
                 <span className="text-meta text-ink-muted">Read-only demo · not signed in</span>
+              ) : guest ? (
+                <span className="text-meta text-ink-muted">Guest · private sandbox</span>
               ) : (
                 <>
                   <span className="text-meta text-ink-muted">

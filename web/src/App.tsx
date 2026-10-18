@@ -10,6 +10,8 @@ import { AuditLog, Companies, Contacts, Deals, Tasks } from './screens/Crm.tsx';
 import { Login } from './screens/Login.tsx';
 import { useSession } from './auth/useSession.ts';
 import { PublicDemoProvider } from './auth/publicDemo.tsx';
+import { GuestProvider } from './auth/guestContext.tsx';
+import { showGuestButton } from './auth/guest.ts';
 import { DEFAULT_ROUTE, parseRoute, type Route } from './router.ts';
 
 /**
@@ -53,7 +55,16 @@ export function App(): ReactNode {
   }
 
   if (session.state.status === 'anonymous') {
-    return <Login onSignedIn={() => void session.refresh()} />;
+    // The guest demo is offered to a visitor and to nobody else: this screen is only shown when nobody is signed in, so an owner who
+    // is signed in never sees the button, and the server would refuse the request if they somehow made it.
+    const offerDemo = showGuestButton(session.state.status, session.guestDemoEnabled);
+    return (
+      <Login
+        onSignedIn={() => void session.refresh()}
+        guestDemoEnabled={offerDemo}
+        onTryDemo={() => session.startGuest()}
+      />
+    );
   }
 
   // The public read-only demo. The same shell and the same screens, drawn
@@ -62,9 +73,11 @@ export function App(): ReactNode {
   // permission: the server has already decided, and it refuses every mutation
   // from here regardless of what this component renders.
   const publicDemo = session.state.status === 'public-demo';
+  const guest = session.state.status === 'authenticated' && session.state.role === 'guest' ? (session.state.guest ?? null) : null;
 
   return (
     <PublicDemoProvider value={publicDemo}>
+    <GuestProvider value={guest}>
     <AppShell
       route={route}
       operator={session.state.status === 'authenticated' ? session.state.operator : ''}
@@ -72,6 +85,9 @@ export function App(): ReactNode {
       notice={session.notice}
       onDismissNotice={session.dismissNotice}
       publicDemo={publicDemo}
+      guest={guest}
+      onStartOver={() => void session.startOver()}
+      onLeaveGuest={() => void session.leaveGuest()}
     >
       {route.name === 'overview' ? <Overview /> : null}
       {/* An id on the inbox route selects one email — the router already parses
@@ -90,6 +106,7 @@ export function App(): ReactNode {
 
       {isPlaceholderRoute(route.name) ? <PlaceholderScreen route={route.name} /> : null}
     </AppShell>
+    </GuestProvider>
     </PublicDemoProvider>
   );
 }

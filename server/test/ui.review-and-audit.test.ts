@@ -363,3 +363,50 @@ test('the audit list names the email each row belongs to, by subject and sender,
   assert.equal(JSON.stringify(body).includes('Just following up on our conversation'), false, 'no email body in the list');
   await f.close();
 });
+
+// ================================ R-20: the activity belongs to the email only
+
+test('R-20 attaches nothing to a CRM contact or company, even when the sender matches one', async () => {
+  const { evaluateRules } = await import('../src/agent/decide/rules.ts');
+  const { emptyExtraction } = await import('../src/domain/understanding.ts');
+  const known = {
+    email: { subject: 'Following up', fromEmail: 'dana@solsticeretail.invalid', fromName: 'Dana', providerMessageId: 'x' },
+    understanding: {
+      category: 'ambiguous', intent: 'Refers to an earlier conversation.', priority: 'low', priorityReason: 'x', confidence: 0.4, confidenceBand: 'low',
+      flags: { insufficientInformation: true, ambiguousIntent: true, possibleInjection: false }, extracted: emptyExtraction(), questionAsked: null, summary: 'Follow-up with no context.',
+    },
+    // The sender IS a known contact at a known company.
+    contact: { entityType: 'contact', verdict: 'MATCH', outcome: 'auto_linked', candidates: [], selectedEntityId: 'contact-1' },
+    company: { entityType: 'company', verdict: 'MATCH', outcome: 'auto_linked', candidates: [], selectedEntityId: 'company-1' },
+    openDeal: null,
+    humanChecked: true,
+    matchedContact: { id: 'contact-1', companyId: 'company-1' },
+    now: '2026-08-24T10:00:00.000Z',
+  } as unknown as Parameters<typeof evaluateRules>[0];
+
+  const actions = evaluateRules(known).actions;
+  assert.deepEqual(actions.map((a) => a.type), ['log_activity', 'create_task']);
+  const activity = actions[0]?.payload as { contact: unknown; company: unknown };
+  const task = actions[1]?.payload as { contact: unknown; company: unknown; deal: unknown };
+  assert.equal(activity.contact, null);
+  assert.equal(activity.company, null);
+  assert.deepEqual([task.contact, task.company, task.deal], [null, null, null]);
+
+  // Through the whole pipeline: after "continue" the stored activity is linked to the email and to no contact or company.
+  const f = await pipelineUpToUnderstand();
+  const e08 = await emailOf(f.repos, 'demo-e08');
+  await handleReviewEmail(f.deps, e08.id, { action: 'continue' }, 'operator');
+  const decision = await f.repos.decisions.getCurrentForEmail(e08.id);
+  assert.ok(decision);
+  const { handleApprove } = await import('../src/handlers/emails.ts');
+  // The test database runs on a fixed clock in June; the executor's clock has to agree or the approval looks expired.
+  const { createFixedClock } = await import('../src/lib/clock.ts');
+  const approved = await handleApprove({ ...f.deps, clock: createFixedClock('2026-06-01T02:00:00.000Z', 1000) } as never, decision.id, 'operator');
+  assert.equal(approved.body.ok, true, approved.body.refusalMessage ?? undefined);
+  const activities = await f.repos.activities.listForEmail(e08.id);
+  assert.equal(activities.length, 1);
+  assert.equal(activities[0]?.emailId, e08.id);
+  assert.equal(activities[0]?.contactId, null);
+  assert.equal(activities[0]?.companyId, null);
+  await f.close();
+});

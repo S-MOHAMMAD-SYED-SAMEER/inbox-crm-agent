@@ -26,6 +26,8 @@ export type AuthDeps = {
   config: AppConfig;
   clock?: Clock;
   logger?: Logger;
+  /** Present when the guest demo exists on this server: whether it is on, and what to tell a guest about its session. */
+  guest?: { enabled: boolean; info(sandbox: import('../guest/sandbox.ts').Sandbox): import('../guest/http.ts').GuestInfo };
 };
 
 export type LoginResult = {

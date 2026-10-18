@@ -16,6 +16,10 @@ import type { EmailSource } from './adapters/email/types.ts';
 import { toErrorEnvelope } from './lib/errors.ts';
 import { createLogger, type Logger } from './lib/logger.ts';
 import type { Database } from './db/types.ts';
+import { systemClock } from './lib/clock.ts';
+import { GuestManager } from './guest/manager.ts';
+import { loadRecording, type Recording } from './guest/recording.ts';
+import { attachGuest, createGuestRouter, dispatchGuest, guestInfo, requireGuestCsrf } from './guest/http.ts';
 
 // Express application assembly, separated from the server bootstrap so a test
 // can build the app without binding a port.
@@ -29,6 +33,12 @@ export type AppDeps = {
   /** Injectable so tests can supply a stub provider and source. */
   provider?: LlmProvider;
   source?: EmailSource;
+  /**
+   * The guest demo's sandboxes. Injectable so a test can supply a manager with a fake clock and small limits; `null` turns the guest
+   * demo off whatever the configuration says. By default one is built from the configuration (GUEST_DEMO, on unless set to false).
+   */
+  guestManager?: GuestManager | null;
+  recording?: Recording;
 };
 
 // 256 KB. Large enough for any plausible email payload, small enough
@@ -42,6 +52,8 @@ export function createApp({
   config = defaultConfig,
   provider,
   source,
+  guestManager: injectedGuestManager,
+  recording: injectedRecording,
   // Built from `config` so the limiter knows whether the public demo window is
   // open. A caller that injects its own limiter owns that decision, which
   // is what the deployment tests rely on.
@@ -67,6 +79,25 @@ export function createApp({
           return mock;
         })()
       : createLlmProvider(config));
+
+  // --- the guest demo ----------------------------------------------------
+  //
+  // Private sandboxes answering from a recorded run (see guest/). Built only when the configuration allows it, and tolerant of a
+  // missing recording: the demo is simply unavailable, and nothing else changes.
+  let recording: Recording | null = injectedRecording ?? null;
+  let guestManager: GuestManager | null = injectedGuestManager === undefined ? null : injectedGuestManager;
+  if (injectedGuestManager === undefined && config.guestDemo) {
+    try {
+      recording = injectedRecording ?? loadRecording(config.replayRecordingPath);
+      guestManager = new GuestManager({
+        build: { migrationsDir: config.migrationsDir, demoDataDir: config.demoDataDir, recording, clock: systemClock, logger },
+      });
+    } catch (err) {
+      logger.warn('The guest demo is unavailable: its recording could not be loaded.', { internal: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  if (guestManager && !recording) recording = injectedRecording ?? loadRecording(config.replayRecordingPath);
+  app.locals.guestManager = guestManager;
 
   app.disable('x-powered-by');
 
@@ -141,6 +172,10 @@ export function createApp({
 
   app.use('/api', attachSession({ repos }));
 
+  // A guest is recognised after the owner is looked for, never before: a request that carries an owner session is the owner's, and a
+  // guest cookie on it is ignored.
+  if (guestManager) app.use('/api', attachGuest(guestManager));
+
   // Rate limiting after `attachSession`, so an authenticated caller is keyed by
   // their session rather than sharing an IP bucket with everyone behind the same
   // NAT — and so an unauthenticated login attempt still gets an IP bucket.
@@ -153,8 +188,11 @@ export function createApp({
   // — `requireSession` below is what refuses those, and two layers answering the
   // same question with different codes would make 401 and 403 interchangeable.
   app.use('/api', requireCsrf());
+  if (guestManager) app.use('/api', requireGuestCsrf());
 
-  app.use('/api', createAuthRouter({ repos, config, logger }));
+  const guestDeps = guestManager && recording ? { enabled: config.guestDemo, info: (sandbox: Parameters<typeof guestInfo>[2]) => guestInfo(guestManager, recording as Recording, sandbox) } : undefined;
+  app.use('/api', createAuthRouter({ repos, config, logger, ...(guestDeps ? { guest: guestDeps } : {}) }));
+  if (guestManager && recording) app.use('/api', createGuestRouter({ manager: guestManager, recording, config }));
 
   // The gate. With DEMO_PUBLIC_READONLY off — the default, and the only state
   // any existing deployment has — this behaves exactly as `requireSession` did:
@@ -162,6 +200,8 @@ export function createApp({
   // in `middleware.ts` also passes, and nothing else does. A public reader is
   // still anonymous: no session is created, so every mutation below still fails.
   app.use('/api', requireSessionOrPublicRead({ publicReadsEnabled: config.demoPublicReadonly }));
+  // A guest's request goes to its own sandbox here and ends there. It never reaches the routers below, which hold the owner's data.
+  if (guestManager) app.use('/api', dispatchGuest());
   app.use('/api', createEmailRouter({ repos, source: emailSource, provider: llmProvider, logger }));
 
   // Read-only CRM projections. Below the gate, so authenticated by

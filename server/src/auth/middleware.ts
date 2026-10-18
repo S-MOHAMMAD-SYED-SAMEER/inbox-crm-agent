@@ -132,7 +132,9 @@ export function isPublicDemoRead(method: string, path: string): boolean {
  */
 export function requireSessionOrPublicRead(options: { publicReadsEnabled: boolean }) {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    if (req.session) {
+    // An owner session, or a guest: a guest is recognised only by a live guest cookie (see guest/http.ts), and everything it is let
+    // through to is its own sandbox.
+    if (req.session || req.guest) {
       next();
       return;
     }

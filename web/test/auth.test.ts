@@ -489,7 +489,8 @@ test('the application is unreachable without an authenticated session', () => {
 
   assert.ok(loadingIndex > 0 && anonymousIndex > 0 && shellIndex > 0);
   assert.ok(anonymousIndex < shellIndex, 'the shell can render before the session is confirmed');
-  assert.match(app, /return <Login/);
+  // The anonymous branch returns the sign-in screen (which may now also offer the guest demo) before the shell is ever reached.
+  assert.match(app, /return \(\s*<Login/);
 });
 
 test('no secret or credential appears anywhere in the web source', () => {

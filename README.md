@@ -53,6 +53,20 @@ the batches rather than scripting them. The Anthropic provider is **implemented,
 
 <!-- DEMO_VIDEO: 60–90s screen recording of the app running locally goes here -->
 
+## Try it: two ways in
+
+**As the owner** (the person running it): sign in with the password printed in the terminal. You get your own data, and with
+`npm run live` the real model. Everything on this page about running it locally is this way in.
+
+**As a guest** (anyone, no password): click **Try the demo — no sign-in** on the sign-in page. You can run the whole flow yourself:
+ingest, analyse, match, decide, open an email, edit a proposal, approve or reject. Nothing you do is permanent. You get a private
+copy of the demo data that is deleted when you leave (or after 30 minutes idle, or 2 hours at most), and **Start over** puts it back
+at the beginning. Model answers are **replayed from a recorded real run** of `gemini-3.5-flash-lite` (2026-10-17, 1 of 3 runs), so no
+model is called and no key is needed, and **nothing is ever sent**. A guest cannot see or change the owner's data or another guest's,
+turn sending on, change server settings or trigger a model call. Every check around the model still runs live on each replayed
+answer. `GUEST_DEMO=false` turns it off. Nothing is hosted: see [docs/HOSTING.md](./docs/HOSTING.md) and
+[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+
 ## Development setup
 
 The two-process setup below is for working on the code. The API refuses requests without a session, so
@@ -152,15 +166,15 @@ server/
   src/handlers/        pure {status, body} handlers
   src/lib/             errors, validation, redaction, logging, ids, clock
   data/demo/           E-01..E-10, each with a canned model response
-  test/                880 tests
+  test/                903 tests
 web/
   src/router.ts        ~60-line hash router, unit-tested
   src/components/planDiff.tsx  the read-only before/after view of a plan
   src/screens/         Overview · Inbox · email detail · Approvals + placeholders for the rest
-  test/                162 tests
+  test/                171 tests
 ```
 
-1042 tests total (880 server + 162 web), all currently passing.
+1074 tests total (903 server + 171 web), all currently passing.
 
 ## The UNDERSTAND pipeline
 
@@ -274,7 +288,7 @@ and `NUMERIC` arrive as strings from `pg`, booleans as `0`/`1` from SQLite). Han
 **Postgres status, stated precisely.** The Postgres driver was run against a real PostgreSQL 16 server
 (a throwaway container) on 2026-10-16: all 10 migrations apply, and `npm run verify:postgres` passes
 **55 of 55** checks (constraints, transactions and savepoints, approvals and revisions, the outbox claim,
-sessions, and real parallel connections racing for one claim). **The 880-test unit suite itself still runs
+sessions, and real parallel connections racing for one claim). **The 903-test unit suite itself still runs
 only on SQLite**: it builds a private in-memory database per test, which is not practical to repeat over a
 network. So the driver is verified by that targeted script, not by the whole suite. To repeat it:
 

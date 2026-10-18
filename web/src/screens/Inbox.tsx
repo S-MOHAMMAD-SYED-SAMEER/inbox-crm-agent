@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { usePublicDemo } from '../auth/publicDemo.tsx';
+import { useGuest } from '../auth/guestContext.tsx';
+import { guestAnalyseNote } from '../auth/guest.ts';
 import { api, ApiError } from '../api/client.ts';
 import type { EmailSummary } from '../api/types.ts';
 import { routeToHash } from '../router.ts';
@@ -31,6 +33,7 @@ type LoadState =
 
 export function Inbox(): ReactNode {
   const publicDemo = usePublicDemo();
+  const guest = useGuest();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -90,7 +93,7 @@ export function Inbox(): ReactNode {
         <button
           type="button"
           disabled={busy !== null || waiting === 0}
-          title={analyseCostNote(waiting) ?? 'Nothing is waiting to be read.'}
+          title={(guest ? guestAnalyseNote(waiting) : analyseCostNote(waiting)) ?? 'Nothing is waiting to be read.'}
           onClick={() =>
             run('understand', async () => {
               const result = await api.understandPending();
@@ -140,7 +143,7 @@ export function Inbox(): ReactNode {
 
       {publicDemo || analyseCostNote(waiting) === null ? null : (
         <p data-analyse-cost className="text-meta text-ink-muted">
-          {analyseCostNote(waiting)}
+          {guest ? guestAnalyseNote(waiting) : analyseCostNote(waiting)}
         </p>
       )}
 
