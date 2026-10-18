@@ -68,7 +68,10 @@ test('a vendor pitch is explained once, in words, with capital letters, and neve
 
 test('an article agrees with the category: "an ambiguous email", "a sales inquiry"', () => {
   const ambiguous = context({ understanding: understanding({ category: 'ambiguous' }) });
-  assert.match(buildRationale(ambiguous, evaluateRules(ambiguous)), /^No action is recommended|^Read as an ambiguous/);
+  assert.match(buildRationale(ambiguous, evaluateRules(ambiguous)), /^No action is recommended/);
+  // "ambiguous" is an adjective and is read without an article ("Read as ambiguous"); the full table is in ui.w1-w2.test.ts.
+  const checked = context({ understanding: understanding({ category: 'ambiguous' }), humanChecked: true });
+  assert.match(buildRationale(checked, evaluateRules(checked)), /^Read as ambiguous \(high confidence\)\./);
   const sales = context();
   assert.match(buildRationale(sales, evaluateRules(sales)), /^Read as a sales inquiry \(high confidence\)\./);
 });

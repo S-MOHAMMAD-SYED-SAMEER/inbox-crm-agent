@@ -16,12 +16,22 @@ R-20 closes that, and only that. When the audit log says a person checked the em
 1. **log an activity**, recording that the email arrived; and
 2. **create a task** for a person to look at it.
 
-What it deliberately does not do:
+What it is attached to is the person's decision, never the machine's:
 
-- **It attaches nothing to a CRM contact or company.** The activity is linked to the email and to nothing else, and the task names
-  no record. This holds even when the sender matches an existing contact or company: the reading is still ambiguous, so nothing is
-  filed against a person or an organisation on the strength of it. (A test proves it, including with a matched sender.)
-- It creates no company, contact or deal, and it drafts no reply, so nothing could be sent.
+- **No pick** (a plain Continue, nothing to answer): the activity and the task are attached to the email and to nothing else. This holds
+  even when the sender matches an existing contact or company: the reading is still ambiguous, so nothing is filed against a person or
+  an organisation on the strength of it. (A test proves it, including with a matched sender.)
+- **An existing record picked** ("Choose the record", when matching found more than one possible record): the activity and the task
+  are attached to the contact and/or company they picked.
+- **"None of these, create new records" picked:** R-01 and R-02 add `create_company` and/or `create_contact` for the kinds the CRM has
+  no record of, built only from fields that passed the verbatim check and the email's own headers, and the activity and the task are
+  attached to those. A pick is recorded with its actor (`match_resolved_by_human`) and only the pick that produced the current match
+  counts.
+
+What it deliberately does not do, in every case:
+
+- It never creates a deal, and it drafts no reply, so nothing could be sent.
+- It never links two records to each other (R-03 does not apply to an ambiguous email).
 - It does not lower the approval requirement. The reading is still ambiguous, so the plan still needs a person to approve it.
 
 Without the person's check, R-18 applies exactly as before, and the mock evaluations are unchanged. "Continue" itself is offered

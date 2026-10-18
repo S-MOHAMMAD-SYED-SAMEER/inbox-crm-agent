@@ -411,11 +411,19 @@ try {
   const guestChoices = String(await evaluate('document.querySelector("[data-choose-record]").innerText'));
   if (!/Harborview/.test(guestChoices)) fail('The candidates for E-04 do not name Harborview');
   for (let pick = 0; pick < 3 && !String(await evaluate('document.body.innerText')).includes('The plan is waiting for approval'); pick += 1) {
-    await evaluate('[...document.querySelectorAll("[data-choose-record] button")].find((b) => /choose this record/i.test(b.textContent)).click()');
+    await evaluate('[...document.querySelectorAll("[data-choose-record] button")].find((b) => /none of these/i.test(b.textContent)).click()');
     await sleep(1200);
   }
-  await waitFor('document.body.innerText.includes("Record chosen. The plan is waiting for approval.")', 'The guest choosing a record did not leave a plan waiting for approval');
-  console.log('PASS  as a guest, choosing one of the Harborview records leaves a plan waiting for approval');
+  await waitFor('document.body.innerText.includes("Recorded: new records will be proposed. The plan is waiting for approval.")', 'The guest choosing "none of these" did not leave a plan waiting for approval');
+  console.log('PASS  as a guest, "None of these: create new records" leaves a plan waiting for approval');
+
+  // W-1: the plan then CREATES the company and the contact the guest asked for, and has no deal and no reply.
+  await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The guest Inbox did not load');
+  await evaluate('[...document.querySelectorAll("tbody a")].find((a) => /Reporting work for Harborview/.test(a.textContent)).click()');
+  await waitFor('/create company/i.test(document.body.innerText) && /create contact/i.test(document.body.innerText)', 'The plan for E-04 after "create new records" does not create the company and the contact');
+  const dealOrReply = /.{0,60}(create deal|send email|send reply).{0,60}/i.exec(String(await evaluate('document.querySelector("main").innerText')));
+  if (dealOrReply) fail(`The plan for the ambiguous E-04 contains a deal or a reply: ${dealOrReply[0]}`);
+  console.log('PASS  the plan for E-04 creates the new company and contact (no deal, no reply), still waiting for approval');
 
   // Out of the Approvals page and back in, so it opens on the plans waiting for approval rather than on the list it was left on.
   await go('#/inbox', 'document.querySelectorAll("tbody tr").length >= 10', 'The guest Inbox did not load');

@@ -98,9 +98,24 @@ export async function decideEmail(
 
   // A person who has looked at an ambiguous email and let it continue (see handleReviewEmail) has put that on the record; the
   // only rule that reads it is R-20, which turns "no plan at all" into "an activity and a task for a person".
-  const humanChecked = (await repos.audit.listByEmail(email.id)).some(
+  const auditEvents = await repos.audit.listByEmail(email.id);
+  const humanChecked = auditEvents.some(
     (event) => event.eventType === 'human_review_recorded' && (event.payload as { action?: string }).action === 'continue',
   );
+
+  // What a person chose when asked which record this email is (a match conflict). Only a pick that produced the CURRENT resolution
+  // counts: the audit entry names the resolution run it made, and a later re-resolution supersedes it.
+  const humanPick: NonNullable<DecisionContext['humanPick']> = {};
+  for (const [kind, run] of [['contact', contactRun], ['company', companyRun]] as const) {
+    const current = run[0]?.resolutionRun;
+    const pick = auditEvents.find(
+      (event) =>
+        event.eventType === 'match_resolved_by_human' &&
+        (event.payload as { entityType?: string; resolutionRun?: string }).entityType === kind &&
+        (event.payload as { resolutionRun?: string }).resolutionRun === current,
+    );
+    if (pick) humanPick[kind] = (pick.payload as { entityId?: string | null }).entityId === null ? 'new' : 'existing';
+  }
 
   const ctx: DecisionContext = {
     email,
@@ -110,6 +125,7 @@ export async function decideEmail(
     openDeal,
     openDealForContact,
     humanChecked,
+    humanPick,
     matchedContact,
     now: clock.nowIso(),
   };

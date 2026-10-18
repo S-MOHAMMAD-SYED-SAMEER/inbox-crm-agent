@@ -83,6 +83,12 @@ export type DecisionContext = {
   openDealForContact?: Deal | null;
   /** A person looked at this email after it was handed to them and let it continue (the audit log says so). Read only by R-18 and R-20. */
   humanChecked?: boolean;
+  /**
+   * What a person chose for this email's CRM match, when they were asked (a match conflict): an existing record, or "create new". Absent
+   * for a kind nobody was asked about. Read only for an ambiguous email, where R-20 uses it; a pick is the person's decision, a machine
+   * match is not.
+   */
+  humanPick?: { contact?: 'existing' | 'new'; company?: 'existing' | 'new' };
   /** The contact record when the contact resolved to a MATCH. Needed by R-03. */
   matchedContact: Contact | null;
   /** Decision time, from the injectable clock — never `new Date()`. */
@@ -100,13 +106,38 @@ export type Rule = {
 // ---------------------------------------------------------------- helpers
 
 function companyRef(ctx: DecisionContext): EntityRef | null {
+  if (ctx.understanding.category === 'ambiguous') return pickedRef(ctx, 'company');
   if (ctx.company.selectedEntityId !== null) return { kind: 'existing', id: ctx.company.selectedEntityId };
   return willCreateCompany(ctx) ? { kind: 'new', ref: 'company' } : null;
 }
 
 function contactRef(ctx: DecisionContext): EntityRef | null {
+  if (ctx.understanding.category === 'ambiguous') return pickedRef(ctx, 'contact');
   if (ctx.contact.selectedEntityId !== null) return { kind: 'existing', id: ctx.contact.selectedEntityId };
   return willCreateContact(ctx) ? { kind: 'new', ref: 'contact' } : null;
+}
+
+/**
+ * What an ambiguous email may be filed against: only what a person chose. The reading is unreliable, so a machine match (even an exact
+ * one) is not used; a person's pick is. "Existing" is the record they picked, "new" is the record that will be created (built by R-01 or
+ * R-02 from fields that passed the verbatim check). Nothing picked, nothing attached.
+ */
+function pickedRef(ctx: DecisionContext, kind: 'contact' | 'company'): EntityRef | null {
+  if (ctx.humanChecked !== true) return null;
+  const pick = ctx.humanPick?.[kind];
+  const resolution = kind === 'contact' ? ctx.contact : ctx.company;
+  if (pick === 'existing' && resolution.selectedEntityId !== null) return { kind: 'existing', id: resolution.selectedEntityId };
+  if (createNewChosen(ctx) && pick !== 'existing') return (kind === 'contact' ? willCreateContact(ctx) : willCreateCompany(ctx)) ? { kind: 'new', ref: kind } : null;
+  return null;
+}
+
+/**
+ * Whether a person answered "none of these, create new records". The button says "records", so it covers every kind the CRM has no
+ * record of (verdict NO_MATCH): asked which company, "none of these" also means the sender is a new contact. It never covers a kind the
+ * person picked an existing record for, and it never covers a kind the machine matched on its own.
+ */
+function createNewChosen(ctx: DecisionContext): boolean {
+  return ctx.humanChecked === true && Object.values(ctx.humanPick ?? {}).includes('new');
 }
 
 /** Categories that are archived rather than acted on — noise, by definition. */
@@ -117,16 +148,28 @@ function isNoise(ctx: DecisionContext): boolean {
 }
 
 /**
- * Whether this email may create CRM records at all.
+ * Whether this email may create a CRM record of this kind.
  *
- * Noise obviously may not. Neither may an *ambiguous* email: the specification's E-08
- * requires "no plan produced", and creating a company and a contact from a
- * reading the system has just declared unreliable would pollute the CRM on the
- * strength of a guess. UNDERSTAND normally routes these to review before DECIDE ever
- * sees them; this is the guard for when one arrives anyway.
+ * Noise may not. Neither may an *ambiguous* email on the strength of the system's own guess: the specification's E-08 requires "no plan
+ * produced", and creating a company and a contact from a reading the system has just declared unreliable would pollute the CRM. The one
+ * exception is a person who was asked which record this is, answered "none of these, create new records", and has checked the email:
+ * that is their decision, and then (and only then) the record is created, from the same verbatim-checked fields as for any other email.
+ * UNDERSTAND normally routes ambiguous emails to review before DECIDE ever sees them; this is the guard for when one arrives anyway.
  */
-function producesCrmRecords(ctx: DecisionContext): boolean {
-  return !isNoise(ctx) && ctx.understanding.category !== 'ambiguous';
+function producesCrmRecords(ctx: DecisionContext, kind: 'contact' | 'company'): boolean {
+  if (isNoise(ctx)) return false;
+  if (ctx.understanding.category !== 'ambiguous') return true;
+  return createNewChosen(ctx) && ctx.humanPick?.[kind] !== 'existing';
+}
+
+/** Why no record of this kind is created for this email, in words that are true for noise and for an ambiguous email alike. */
+function noRecordReason(ctx: DecisionContext, kind: 'contact' | 'company'): string {
+  if (ctx.understanding.category === 'ambiguous') {
+    return ctx.humanPick?.[kind] === 'existing'
+      ? `a person picked an existing ${kind}, so a new one is not created`
+      : `an ambiguous email creates a ${kind} only when a person has chosen to create one, and no one has`;
+  }
+  return `${withArticle(plainCategory(ctx))} email never creates a CRM record`;
 }
 
 function companyLabel(ctx: DecisionContext): string | null {
@@ -136,17 +179,25 @@ function companyLabel(ctx: DecisionContext): string | null {
 }
 
 function willCreateCompany(ctx: DecisionContext): boolean {
-  return ctx.company.verdict === 'NO_MATCH' && producesCrmRecords(ctx) && companyLabel(ctx) !== null;
+  return ctx.company.verdict === 'NO_MATCH' && producesCrmRecords(ctx, 'company') && companyLabel(ctx) !== null;
 }
 
 function willCreateContact(ctx: DecisionContext): boolean {
-  return ctx.contact.verdict === 'NO_MATCH' && producesCrmRecords(ctx);
+  return ctx.contact.verdict === 'NO_MATCH' && producesCrmRecords(ctx, 'contact');
 }
 
-/** The category in words a person reads ("vendor pitch", not the stored name). */
-function humanCategory(ctx: DecisionContext): string {
-  const words = ctx.understanding.category.replace(/_/g, ' ');
+/** "a vendor pitch", "an ambiguous": the article that agrees with the next word. */
+function withArticle(words: string): string {
   return /^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`;
+}
+
+/**
+ * The category as the reading is stated: "a vendor pitch", but "ambiguous" and "spam", which are said without an article ("Read as
+ * ambiguous", "Read as spam"). The article is chosen here, once, for every category.
+ */
+function readAs(ctx: DecisionContext): string {
+  const words = plainCategory(ctx);
+  return ctx.understanding.category === 'ambiguous' || ctx.understanding.category === 'spam' ? words : withArticle(words);
 }
 
 function plainCategory(ctx: DecisionContext): string {
@@ -254,11 +305,8 @@ const entityRules: Rule[] = [
     id: 'R-01',
     description: 'Create the company when the email names one the CRM does not have.',
     evaluate(ctx) {
-      if (!producesCrmRecords(ctx)) {
-        return {
-          fired: false,
-          because: `a ${ctx.understanding.category.replace(/_/g, ' ')} email never creates a CRM record`,
-        };
+      if (!producesCrmRecords(ctx, 'company')) {
+        return { fired: false, because: noRecordReason(ctx, 'company') };
       }
       if (ctx.company.verdict !== 'NO_MATCH') {
         return { fired: false, because: `the company resolved as ${ctx.company.verdict}` };
@@ -286,11 +334,8 @@ const entityRules: Rule[] = [
     id: 'R-02',
     description: 'Create the contact when the sender is not already in the CRM.',
     evaluate(ctx) {
-      if (!producesCrmRecords(ctx)) {
-        return {
-          fired: false,
-          because: `a ${ctx.understanding.category.replace(/_/g, ' ')} email never creates a CRM record`,
-        };
+      if (!producesCrmRecords(ctx, 'contact')) {
+        return { fired: false, because: noRecordReason(ctx, 'contact') };
       }
       if (ctx.contact.verdict !== 'NO_MATCH') {
         return { fired: false, because: `the contact resolved as ${ctx.contact.verdict}` };
@@ -319,6 +364,9 @@ const entityRules: Rule[] = [
     evaluate(ctx) {
       if (ctx.contact.verdict !== 'MATCH' || ctx.company.verdict !== 'MATCH') {
         return { fired: false, because: 'both the contact and the company must already exist' };
+      }
+      if (ctx.understanding.category === 'ambiguous') {
+        return { fired: false, because: 'an ambiguous email changes no record, and linking two records to each other is a change to both' };
       }
       if (ctx.contact.selectedEntityId === null || ctx.company.selectedEntityId === null) {
         return { fired: false, because: 'a matched record without an id cannot be linked' };
@@ -353,7 +401,7 @@ const categoryRules: Rule[] = [
       if (!isNoise(ctx)) return { fired: false, because: `the category is ${plainCategory(ctx)}` };
       return {
         fired: true,
-        because: `${humanCategory(ctx)} email never becomes a lead, so it is archived and no CRM record is created`,
+        because: `${withArticle(plainCategory(ctx))} email never becomes a lead, so it is archived and no CRM record is created`,
         actions: [
           {
             type: 'archive_email',
@@ -540,12 +588,18 @@ const categoryRules: Rule[] = [
 // R-20 is the one rule added for the operator's "continue" action on an ambiguous email. Without it a person who checked such an
 // email and let it continue would get an empty plan and the email would be handed back to them, which is the dead end the action
 // exists to remove. It plans the smallest honest thing: record that the email arrived, and open a task for a person to deal
-// with it. It creates no company, contact or deal, files nothing against any existing one, and it never replies. The plan still needs approval because the reading is
-// still ambiguous.
+// with it. It never creates a deal and it never replies, and the plan still needs approval because the reading is still ambiguous.
+//
+// What the activity and the task are attached to is decided by the person, not by the machine. If they were asked which record this is
+// (a match conflict) and picked an existing one, both are attached to it. If they chose "none of these, create new records", R-01 and
+// R-02 add the company and/or contact (from fields that passed the verbatim check) and both are attached to those. If they were not
+// asked (no conflict), nothing is picked and both are attached to the email only, not even to a record the sender happens to match.
+// R-03 never adds a link between two records for an ambiguous email: choosing the records is not a decision to change how they relate.
 const humanCheckedRules: Rule[] = [
   {
     id: 'R-20',
-    description: 'An ambiguous email that a person has checked becomes an activity and a task for a person, never a CRM record or a reply.',
+    description:
+      'An ambiguous email that a person has checked becomes an activity and a task for a person, attached to the record(s) the person picked or chose to create (to the email only when none), never a deal or a reply.',
     evaluate(ctx) {
       if (ctx.understanding.category !== 'ambiguous') {
         return { fired: false, because: `the category is ${plainCategory(ctx)}` };
@@ -555,13 +609,19 @@ const humanCheckedRules: Rule[] = [
       }
       return {
         fired: true,
-        because: 'a person checked this ambiguous email and let it continue, so it is logged and given a task for a person',
-        // Attached to the EMAIL ONLY. The reading is still ambiguous, so nothing here is filed against a CRM contact or company, not
-        // even one the sender happens to match: the activity is linked to this email and to nothing else, and the task names no record.
+        because: `a person checked this ambiguous email and let it continue, so it is logged and given a task for a person${attachedTo(ctx)}`,
+        // Attached to what the person picked, and to nothing a machine matched: with no pick, to the EMAIL ONLY (the reading is still
+        // ambiguous, so not even a record the sender happens to match).
         actions: [
           {
             type: 'log_activity',
-            payload: { type: 'email_in', subject: ctx.email.subject, body: ctx.understanding.summary, contact: null, company: null },
+            payload: {
+              type: 'email_in',
+              subject: ctx.email.subject,
+              body: ctx.understanding.summary,
+              contact: contactRef(ctx),
+              company: companyRef(ctx),
+            },
           },
           {
             type: 'create_task',
@@ -570,8 +630,8 @@ const humanCheckedRules: Rule[] = [
               description: ctx.understanding.intent,
               dueAt: dueAt(ctx.now, ctx.understanding.priority),
               priority: ctx.understanding.priority,
-              contact: null,
-              company: null,
+              contact: contactRef(ctx),
+              company: companyRef(ctx),
               deal: null,
             },
           },
@@ -580,6 +640,24 @@ const humanCheckedRules: Rule[] = [
     },
   },
 ];
+
+/** The sentence fragment that says what a person's pick made R-20 attach to. Empty when nothing was picked. */
+function attachedTo(ctx: DecisionContext): string {
+  const parts: string[] = [];
+  for (const kind of ['contact', 'company'] as const) {
+    const pick = ctx.humanPick?.[kind];
+    if (pick === 'existing') parts.push(`the ${kind} they picked`);
+    if (pick === 'new') parts.push(`a new ${kind}`);
+  }
+  // "Create new" also covers the kind nobody was asked about, when the CRM has no record of it.
+  if (createNewChosen(ctx)) {
+    for (const kind of ['contact', 'company'] as const) {
+      const resolution = kind === 'contact' ? ctx.contact : ctx.company;
+      if (ctx.humanPick?.[kind] === undefined && resolution.verdict === 'NO_MATCH' && pickedRef(ctx, kind) !== null) parts.push(`a new ${kind}`);
+    }
+  }
+  return parts.length === 0 ? '' : `, attached to ${parts.join(' and ')}`;
+}
 
 export const RULES: readonly Rule[] = [...entityRules, ...categoryRules, ...humanCheckedRules];
 
@@ -673,7 +751,7 @@ export function buildRationale(ctx: DecisionContext, evaluation: RuleEvaluation)
   // The reading is stated once; the reasons never repeat it.
   const sentences = fired.map((entry) => sentence(entry.because));
   return (
-    `Read as ${humanCategory(ctx)} (${ctx.understanding.confidenceBand} confidence). ` +
+    `Read as ${readAs(ctx)} (${ctx.understanding.confidenceBand} confidence). ` +
     `${sentences.join(' ')} ` +
     `Rules fired: ${fired.map((entry) => entry.rule).join(', ')}.`
   );
