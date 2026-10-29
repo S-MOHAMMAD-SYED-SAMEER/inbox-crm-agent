@@ -9,9 +9,10 @@ resolve → decide → approve → execute. An approved plan is applied to the C
 idempotently, with before/after snapshots on every action. Work waiting on a person now has a real
 queue — sorted by how little time is left on it, with a before/after diff of what approving would
 change — and an approval that outlives its window is swept to human review rather than staying
-silently executable. **Nothing is ever sent**: an approved reply stops at the outbox as `suppressed`.
+silently executable. **No real email is ever sent**: by default (both locks off) an approved reply stops at the outbox as `suppressed`;
+with both locks set it reaches a deterministic mock sender, which delivers nothing real.
 The remaining known gap is a real outbound email provider: only a deterministic mock sender is
-implemented, and `ALLOW_OUTBOUND_SEND`/`OUTBOUND_PROVIDER` refuse to deliver anything until one
+implemented, and `ALLOW_OUTBOUND_SEND`/`OUTBOUND_PROVIDER` will not deliver anything real until one
 exists.
 
 Full specification: [`docs/PROJECT2_INBOX_CRM_SPEC.md`](./docs/PROJECT2_INBOX_CRM_SPEC.md).
@@ -81,7 +82,7 @@ The results card from the video is [docs/screenshots/results.png](docs/screensho
 ingest, analyse, match, decide, open an email, edit a proposal, approve or reject. Nothing you do is permanent. You get a private
 copy of the demo data that is deleted when you leave (or after 30 minutes idle, or 2 hours at most), and **Start over** puts it back
 at the beginning. Model answers are **replayed from a recorded real run** of `gemini-3.5-flash-lite` (2026-10-17, 1 of 3 runs), so no
-model is called and no key is needed, and **nothing is ever sent**. A guest cannot see or change the owner's data or another guest's,
+model is called and no key is needed, and **no real email is ever sent**. A guest cannot see or change the owner's data or another guest's,
 turn sending on, change server settings or trigger a model call. Every check around the model still runs live on each replayed
 answer. `GUEST_DEMO=false` turns it off. Nothing is hosted: see [docs/HOSTING.md](./docs/HOSTING.md) and
 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
@@ -154,14 +155,14 @@ These parts of that rule are implemented and tested:
 | The agent cannot express a destructive action | [`src/domain/actions.ts`](server/src/domain/actions.ts) | The action registry is closed and contains no delete or bulk-update action. Not gated — absent. |
 | A consequential action always needs a human | [`src/agent/policy/approval.ts`](server/src/agent/policy/approval.ts) | `requiresApproval()` is pure, deterministic, and never reads the model's opinion. No autonomy level, setting, or environment variable permits a tier-2 action to run unattended. |
 | The audit trail cannot be rewritten | [`src/db/repositories/audit.ts`](server/src/db/repositories/audit.ts) | The repository exposes `append()` and reads. There is no update or delete method to call. |
-| An email cannot instruct the agent | [`src/agent/understand/prompt.ts`](server/src/agent/understand/prompt.ts) | Content never enters the system prompt; it arrives fenced in a user turn, and the fence is escaped so content cannot close it. The only tool the model has describes an email — there is no tool that acts. |
+| An email cannot instruct the agent | [`src/agent/understand/prompt.ts`](server/src/agent/understand/prompt.ts) | Content never enters the system prompt; it arrives fenced in a user turn, and the fence is escaped so content cannot close it. The only tool the model has describes an email — there is no tool that acts. This is a statement about what the code allows, not a claim that a model never follows an attack: the injection detector missed 2 of 12 test attacks, and in an earlier run the model once obeyed one (see Results). |
 | Matching is decided by code, never by a model | [`src/agent/resolve/`](server/src/agent/resolve/) | Entity resolution makes no model call at all. The analysis supplies evidence (a domain, a company name); fixed scores and thresholds decide what it is worth. |
 | A close call is never silently promoted to a match | [`src/agent/resolve/resolve.ts`](server/src/agent/resolve/resolve.ts) | Two candidates within 0.10 are a conflict — checked *before* the auto-link threshold — and a lone mid-band candidate is not promoted for lack of competition. |
 | The UI is not the security boundary | [`src/agent/execute/executor.ts`](server/src/agent/execute/executor.ts) | Before anything is written the executor re-runs the approval policy from stored facts, checks the approval record, its state, its expiry and a fingerprint of the plan that was approved. A caller cannot assert approval; there is no field for it. |
-| An approved reply is never sent | [`src/agent/execute/executor.ts`](server/src/agent/execute/executor.ts) | The reply is written to the outbox as `suppressed`. No code path in this build delivers a message, and a guardrail-blocked draft is refused before the plan runs at all. |
+| An approved reply is never really sent | [`src/agent/execute/executor.ts`](server/src/agent/execute/executor.ts) | By default the reply is written to the outbox as `suppressed`; with both locks set it reaches a deterministic mock sender (`gmail` is a declared name with no implementation). No code path in this build delivers a real message, and a guardrail-blocked draft is refused before the plan runs at all. |
 | The model never chooses an action | [`src/agent/decide/rules.ts`](server/src/agent/decide/rules.ts) | Every action comes from a deterministic rule over the understanding and the resolution. The model is called *after* the plan is final, and its only tool records two strings of prose. |
 | A draft cannot invent a price, a promise or a statistic | [`src/agent/decide/draftGuardrails.ts`](server/src/agent/decide/draftGuardrails.ts) | Seven deterministic post-checks, one of which blocks a promise (a proposal, a refund, a call) that nothing in the plan does. The prompt asks; these check. A blocked draft is kept visible and forces approval rather than vanishing. |
-| A value with no evidence never reaches the database | [`src/agent/understand/validate.ts`](server/src/agent/understand/validate.ts) | Every non-null field must quote text that appears in the email. Unsupported values are dropped to `not_provided`, and the drop is audited. |
+| A value with no evidence never reaches the database | [`src/agent/understand/validate.ts`](server/src/agent/understand/validate.ts) | Every non-null field must carry a quoted span that appears in the email. For names, titles, companies, email addresses and phone numbers the value itself must also be written in the email; free-form fields (service interest, requirement summary and so on) are judged by their quoted span, not by their value. Unsupported values are dropped to `not_provided`, and the drop is audited. |
 
 ## What is built
 
@@ -205,7 +206,7 @@ sanitised email
   → provenance      does every value quote text that is in the email?  (per-field → dropped)
   → coherence       does the answer contradict itself?                 (corrected, recorded)
   → confidence      high / medium / low band
-  → injection       deterministic detector, authoritative over the model
+  → injection       deterministic detector; its verdict is added to the model's own flag (either one marks the email suspected: it can add suspicion, never remove it)
   → persist         model output, effective understanding, validation and security kept apart
   → state           resolving | needs_review (+reason) | understand_failed
 ```
@@ -238,7 +239,7 @@ by counting CRM rows before and after a full run.
 
 ```
 understanding + resolution + CRM + settings
-  → rules        18 deterministic rules, then R-19 (a returning contact's open deal is advanced, never duplicated); every one records why it did or did not fire
+  → rules        13 deterministic rules (R-01 to R-03, R-10 to R-18 and R-20), then R-19 as a separate step over the finished plan (a returning contact's open deal is advanced, never duplicated); every one records why it did or did not fire
   → plan         ordered actions from the closed registry, with a risk tier
   → policy       requiresApproval() — the foundation function, unchanged
   → draft        the model writes prose, only where a reply is warranted
@@ -269,7 +270,7 @@ plan (DECIDE)
   → human         approve (records who, when, and a fingerprint of the plan) or reject with a reason
   → EXECUTOR      re-derives every safety fact from the database and refuses if any disagrees
   → apply         one transaction, idempotency key per action, before/after snapshots
-  → outbox        an approved reply is stored as `suppressed` — never sent
+  → outbox        an approved reply is stored as `suppressed` (or, with both locks set, reaches the mock sender) — never really sent
   → state         completed | archived | execution_failed
 ```
 
@@ -278,10 +279,12 @@ analysis, resolution and settings rather than reading the plan's cached flag; th
 approval exists, belongs to this decision, is `approved`, has not expired, and that a fingerprint of
 the plan still matches what was approved. Eleven named refusal codes say exactly which check said no.
 
-**Nothing can be sent.** A guardrail-blocked draft is refused before the plan runs. An approved reply
-is written to the outbox with status `suppressed` and reason `outbound_send_disabled`. No code path
-in this build delivers a message — `ALLOW_OUTBOUND_SEND` is not consulted as a permission, because
-there is nothing for it to permit yet.
+**No real email can be sent.** A guardrail-blocked draft is refused before the plan runs. By default (both locks
+off) an approved reply is written to the outbox with status `suppressed` and reason `outbound_send_disabled`. With
+`ALLOW_OUTBOUND_SEND` and `OUTBOUND_PROVIDER` both set, the executor claims the message and hands it to the sender,
+which today is a deterministic mock (`gmail` is a declared name with no implementation). So no code path in this
+build delivers a real message, and `ALLOW_OUTBOUND_SEND` is consulted as a permission: it decides whether the mock
+sender is used.
 
 ## Decisions worth being able to explain
 
@@ -443,7 +446,7 @@ all across every run, 4 of them returned a 503 and were recorded, never silently
 | DECIDE cases passed / action accuracy / approval-policy accuracy | **6 of 7** / **100%** / **100%** | 7 of 7 |
 | UNDERSTAND category / priority accuracy | **80%** / **70%** | 100% |
 | UNDERSTAND extraction F1 | **0.91 to 0.95** | 1.00 |
-| Invented fields (a stored value not in the email) | **0**, after the verbatim rule | 0 |
+| Invented fields (a name, title, company, email or phone not written in the email; free-form fields are judged by the span they quote) | **0**, after the verbatim rule | 0 |
 | UNDERSTAND cases that pass every check | **2 to 4 of 10** | 10 of 10 |
 
 **The mock-versus-real gap is the finding.** The mock passes 10 of 10 and the real model 2 to 4 of 10 full cases: the mock measures the code

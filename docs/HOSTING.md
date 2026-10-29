@@ -63,7 +63,7 @@ never been run in production.
 
 A model is a separate decision: the keyless `mock` provider runs the whole demo on a host with no key. A real provider
 needs its key in the environment (`LLM_PROVIDER=gemini` with `GEMINI_API_KEY`, or `anthropic`), and **every email then costs
-real requests**; see the README for what has and has not been run. **Nothing is ever sent**: outbound sending needs two
+real requests**; see the README for what has and has not been run. **No real email is ever sent**: outbound sending needs two
 independent switches and the only sender implemented is a mock.
 
 ## What has and has not been verified

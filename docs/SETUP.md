@@ -81,7 +81,7 @@ never stored in the browser, so if you lose it, stop the app (**Ctrl+C**) and ru
 
 The `mock` provider is **not a model**. It replays scripted answers for the ten demo emails, so every run behaves the same
 and nothing costs anything. Everything around it (the checks on its answers, the matching, the rules, the approval gate)
-is the real code. **Nothing is ever sent**: an approved reply stops in the outbox as `suppressed`.
+is the real code. **No real email is ever sent**: by default an approved reply stops in the outbox as `suppressed`.
 
 The demo starts at `manual` autonomy, so every plan waits for you to approve it.
 `AUTONOMY_LEVEL=assisted npm run demo` starts it at `assisted`, where only the harmless plans (archiving the spam, logging a
@@ -95,7 +95,7 @@ To use another port, set `PORT` (for example `PORT=3101 npm run demo` in Git Bas
 On the sign-in page, **Try the demo — no sign-in** gives you a private copy of the demo, with no password. Run the whole flow
 yourself; **Start over** puts it back at the beginning and **Leave the demo** ends it. The answers are **replayed from a
 recorded real run** of `gemini-3.5-flash-lite`, so no model is called even when the app itself is running on a real key, and
-nothing is ever sent. It works the same way with `npm run demo` and with `npm run live`. `GUEST_DEMO=false` turns it off. The
+no real email is ever sent. It works the same way with `npm run demo` and with `npm run live`. `GUEST_DEMO=false` turns it off. The
 details are in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## 5. Run it on the real model (free Gemini key)
